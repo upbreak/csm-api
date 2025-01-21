@@ -24,10 +24,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 
 	// CORS 미들웨어 설정
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://example.com", "http://localhost:3000"}, // 허용할 도메인
-		AllowCredentials: true,                                                    // 쿠키 허용
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},     // 허용할 메서드
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},               // 허용할 헤더
+		AllowedOrigins:   []string{"http://localhost:3002"},                   // 허용할 도메인
+		AllowCredentials: true,                                                // 쿠키 허용
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 허용할 메서드
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},           // 허용할 헤더
 	})
 
 	// db연결 설정
