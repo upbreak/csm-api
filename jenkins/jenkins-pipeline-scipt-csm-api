@@ -1,0 +1,102 @@
+pipeline {
+    agent any
+    environment {
+        LOCAL_WORKSPACE_DIR = '/tmp/csm-api' // 컨테이너 내부 마운트 경로
+    }
+    stages {
+        stage('Initialize Variables') {
+            steps {
+                withCredentials([string(credentialsId: 'htenc-csm-api', variable: 'SECRET_JSON')]) {
+                    script {
+                        def secrets = new groovy.json.JsonSlurper().parseText(SECRET_JSON)
+
+                        // 환경 변수를 Jenkins 환경에 설정
+                        env.CSM_API_IMAGE_NAME = secrets['CSM-API-IMAGE-NAME']
+                        env.CSM_API_TAR_FILE = secrets['CSM-API-TAR-FILE']
+                        env.CSM_API_DOCKER_NETWORK = secrets['CSM-API-DOCKER-NETWORK']
+                        env.CSM_REMOTE_USER = secrets['CSM-REMOTE-USER']
+                        env.CSM_REMOTE_SERVER = secrets['CSM-REMOTE-SERVER']
+                        env.CSM_REMOTE_PATH = secrets['CSM-REMOTE-PATH']
+                        env.CSM_REMOTE_PASSWORD = secrets['CSM-REMOTE-PASSWORD']
+                    }
+                }
+            }
+        }
+        stage('Create Docker Image') {
+            steps {
+                script {
+                    sh """
+                    set -e
+                    echo "=== 도커 이미지 및 tar 생성 ==="
+                    cd '${LOCAL_WORKSPACE_DIR}'
+                    docker build -t '${env.CSM_API_IMAGE_NAME}:latest' .
+                    docker save -o '${LOCAL_WORKSPACE_DIR}/${env.CSM_API_TAR_FILE}' '${env.CSM_API_IMAGE_NAME}:latest'
+                    """
+                }
+            }
+        }
+        stage('Transfer and Deploy') {
+            steps {
+                script {
+                    def imageName = env.CSM_API_IMAGE_NAME
+                    def tarFileName = env.CSM_API_TAR_FILE
+                    def dockerNetwork = env.CSM_API_DOCKER_NETWORK
+                    def remoteUser = env.CSM_REMOTE_USER
+                    def remoteServer = env.CSM_REMOTE_SERVER
+                    def remotePath = env.CSM_REMOTE_PATH
+                    def remotePassword = env.CSM_REMOTE_PASSWORD
+                    def remoteTarPath = "${remotePath}/${tarFileName}"
+
+                    sh """
+                    set -e
+
+                    echo "=== 로컬 tar file 확인 ==="
+                    if [ ! -f '${LOCAL_WORKSPACE_DIR}/${tarFileName}' ]; then
+                        echo "Tar file not found: ${LOCAL_WORKSPACE_DIR}/${tarFileName}"
+                        exit 1
+                    fi
+
+                    echo "=== 서버에 tar file 전송 ==="
+                    sshpass -p '${remotePassword}' scp -o StrictHostKeyChecking=no '${LOCAL_WORKSPACE_DIR}/${tarFileName}' '${remoteUser}@${remoteServer}:${remotePath}'
+
+                    echo "=== 서버에 ssh 접속 ==="
+                    sshpass -p '${remotePassword}' ssh -o StrictHostKeyChecking=no '${remoteUser}@${remoteServer}' << 'EOF'
+                    set -e
+
+                    IMAGE_NAME="${imageName}"
+                    TAR_FILE_NAME="${tarFileName}"
+                    DOCKER_NETWORK="${dockerNetwork}"
+                    REMOTE_TAR_PATH="${remoteTarPath}"
+
+                    echo "=== 기존 이미지 백업 ==="
+                    if sudo docker images | grep -w "\${IMAGE_NAME}"; then
+                        TIMESTAMP=\$(date +"%Y%m%d%H%M")
+                        BACKUP_IMAGE_NAME="\${IMAGE_NAME}_backup_\${TIMESTAMP}"
+                        sudo docker tag "\${IMAGE_NAME}:latest" "\${BACKUP_IMAGE_NAME}:latest"
+                        sudo docker rmi -f "\${IMAGE_NAME}:latest" || true
+                        echo "기존 이미지를 \${BACKUP_IMAGE_NAME}으로 백업했습니다."
+                    fi
+
+                    echo "=== 새로운 이미지 생성 ==="
+                    sudo docker load -i "\${REMOTE_TAR_PATH}"
+
+                    echo "=== 기존 컨테이너 중지 및 삭제 ==="
+                    if sudo docker ps -a | grep -w "\${IMAGE_NAME}"; then
+                        sudo docker stop "\${IMAGE_NAME}" || true
+                        sudo docker rm "\${IMAGE_NAME}" || true
+                    fi
+
+                    echo "=== 새로운 컨테이너 실행 ==="
+                    sudo docker run -d --name "\${IMAGE_NAME}" --network "\${DOCKER_NETWORK}" --restart=unless-stopped -p 8080:8080 "\${IMAGE_NAME}:latest"
+
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo '작업 완료.'
+        }
+    }
+}

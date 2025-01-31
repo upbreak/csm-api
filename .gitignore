@@ -1,3 +1,5 @@
 .idea/*
-csm-api/config/*
+db_config.go
+jwt_config.go
 *.tar
+jenkins-credentials
