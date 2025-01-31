@@ -1,0 +1,22 @@
+services:
+  jenkins:
+    image: jenkins-custom
+    container_name: jenkins
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - D:/jenkins_home:/var/jenkins_home:rw
+      - D:/project/2025/csm/csm-front:/tmp/csm-front:rw
+      - D:/project/2025/csm/csm-api/csm-api:/tmp/csm-api:rw
+      - D:/project/2025/csm/csm-api/base-image:/tmp/base-image:rw
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock  # Docker 소켓 설정
+    networks:
+      - jenkins_internal_network
+
+networks:
+  jenkins_internal_network:
+    driver: bridge
