@@ -10,7 +10,7 @@ RUN go mod download
 
 # 소스 코드 복사 및 빌드
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o app
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags prod -o app
 
 # 실행 환경 설정
 FROM base-dependencies
