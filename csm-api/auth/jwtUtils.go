@@ -4,11 +4,9 @@ import (
 	"context"
 	"csm-api/clock"
 	"csm-api/config"
-	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -26,10 +24,9 @@ const (
 
 // claims 정의
 type JWTClaims struct {
-	UserId     string
-	Role       JWTRole
-	Token      string
-	RefreshKey string
+	UserId string
+	Role   JWTRole
+	Token  string
 }
 
 // context에 저장하는 claims value
@@ -52,7 +49,7 @@ func JwtNew(c clock.Clocker) (*JWTUtils, error) {
 }
 
 // 토큰 생성
-func (j *JWTUtils) GenerateToken(jwtClaims *JWTClaims) (*JWTClaims, error) {
+func (j *JWTUtils) GenerateToken(jwtClaims *JWTClaims) (string, error) {
 	// 비밀 키
 	secretKey := []byte(j.Cfg.SecretKey)
 
@@ -60,7 +57,7 @@ func (j *JWTUtils) GenerateToken(jwtClaims *JWTClaims) (*JWTClaims, error) {
 	claims := jwt.MapClaims{
 		"userId":     jwtClaims.UserId,
 		"exp":        j.Clock.Now().Add(1 * time.Minute).Unix(), // 만료 시간: 1분
-		"role":       "admin",
+		"role":       jwtClaims.Role,
 		"refreshKey": j.Cfg.RefreshKey,
 	}
 
@@ -70,19 +67,18 @@ func (j *JWTUtils) GenerateToken(jwtClaims *JWTClaims) (*JWTClaims, error) {
 	// 비밀 키로 서명
 	tokenString, err := parseToken.SignedString(secretKey)
 	if err != nil {
-		return &JWTClaims{}, fmt.Errorf("jwtUtils.go/GenerateToken() err: %w", err)
+		return "", fmt.Errorf("jwtUtils.go/GenerateToken() err: %w", err)
 	}
 
 	jwtClaims.Token = tokenString
 
-	return jwtClaims, nil
+	return tokenString, nil
 }
 
 // 토큰 재발급
 func (j *JWTUtils) RefreshToken(refreshToken string) (*JWTClaims, error) {
 	// 비밀 키
 	secretKey := []byte(j.Cfg.SecretKey)
-	refreshKey := j.Cfg.RefreshKey
 
 	// 토큰 파싱 및 검증
 	parseToken, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
@@ -99,7 +95,7 @@ func (j *JWTUtils) RefreshToken(refreshToken string) (*JWTClaims, error) {
 	// 클레임 RefreshKey 확인
 	//claims, ok := parseToken.Claims.(jwt.MapClaims)
 	claims, _ := parseToken.Claims.(jwt.MapClaims)
-	if claims["refreshKey"] != refreshKey {
+	if claims["refreshKey"] != j.Cfg.RefreshKey {
 		return nil, fmt.Errorf("jwtUtile.go/RefreshToken-refreshToken is differ: %v", err)
 	}
 	//if !ok || !parseToken.Valid {
@@ -108,9 +104,10 @@ func (j *JWTUtils) RefreshToken(refreshToken string) (*JWTClaims, error) {
 
 	// JWT 클레임 설정
 	jwtClaims := jwt.MapClaims{
-		"userId": claims["userId"].(string),
-		"exp":    j.Clock.Now().Add(1 * time.Minute).Unix(), // 만료 시간: 1분
-		"role":   claims["role"].(string),
+		"userId":     claims["userId"].(string),
+		"exp":        j.Clock.Now().Add(1 * time.Minute).Unix(), // 만료 시간: 1분
+		"role":       claims["role"].(string),
+		"refreshKey": j.Cfg.RefreshKey,
 	}
 
 	// 토큰 생성
@@ -123,33 +120,26 @@ func (j *JWTUtils) RefreshToken(refreshToken string) (*JWTClaims, error) {
 	}
 
 	jwtTokenClaims := &JWTClaims{
-		UserId:     claims["userId"].(string),
-		Role:       JWTRole(claims["role"].(string)),
-		Token:      tokenString,
-		RefreshKey: refreshKey,
+		UserId: claims["userId"].(string),
+		Role:   JWTRole(claims["role"].(string)),
+		Token:  tokenString,
 	}
 
 	return jwtTokenClaims, nil
 }
 
 // 토큰 유효성 검사
-func (j *JWTUtils) validateJWT(r *http.Request) (*JWTClaims, error) {
+func (j *JWTUtils) ValidateJWT(r *http.Request) (*JWTClaims, error) {
 	// 비밀 키
 	secretKey := []byte(j.Cfg.SecretKey)
 	//fmt.Printf("validateJWT secretkey: %v \n", secretKey)
 
-	// Authorization 헤더 읽기
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil, errors.New("Authorization header is empty")
+	// 쿠키 읽기
+	cookie, err := r.Cookie("jwt")
+	if err != nil {
+		return nil, fmt.Errorf("jwtUtils.go/validateJWT() err: %v", err)
 	}
-
-	// "Bearer " 접두사 제거
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenString == authHeader {
-		return nil, errors.New("Invalid Authorization token format")
-	}
-	//fmt.Println(tokenString)
+	tokenString := cookie.Value
 
 	// 토큰 파싱 및 검증
 	parseToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -179,7 +169,7 @@ func (j *JWTUtils) validateJWT(r *http.Request) (*JWTClaims, error) {
 // 사용자 토큰 인증시 필요한 api 호출시 token의 claims에 있는 값을 context에 저장
 func (j *JWTUtils) FillContext(r *http.Request) (*http.Request, error) {
 	// 토큰 검사 및 claims 추출
-	claims, err := j.validateJWT(r)
+	claims, err := j.ValidateJWT(r)
 	if err != nil {
 		return nil, err
 	}
