@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"csm-api/auth"
 	"csm-api/clock"
 	"csm-api/config"
 	"csm-api/handler"
@@ -15,12 +16,6 @@ import (
 // chi패키지를 이용하여 http method에 따른 여러 요청을 라우팅 할 수 있음 함수 구현
 func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(), error) {
 	mux := chi.NewRouter()
-
-	// 테스트용 라우팅
-	mux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_, _ = w.Write([]byte(`{"status": "ok"}`))
-	})
 
 	// CORS 미들웨어 설정
 	c := cors.New(cors.Options{
@@ -41,6 +36,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	r := store.Repository{Clocker: clock.RealClock{}}
 
 	// jwt struct 생성
+	jwt, err := auth.JwtNew(clock.RealClock{})
+	if err != nil {
+		return nil, cleanup, err
+	}
 
 	// 라우팅:: begin
 	// 로그인
@@ -49,8 +48,25 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			DB:    safeDb,
 			Store: &r,
 		},
+		Jwt: jwt,
 	}
 	mux.Post("/login", loginHandler.ServeHTTP)
+
+	// jwt 유효성 검사
+	jwtVaildHandler := &handler.JwtValidHandler{
+		Jwt: jwt,
+	}
+	mux.Get("/jwt-validation", jwtVaildHandler.ServeHTTP)
+
+	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
+	mux.Route("/test", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		// 테스트용 라우팅
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			_, _ = w.Write([]byte(`{"status": "ok"}`))
+		})
+	})
 	// 라우팅:: end
 
 	handlerMux := c.Handler(mux)
