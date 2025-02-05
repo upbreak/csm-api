@@ -58,6 +58,36 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Get("/jwt-validation", jwtVaildHandler.ServeHTTP)
 
+	// 현장관리 리스트 조회
+	siteListHandler := &handler.SiteListHandler{
+		Service: &service.ServiceSite{
+			DB:    safeDb,
+			Store: &r,
+			ProjectService: &service.ServiceProject{
+				DB:    safeDb,
+				Store: &r,
+				UserService: &service.ServiceUser{
+					DB:    safeDb,
+					Store: &r,
+				},
+			},
+			ProjectDailyService: &service.ServiceProjectDaily{
+				DB:    safeDb,
+				Store: &r,
+			},
+			SitePosService: &service.ServiceSitePos{
+				DB:    safeDb,
+				Store: &r,
+			},
+			SiteDateService: &service.ServiceSiteDate{
+				DB:    safeDb,
+				Store: &r,
+			},
+		},
+		Jwt: jwt,
+	}
+	mux.Get("/site-list", siteListHandler.ServeHTTP)
+
 	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/test", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))

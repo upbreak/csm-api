@@ -41,7 +41,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			ctx,
 			w,
 			&ErrResponse{
-				Result:         "failed",
+				Result:         Failure,
 				Message:        err.Error(),
 				Details:        InvalidUser,
 				HttpStatusCode: http.StatusInternalServerError,
@@ -57,7 +57,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			ctx,
 			w,
 			&ErrResponse{
-				Result:         "jwt created failed",
+				Result:         Failure,
 				Message:        err.Error(),
 				Details:        TokenCreatedFail,
 				HttpStatusCode: http.StatusInternalServerError,
