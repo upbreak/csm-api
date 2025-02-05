@@ -22,6 +22,8 @@ const (
 	BodyDataParseError  ErrDetailsRole = "Body Data Parse Error"
 	InvalidUser         ErrDetailsRole = "Invalid User"
 	TokenCreatedFail    ErrDetailsRole = "Token Created Fail"
+	NotFoundParam       ErrDetailsRole = "Not Found Parameter"
+	ParsingError        ErrDetailsRole = "Parsing Error"
 )
 
 type ErrResponse struct {
