@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type SiteRes struct {
+	Site Sites `json:"site"`
+	Code Codes `json:"code"`
+}
+
 type Site struct {
 	Sno                int64     `json:"sno"`
 	SiteNm             string    `json:"site_nm"`
@@ -21,6 +26,7 @@ type Site struct {
 	DefaultJno         int64     `json:"default_jno"`
 	DefaultProjectName string    `json:"default_project_name"`
 	DefaultProjectNo   string    `json:"default_project_no"`
+	CurrentSiteStats   string    `json:"current_site_stats"`
 
 	ProjectList *ProjectInfos `json:"project_list"`
 	SitePos     *SitePos      `json:"site_pos"`
@@ -66,6 +72,7 @@ func (s *Site) ToSite(siteSql *SiteSql) *Site {
 	s.DefaultJno = siteSql.DefaultJno.Int64
 	s.DefaultProjectName = siteSql.DefaultProjectName.String
 	s.DefaultProjectNo = siteSql.DefaultProjectNo.String
+	s.CurrentSiteStats = siteSql.CurrentSiteStats.String
 
 	return s
 }

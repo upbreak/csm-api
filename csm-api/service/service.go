@@ -33,3 +33,7 @@ type ProjectDailyService interface {
 type UserService interface {
 	GetUserInfoPmPeList(ctx context.Context, unoList []int) (*entity.UserPmPeInfos, error)
 }
+
+type CodeService interface {
+	GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error)
+}

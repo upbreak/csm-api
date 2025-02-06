@@ -84,6 +84,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 				Store: &r,
 			},
 		},
+		CodeService: &service.ServiceCode{
+			DB:    safeDb,
+			Store: &r,
+		},
 		Jwt: jwt,
 	}
 	mux.Get("/site-list", siteListHandler.ServeHTTP)
