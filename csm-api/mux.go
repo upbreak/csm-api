@@ -93,6 +93,15 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Get("/site-list", siteListHandler.ServeHTTP)
 
+	// 근태인식기
+	deviceListHandler := &handler.DeviceListHandler{
+		Service: &service.ServiceDevice{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	mux.Post("/device-list", deviceListHandler.ServeHTTP)
+
 	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/test", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
