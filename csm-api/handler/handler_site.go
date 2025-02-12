@@ -8,12 +8,25 @@ import (
 	"time"
 )
 
+/**
+ * @author 작성자: 김진우
+ * @created 작성일: 2025-02-12
+ * @modified 최종 수정일:
+ * @modifiedBy 최종 수정자:
+ * @modified description
+ * -
+ */
+
+// struct: 현장 관리 리스트 핸들러 구조체
 type SiteListHandler struct {
 	Service     service.SiteService
 	CodeService service.CodeService
 	Jwt         *auth.JWTUtils
 }
 
+// func: 현장 관리 리스트 핸들러 함수
+// @param
+// -
 func (s *SiteListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -103,4 +116,39 @@ func (s *SiteListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 
+}
+
+// struct: 현장 데이터 조회 핸들러 구조체
+type SiteNmListHandler struct {
+	Service service.SiteService
+}
+
+// func: 현장 데이터 조회 핸들러 함수
+// @param
+// -
+func (s *SiteNmListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	list, err := s.Service.GetSiteNmList(ctx)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List entity.Sites `json:"list"`
+		}{List: *list},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }

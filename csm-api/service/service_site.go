@@ -8,6 +8,16 @@ import (
 	"time"
 )
 
+/**
+ * @author 작성자: 김진우
+ * @created 작성일: 2025-02-12
+ * @modified 최종 수정일:
+ * @modifiedBy 최종 수정자:
+ * @modified description
+ * -
+ */
+
+// struct: 현장 데이터 서비스 구조체
 type ServiceSite struct {
 	DB                  store.Queryer
 	Store               store.SiteStore
@@ -17,9 +27,9 @@ type ServiceSite struct {
 	SiteDateService     SiteDateService
 }
 
-// 현장 관리 리스트 조회
-//
-// @param targetDate: ???
+// func: 현장 관리 리스트 조회
+// @param
+// - targetDate: 현재시간
 func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
 
 	//현장관리 테이블 조회
@@ -64,6 +74,20 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		}
 		site.SiteDate = siteDateData
 	}
+
+	return sites, nil
+}
+
+// func: 현장 데이터 리스트 조회
+// @param
+// -
+func (s *ServiceSite) GetSiteNmList(ctx context.Context) (*entity.Sites, error) {
+	siteSqls, err := s.Store.GetSiteNmList(ctx, s.DB)
+	if err != nil {
+		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
+	}
+	sites := &entity.Sites{}
+	sites.ToSites(siteSqls)
 
 	return sites, nil
 }

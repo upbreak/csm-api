@@ -5,11 +5,22 @@ import (
 	"time"
 )
 
+/**
+ * @author 작성자: 김진우
+ * @created 작성일: 2025-02-12
+ * @modified 최종 수정일:
+ * @modifiedBy 최종 수정자:
+ * @modified description
+ * -
+ */
+
+// struct: 현장 관리 응답 구조체
 type SiteRes struct {
 	Site Sites `json:"site"`
 	Code Codes `json:"code"`
 }
 
+// struct: 현장 데이터 json용 구조체
 type Site struct {
 	Sno                int64     `json:"sno"`
 	SiteNm             string    `json:"site_nm"`
@@ -33,8 +44,10 @@ type Site struct {
 	SiteDate    *SiteDate     `json:"site_date"`
 }
 
+// struct: 현장 데이터 json 배열 구조체
 type Sites []*Site
 
+// struct: 현장 데이터 db용 구조체
 type SiteSql struct {
 	Sno                sql.NullInt64  `db:"SNO"`
 	SiteNm             sql.NullString `db:"SITE_NM"`
@@ -54,8 +67,12 @@ type SiteSql struct {
 	CurrentSiteStats   sql.NullString `db:"CURRENT_SITE_STATS"`
 }
 
+// struct: 현장 데이터 db 배열 구조체
 type SiteSqls []*SiteSql
 
+// func: db -> json 구조체 변환
+// @param
+// - SiteSql: 현장 데이터 db 구조체
 func (s *Site) ToSite(siteSql *SiteSql) *Site {
 	s.Sno = siteSql.Sno.Int64
 	s.SiteNm = siteSql.SiteNm.String
@@ -77,6 +94,9 @@ func (s *Site) ToSite(siteSql *SiteSql) *Site {
 	return s
 }
 
+// func: db -> json 배열 구조체 변환
+// @param
+// - SiteSql: 현장 데이터 db 배열 구조체
 func (s *Sites) ToSites(siteSqls *SiteSqls) *Sites {
 	for _, siteSql := range *siteSqls {
 		site := Site{}
