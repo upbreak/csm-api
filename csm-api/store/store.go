@@ -47,4 +47,7 @@ type NoticeAddStore interface {
 type DeviceStore interface {
 	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql) (*entity.DeviceSqls, error)
 	GetDeviceListCount(ctx context.Context, db Queryer) (int, error)
+	AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
+	//UpdateDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
+	//DeleteDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
 }
