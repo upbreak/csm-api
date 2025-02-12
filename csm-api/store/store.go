@@ -37,3 +37,8 @@ type UserStore interface {
 type CodeStore interface {
 	GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.CodeSqls, error)
 }
+
+type DeviceStore interface {
+	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql) (*entity.DeviceSqls, error)
+	GetDeviceListCount(ctx context.Context, db Queryer) (int, error)
+}
