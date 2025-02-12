@@ -71,7 +71,6 @@ func (s *SiteListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			&ErrResponse{
 				Result:         Failure,
 				Message:        err.Error(),
-				Details:        InvalidUser,
 				HttpStatusCode: http.StatusInternalServerError,
 			},
 			http.StatusOK)
