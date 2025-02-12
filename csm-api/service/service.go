@@ -37,3 +37,7 @@ type UserService interface {
 type CodeService interface {
 	GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error)
 }
+
+type NoticeService interface {
+	GetNoticeList(ctx context.Context) ([]entity.Notice, error)
+}

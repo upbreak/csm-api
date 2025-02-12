@@ -37,3 +37,8 @@ type UserStore interface {
 type CodeStore interface {
 	GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.CodeSqls, error)
 }
+
+type NoticeAddStore interface {
+	// AddNotice()
+	GetNoticeList(ctx context.Context, db Queryer) (entity.Notices, error)
+}
