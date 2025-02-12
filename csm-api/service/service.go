@@ -12,6 +12,7 @@ type GetUserValidService interface {
 
 type SiteService interface {
 	GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
+	GetSiteNmList(ctx context.Context) (*entity.Sites, error)
 }
 
 type SitePosService interface {
@@ -38,10 +39,8 @@ type CodeService interface {
 	GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error)
 }
 
-
 type NoticeService interface {
 	GetNoticeList(ctx context.Context) ([]entity.Notice, error)
-
 }
 
 type DeviceService interface {

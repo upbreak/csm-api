@@ -14,6 +14,18 @@ import (
 	"github.com/rs/cors"
 )
 
+/**
+ * @author 작성자: 김진우
+ * @created 작성일: 2025-02-12
+ * @modified 최종 수정일:
+ * @modifiedBy 최종 수정자:
+ * @modified description
+ * -
+ */
+
+// func:
+// @param
+// - cfg *config.DBConfigs: db 접속 정보
 // chi패키지를 이용하여 http method에 따른 여러 요청을 라우팅 할 수 있음 함수 구현
 func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(), error) {
 	mux := chi.NewRouter()
@@ -92,6 +104,15 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		Jwt: jwt,
 	}
 	mux.Get("/site-list", siteListHandler.ServeHTTP)
+
+	//현장 데이터 조회
+	siteNmListHandler := &handler.SiteNmListHandler{
+		Service: &service.ServiceSite{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	mux.Get("/site-nm-list", siteNmListHandler.ServeHTTP)
 
 	// 근태인식기
 	deviceListHandler := &handler.DeviceListHandler{

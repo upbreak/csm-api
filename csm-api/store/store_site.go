@@ -7,6 +7,18 @@ import (
 	"time"
 )
 
+/**
+ * @author 작성자: 김진우
+ * @created 작성일: 2025-02-12
+ * @modified 최종 수정일:
+ * @modifiedBy 최종 수정자:
+ * @modified description
+ * -
+ */
+
+// func: 현장 관리 조회
+// @param
+// - targetDate: 현재시간
 func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error) {
 	siteSqls := entity.SiteSqls{}
 
@@ -57,5 +69,29 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 		return &siteSqls, fmt.Errorf("getSiteList fail: %w", err)
 	}
 
+	return &siteSqls, nil
+}
+
+// func: 현장 데이터 리스트
+// @param
+// -
+func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error) {
+	siteSqls := entity.SiteSqls{}
+
+	query := `
+				SELECT 
+					t1.SNO,
+					t1.SITE_NM,
+					t1.LOC_CODE,
+					t1.LOC_NAME,
+					t1.ETC,
+					t1.REG_DATE,
+					t1.MOD_DATE
+				FROM IRIS_SITE_SET t1`
+	//WHERE t1.IS_USE ='Y'`
+
+	if err := db.SelectContext(ctx, &siteSqls, query); err != nil {
+		return &siteSqls, fmt.Errorf("getSiteNmList fail: %w", err)
+	}
 	return &siteSqls, nil
 }
