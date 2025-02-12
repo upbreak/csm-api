@@ -42,6 +42,8 @@ type CodeService interface {
 type NoticeService interface {
 	GetNoticeList(ctx context.Context) ([]entity.Notice, error)
 
+}
+
 type DeviceService interface {
 	GetDeviceList(ctx context.Context, page entity.Page) (*entity.Devices, error)
 	GetDeviceListCount(ctx context.Context) (int, error)
