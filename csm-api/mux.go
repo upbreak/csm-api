@@ -8,9 +8,10 @@ import (
 	"csm-api/handler"
 	"csm-api/service"
 	"csm-api/store"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
-	"net/http"
 )
 
 // chi패키지를 이용하여 http method에 따른 여러 요청을 라우팅 할 수 있음 함수 구현
@@ -110,6 +111,35 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			_, _ = w.Write([]byte(`{"status": "ok"}`))
 		})
 	})
+
+	// 미들웨어 사용하여 토큰 검사 후 ServerHTTP 실행
+	mux.Route("/notice", func(router chi.Router) {
+		router.Use(handler.AuthMiddleware(jwt))
+
+		// 공지사항 추가
+		router.Post("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "applicaation/json; charset=utf-8")
+			_, _ = w.Write([]byte(`{"status": "ok, POST작업"}`))
+		})
+
+		// 전체 공지사항 조회
+		listNoticeHandler := &handler.ListNotice{
+			Service: &service.ListNotice{
+				DB:   safeDb,
+				Repo: &r,
+			},
+		}
+
+		router.Get("/", listNoticeHandler.ServeHTTP)
+
+		// 상세 공지사항 조회
+
+		// 공지사항 수정
+
+		// 공지사항 삭제
+
+	})
+
 	// 라우팅:: end
 
 	handlerMux := c.Handler(mux)
