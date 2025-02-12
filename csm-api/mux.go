@@ -115,13 +115,22 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	mux.Get("/site-nm-list", siteNmListHandler.ServeHTTP)
 
 	// 근태인식기
+	// 조회
 	deviceListHandler := &handler.DeviceListHandler{
 		Service: &service.ServiceDevice{
 			DB:    safeDb,
 			Store: &r,
 		},
 	}
+	// 추가
+	deviceAddHandler := &handler.DeviceAddHandler{
+		Service: &service.ServiceDevice{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
 	mux.Post("/device-list", deviceListHandler.ServeHTTP)
+	mux.Post("/device-add", deviceAddHandler.ServeHTTP)
 
 	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/test", func(r chi.Router) {

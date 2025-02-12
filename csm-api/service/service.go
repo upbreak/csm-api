@@ -46,4 +46,7 @@ type NoticeService interface {
 type DeviceService interface {
 	GetDeviceList(ctx context.Context, page entity.Page) (*entity.Devices, error)
 	GetDeviceListCount(ctx context.Context) (int, error)
+	AddDevice(ctx context.Context, device entity.Device) error
+	//UpdateDevice(ctx context.Context, device entity.Device) error
+	//DeleteDevice(ctx context.Context, device entity.Device) error
 }

@@ -24,6 +24,8 @@ const (
 	TokenCreatedFail    ErrDetailsRole = "Token Created Fail"
 	NotFoundParam       ErrDetailsRole = "Not Found Parameter"
 	ParsingError        ErrDetailsRole = "Parsing Error"
+	ValidationError     ErrDetailsRole = "UNIQUE KEY Validation fail"
+	DataAddFailed       ErrDetailsRole = "Data Add Failed"
 )
 
 type ErrResponse struct {

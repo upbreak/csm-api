@@ -3,11 +3,24 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"errors"
 	"fmt"
 )
 
+/**
+ * @author 작성자: 김진우
+ * @created 작성일: 2025-02-12
+ * @modified 최종 수정일:
+ * @modifiedBy 최종 수정자:
+ * @modified description
+ * -
+ */
+
+// func: 근태인식기 전체 조회
+// @param
+// - page entity.PageSql: 현재페이지 번호, 리스트 목록 개수
 func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql) (*entity.DeviceSqls, error) {
 	sqls := entity.DeviceSqls{}
 
@@ -40,6 +53,9 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 	return &sqls, nil
 }
 
+// func: 근태인식기 전체 개수 조회
+// @param
+// -
 func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer) (int, error) {
 	var count int
 
@@ -53,3 +69,59 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer) (int, e
 	}
 	return count, nil
 }
+
+// func: 근태인식기 추가
+// @param
+// - device entity.DeviceSql: SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, REG_USER
+func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		fmt.Println("Failed to begin transaction: %v", err)
+	}
+
+	agent := utils.GetAgent()
+
+	query := `
+				INSERT INTO IRIS_DEVICE_SET(
+					DNO, 
+					SNO, 
+					DEVICE_SN, 
+					DEVICE_NM, 
+					ETC, 
+					IS_USE, 
+					REG_DATE, 
+					REG_AGENT,
+					REG_USER
+				) VALUES (
+					SEQ_IRIS_DEVICE_SET.NEXTVAL,
+					:1,
+				    :2,
+				    :3,
+				    :4,
+				    :5,
+				    SYSDATE,
+				    :6,
+				    :7    
+				)`
+	_, err = tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, agent, device.RegUser)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("AddDevice fail: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+	return nil
+}
+
+// func: 근태인식기 수정
+// @param
+// -
+
+// func: 근태인식기 삭제
+// @param
+// -
