@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+const (
+	PageNumKey = "page_num"
+	RowSizeKey = "row_size"
+	OrderKey   = "order"
+)
+
 type Page struct {
 	PageNum int `json:"page_num"`
 	RowSize int `json:"row_size"`

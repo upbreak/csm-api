@@ -169,13 +169,12 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		})
 
 		// 전체 공지사항 조회
-		listNoticeHandler := &handler.ListNotice{
-			Service: &service.ListNotice{
-				DB:   safeDb,
-				Repo: &r,
+		listNoticeHandler := &handler.NoticeListHandler{
+			Service: &service.ServiceNotice{
+				DB:    safeDb,
+				Store: &r,
 			},
 		}
-
 		router.Get("/", listNoticeHandler.ServeHTTP)
 
 		// 상세 공지사항 조회
