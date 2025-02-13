@@ -120,8 +120,65 @@ func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.D
 
 // func: 근태인식기 수정
 // @param
-// -
+// - device entity.DeviceSql: DNO, SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, MOD_USER
+func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		fmt.Println("Failed to begin transaction: %v", err)
+	}
+
+	agent := utils.GetAgent()
+
+	query := `
+				UPDATE IRIS_DEVICE_SET 
+				SET 
+					SNO = :1, 
+					DEVICE_SN = :2, 
+					DEVICE_NM = :3, 
+					ETC = :4, 
+					IS_USE = :5, 
+					MOD_DATE = SYSDATE,
+					MOD_USER = :6,
+					MOD_AGENT = :7 
+				WHERE DNO = :8`
+
+	_, err = tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, device.ModUser, agent, device.Dno)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("ModifyDevice fail: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+	return nil
+}
 
 // func: 근태인식기 삭제
 // @param
-// -
+// - dno sql.NullInt64: 홍채인식기 고유번호
+func (r *Repository) RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		fmt.Println("Failed to begin transaction: %v", err)
+	}
+
+	query := `DELETE FROM IRIS_DEVICE_SET WHERE DNO = :1`
+
+	_, err = tx.ExecContext(ctx, query, dno)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("RemoveDevice fail: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+	return nil
+}

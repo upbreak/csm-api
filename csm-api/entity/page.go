@@ -6,8 +6,8 @@ import (
 )
 
 type Page struct {
-	PageNum int64 `json:"page_num"`
-	RowSize int64 `json:"row_size"`
+	PageNum int `json:"page_num"`
+	RowSize int `json:"row_size"`
 }
 
 type PageSql struct {
@@ -18,8 +18,8 @@ type PageSql struct {
 func (s PageSql) OfPageSql(p Page) (PageSql, error) {
 
 	if p.PageNum != 0 && p.RowSize != 0 {
-		s.StartNum = sql.NullInt64{Valid: true, Int64: (p.PageNum - 1) * p.RowSize}
-		s.EndNum = sql.NullInt64{Valid: true, Int64: p.PageNum * p.RowSize}
+		s.StartNum = sql.NullInt64{Valid: true, Int64: int64((p.PageNum - 1) * p.RowSize)}
+		s.EndNum = sql.NullInt64{Valid: true, Int64: int64(p.PageNum * p.RowSize)}
 	} else {
 		return PageSql{}, fmt.Errorf("PageNum or RowSize is zero")
 	}

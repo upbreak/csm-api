@@ -26,7 +26,7 @@ type SiteListHandler struct {
 
 // func: 현장 관리 리스트 핸들러 함수
 // @param
-// -
+// - response: targetDate(현재날짜), pCode(부모코드) - url parameter
 func (s *SiteListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

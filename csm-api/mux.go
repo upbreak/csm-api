@@ -103,7 +103,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 		Jwt: jwt,
 	}
-	mux.Get("/site-list", siteListHandler.ServeHTTP)
+	mux.Get("/site", siteListHandler.ServeHTTP)
 
 	//현장 데이터 조회
 	siteNmListHandler := &handler.SiteNmListHandler{
@@ -112,7 +112,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
-	mux.Get("/site-nm-list", siteNmListHandler.ServeHTTP)
+	mux.Get("/site-nm", siteNmListHandler.ServeHTTP)
 
 	// 근태인식기
 	// 조회
@@ -129,8 +129,24 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
-	mux.Post("/device-list", deviceListHandler.ServeHTTP)
-	mux.Post("/device-add", deviceAddHandler.ServeHTTP)
+	// 수정
+	deviceModifyHandler := &handler.DeviceModifyHandler{
+		Service: &service.ServiceDevice{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	// 삭제
+	deviceRemoveHandler := &handler.DeviceRemoveHandler{
+		Service: &service.ServiceDevice{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	mux.Get("/device", deviceListHandler.ServeHTTP)
+	mux.Post("/device", deviceAddHandler.ServeHTTP)
+	mux.Put("/device", deviceModifyHandler.ServeHTTP)
+	mux.Delete("/device/{id}", deviceRemoveHandler.ServeHTTP)
 
 	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/test", func(r chi.Router) {

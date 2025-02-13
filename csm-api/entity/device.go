@@ -79,6 +79,11 @@ func (ds *Devices) ToDevices(sqls *DeviceSqls) *Devices {
 
 // - device entity.DeviceSql: SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, REG_USER
 func (d *DeviceSql) OfDeviceSql(device Device) *DeviceSql {
+	if device.Dno != 0 {
+		d.Dno = sql.NullInt64{Valid: true, Int64: device.Dno}
+	} else {
+		d.Dno = sql.NullInt64{Valid: false}
+	}
 	if device.Sno != 0 {
 		d.Sno = sql.NullInt64{Valid: true, Int64: device.Sno}
 	} else {

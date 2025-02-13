@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"database/sql"
 	"fmt"
 )
 
@@ -67,10 +68,30 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) err
 	return nil
 }
 
-// func:
+// func: 근태인식기 수정
 // @param
-// -
+// - device entity.DeviceSql: DNO, SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, MOD_USER
+func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) error {
+	deviceSql := &entity.DeviceSql{}
+	deviceSql = deviceSql.OfDeviceSql(device)
+	if err := s.Store.ModifyDevice(ctx, s.TDB, *deviceSql); err != nil {
+		return fmt.Errorf("service_device/UpdateDevice err: %w", err)
+	}
+	return nil
+}
 
-// func:
+// func: 근태인식기 삭제
 // @param
-// -
+// - dno int64: 홍채인식기 고유번호
+func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) error {
+	var dnoSql sql.NullInt64
+	if dno != 0 {
+		dnoSql = sql.NullInt64{Valid: true, Int64: dno}
+	} else {
+		dnoSql = sql.NullInt64{Valid: false}
+	}
+	if err := s.Store.RemoveDevice(ctx, s.TDB, dnoSql); err != nil {
+		return fmt.Errorf("service_device/RemoveDevice err: %w", err)
+	}
+	return nil
+}
