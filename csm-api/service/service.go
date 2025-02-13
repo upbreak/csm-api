@@ -40,7 +40,7 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context) ([]entity.Notice, error)
+	GetNoticeList(ctx context.Context, page entity.Page) (*entity.Notices, error)
 }
 
 type DeviceService interface {
