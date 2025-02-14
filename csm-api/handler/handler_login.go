@@ -51,7 +51,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//jwt 생성
-	tokenString, err := l.Jwt.GenerateToken(&auth.JWTClaims{UserId: user.UserId})
+	tokenString, err := l.Jwt.GenerateToken(&auth.JWTClaims{UserId: user.UserId, UserName: user.UserName, IsSaved: login.IsSaved})
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -68,26 +68,16 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 쿠키 설정
 	cookie := &http.Cookie{
-		Name:  "jwt",
-		Value: tokenString,
-		Path:  "/",
-		//Expires:  time.Now().Add(24 * time.Hour), // 1일 동안 유효
+		Name:     "jwt",
+		Value:    tokenString,
+		Path:     "/",
+		MaxAge:   auth.GetCookieMaxAge(login.IsSaved),
 		HttpOnly: true,                    // JavaScript로 접근 불가
 		Secure:   false,                   // true:HTTPS, false:HTTPS/HTTP
 		SameSite: http.SameSiteStrictMode, // 동일 출처에서만 쿠키 전송
 	}
 	http.SetCookie(w, cookie)
 
-	// 응답 json 구조 정의
-	//rsp := struct {
-	//	Result string `json:"result"`
-	//	Data   any    `json:"data"`
-	//}{
-	//	Result: "success",
-	//	Data: struct {
-	//		LoginUserId string `json:"login_user_id"`
-	//	}{LoginUserId: login.UserId},
-	//}
 	rsp := Response{
 		Result: Success,
 		Values: struct {
