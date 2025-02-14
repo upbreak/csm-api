@@ -11,6 +11,8 @@ type Notice struct {
 	RowNum  int64     `json:"row_num"`
 	Idx     NoticeID  `json:"idx"`
 	Sno     int64     `json:"sno"`
+	SiteNm  string    `json:"site_nm"`
+	LocCode string    `json:"loc_code"`
 	Title   string    `json:"title"`
 	Content string    `json:"content"`
 	ShowYN  string    `json:"show_yn"`
@@ -28,6 +30,8 @@ type NoticeSql struct {
 	RowNum  sql.NullInt64  `db:"RNUM"`
 	Idx     NoticeID       `db:"IDX"`
 	Sno     sql.NullInt64  `db:"SNO"`
+	SiteNm  sql.NullString `db:"SITE_NM"`
+	LocCode sql.NullString `db:"LOC_CODE"`
 	Title   sql.NullString `db:"TITLE" validate:"required"`
 	Content sql.NullString `db:"CONTENT" validate:"required"`
 	ShowYN  sql.NullString `db:"SHOW_YN"`
@@ -45,6 +49,7 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.RowNum = noticeSql.RowNum.Int64
 	n.Idx = noticeSql.Idx
 	n.Sno = noticeSql.Sno.Int64
+	n.SiteNm = noticeSql.SiteNm.String
 	n.Title = noticeSql.Title.String
 	n.Content = noticeSql.Content.String
 	n.ShowYN = noticeSql.ShowYN.String
@@ -72,6 +77,18 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.Sno = sql.NullInt64{Valid: true, Int64: notice.Sno}
 	} else {
 		n.Sno = sql.NullInt64{Valid: false}
+	}
+
+	if notice.SiteNm != "" {
+		n.SiteNm = sql.NullString{Valid: true, String: notice.SiteNm}
+	} else {
+		n.SiteNm = sql.NullString{Valid: false}
+	}
+
+	if notice.LocCode != "" {
+		n.LocCode = sql.NullString{Valid: true, String: notice.LocCode}
+	} else {
+		n.LocCode = sql.NullString{Valid: false}
 	}
 
 	if notice.Title != "" {

@@ -43,6 +43,7 @@ type CodeStore interface {
 type NoticeStore interface {
 	// AddNotice()
 	GetNoticeList(ctx context.Context, db Queryer, pageSql entity.PageSql) (*entity.NoticeSqls, error)
+	GetNoticeListCount(ctx context.Context, db Queryer) (int, error)
 }
 
 type DeviceStore interface {
