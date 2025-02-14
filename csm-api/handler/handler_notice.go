@@ -12,7 +12,7 @@ type NoticeListHandler struct {
 }
 
 // func : 공지사항 전체조회
-func (ln *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	page := entity.Page{}
@@ -37,15 +37,32 @@ func (ln *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 
-	notices, err := ln.Service.GetNoticeList(ctx, page)
+	notices, err := n.Service.GetNoticeList(ctx, page)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
+	count, err := n.Service.GetNoticeListCount(ctx)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
 	rsp := Response{
 		Result: Success,
-		Values: notices,
+		Values: struct {
+			Notices entity.Notices `json:"notices"`
+			Count   int            `json:"count"`
+		}{Notices: *notices, Count: count},
 	}
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
