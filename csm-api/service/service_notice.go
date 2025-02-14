@@ -30,3 +30,13 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*e
 
 	return notices, nil
 }
+
+func (s *ServiceNotice) GetNoticeListCount(ctx context.Context) (int, error) {
+	count, err := s.Store.GetNoticeListCount(ctx, s.DB)
+	if err != nil {
+		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
+	}
+
+	return count, nil
+
+}

@@ -29,6 +29,8 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 						SELECT 
 							n1.IDX,
 							n1.SNO, 
+							n2.SITE_NM,
+							n2.LOC_CODE,
 							n1.TITLE, 
 							n1.CONTENT, 
 							n1.REG_UNO, 
@@ -37,7 +39,9 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 							n1.MOD_USER, 
 							n1.MOD_DATE 
 						FROM 
-							IRIS_NOTICE_BOARD n1
+							IRIS_NOTICE_BOARD n1 LEFT OUTER JOIN IRIS_SITE_SET n2 
+						ON 
+							n1.SNO = n2.SNO
 						WHERE 
 							n1.IS_USE = 'Y'
 						ORDER BY 
