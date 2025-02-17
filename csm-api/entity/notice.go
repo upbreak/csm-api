@@ -38,8 +38,8 @@ type NoticeSql struct {
 	RegUno  sql.NullInt64  `db:"REG_UNO" validate:"required"`
 	RegUser sql.NullString `db:"REG_USER" validate:"required"`
 	RegDate sql.NullTime   `db:"REG_DATE"`
-	ModUno  sql.NullInt64  `db:"MOD_UNO" validate:"required"`
-	ModUser sql.NullString `db:"MOD_USER" validate:"required"`
+	ModUno  sql.NullInt64  `db:"MOD_UNO"`
+	ModUser sql.NullString `db:"MOD_USER"`
 	ModDate sql.NullTime   `db:"MOD_DATE"`
 }
 
@@ -50,6 +50,7 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.Idx = noticeSql.Idx
 	n.Sno = noticeSql.Sno.Int64
 	n.SiteNm = noticeSql.SiteNm.String
+	n.LocCode = noticeSql.LocCode.String
 	n.Title = noticeSql.Title.String
 	n.Content = noticeSql.Content.String
 	n.ShowYN = noticeSql.ShowYN.String

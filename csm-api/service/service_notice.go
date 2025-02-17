@@ -9,9 +9,13 @@ import (
 
 type ServiceNotice struct {
 	DB    store.Queryer
+	TDB   store.Beginner
 	Store store.NoticeStore
 }
 
+// func: 공지사항 전체 조회
+// @param
+// - page entity.PageSql : 현재 페이지번호, 리스트 목록 개수
 func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*entity.Notices, error) {
 
 	pageSql := entity.PageSql{}
@@ -31,6 +35,9 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*e
 	return notices, nil
 }
 
+// func: 공지사항 전체 개수 조회
+// @param
+// -
 func (s *ServiceNotice) GetNoticeListCount(ctx context.Context) (int, error) {
 	count, err := s.Store.GetNoticeListCount(ctx, s.DB)
 	if err != nil {
@@ -39,4 +46,18 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context) (int, error) {
 
 	return count, nil
 
+}
+
+// func: 공지사항 추가
+// @param
+// - notice entity.Notice: SNO, TITLE, CONTENT, SHOW_YN, REG_UNO, REG_USER
+func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) error {
+	noticeSql := &entity.NoticeSql{}
+	noticeSql = noticeSql.OfNoticeSql(notice)
+
+	if err := s.Store.AddNotice(ctx, s.TDB, noticeSql); err != nil {
+		return fmt.Errorf("service_notice/AddNotice err : %w", err)
+	}
+
+	return nil
 }

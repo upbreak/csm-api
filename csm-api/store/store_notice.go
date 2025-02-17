@@ -75,3 +75,52 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer) (int, e
 	return count, nil
 
 }
+
+// func: 공지사항 추가
+// @param
+// - notice entity.NoticeSql: SNO, TITLE, CONTENT, SHOW_YN, REG_UNO, REG_USER
+func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql *entity.NoticeSql) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		fmt.Println("Failed to begin transaction: %v", err)
+	}
+
+	query := `
+				INSERT INTO IRIS_NOTICE_BOARD(
+					IDX,
+					SNO,
+					TITLE,
+					CONTENT,
+					SHOW_YN,
+					IS_USE,
+					REG_UNO,
+					REG_USER,
+					REG_DATE
+				)
+				VALUES (
+					SEQ_IRIS_NOTICE_BOARD.NEXTVAL,
+					:1,
+					:2,
+					:3,
+					:4,
+					'Y',
+					:5,
+					:6,
+					SYSDATE
+		)`
+
+	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("AddNotice fail %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return nil
+}
