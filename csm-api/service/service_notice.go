@@ -20,7 +20,8 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*e
 
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
-	if err != nil {
+
+  if err != nil {
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 

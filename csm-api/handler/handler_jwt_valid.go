@@ -12,7 +12,7 @@ type JwtValidHandler struct {
 func (handler *JwtValidHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	_, err := handler.Jwt.ValidateJWT(r)
+	claims, err := handler.Jwt.ValidateJWT(r)
 	if err != nil {
 		RespondJSON(
 			r.Context(),
@@ -31,8 +31,9 @@ func (handler *JwtValidHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			Message string `json:"message"`
-		}{Message: "jwt Validate ok"},
+			Message string         `json:"message"`
+			Claims  auth.JWTClaims `json:"claims"`
+		}{Message: "jwt Validate ok", Claims: *claims},
 	}
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)

@@ -64,6 +64,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		Jwt: jwt,
 	}
 	mux.Post("/login", loginHandler.ServeHTTP)
+	// 로그아웃
+	logoutHandler := &handler.LogoutHandler{}
+	mux.Post("/logout", logoutHandler.ServeHTTP)
 
 	// jwt 유효성 검사
 	jwtVaildHandler := &handler.JwtValidHandler{
@@ -143,11 +146,17 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
-	mux.Get("/device", deviceListHandler.ServeHTTP)
-	mux.Post("/device", deviceAddHandler.ServeHTTP)
-	mux.Put("/device", deviceModifyHandler.ServeHTTP)
-	mux.Delete("/device/{id}", deviceRemoveHandler.ServeHTTP)
-
+	//mux.Get("/device", deviceListHandler.ServeHTTP)
+	//mux.Post("/device", deviceAddHandler.ServeHTTP)
+	//mux.Put("/device", deviceModifyHandler.ServeHTTP)
+	//mux.Delete("/device/{id}", deviceRemoveHandler.ServeHTTP)
+	mux.Route("/device", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/", deviceListHandler.ServeHTTP)
+		r.Post("/", deviceAddHandler.ServeHTTP)
+		r.Put("/", deviceModifyHandler.ServeHTTP)
+		r.Delete("/{id}", deviceRemoveHandler.ServeHTTP)
+	})
 	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/test", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))

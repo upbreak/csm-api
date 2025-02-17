@@ -122,5 +122,6 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql *enti
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
+
 	return nil
 }
