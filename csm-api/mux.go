@@ -167,15 +167,18 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		})
 	})
 
-	// 미들웨어 사용하여 토큰 검사 후 ServerHTTP 실행
+	// 미들웨어 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/notice", func(router chi.Router) {
-		router.Use(handler.AuthMiddleware(jwt))
+		// router.Use(handler.AuthMiddleware(jwt)) // 이거 넣으면 새로고침 할때마다 인증해야함
 
 		// 공지사항 추가
-		router.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "applicaation/json; charset=utf-8")
-			_, _ = w.Write([]byte(`{"status": "ok, POST작업"}`))
-		})
+		addNoticeHandler := &handler.NoticeAddHandler{
+			Service: &service.ServiceNotice{
+				TDB:   safeDb,
+				Store: &r,
+			},
+		}
+		router.Post("/", addNoticeHandler.ServeHTTP)
 
 		// 전체 공지사항 조회
 		listNoticeHandler := &handler.NoticeListHandler{
@@ -185,8 +188,6 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			},
 		}
 		router.Get("/", listNoticeHandler.ServeHTTP)
-
-		// 상세 공지사항 조회
 
 		// 공지사항 수정
 
