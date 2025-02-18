@@ -157,18 +157,26 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	})
 	// End::근태인식기
 
-	// Begin::전체 근로자
-	// 조회
-	workerListHandler := handler.HandlerWorkerList{
+	// Begin::근로자
+	// 전체 근로자 조회
+	workerTotalListHandler := handler.HandlerWorkerTotalList{
 		Service: &service.ServiceWorker{
 			DB:    safeDb,
 			Store: &r,
 		},
 	}
-	//mux.Get("/worker/total", workerListHandler.ServeHttp)
+	// 현장 근로자 조회
+	workerSiteBaseListHandler := handler.HandlerWorkerSiteBaseList{
+		Service: &service.ServiceWorker{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	//mux.Get("/worker/site-base", workerSiteBaseListHandler.ServeHttp)
 	mux.Route("/worker", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/total", workerListHandler.ServeHttp)
+		r.Get("/total", workerTotalListHandler.ServeHttp)
+		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
 	})
 
 	// 미들웨어 사용하여 토큰 검사 후 ServeHTTP 실행

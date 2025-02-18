@@ -56,5 +56,7 @@ type DeviceStore interface {
 
 type WorkerStore interface {
 	GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error)
-	GetWorkerTotalCount(ctx context.Context, db Queryer, searchTime string) (int, error)
+	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error)
+	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error)
+	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error)
 }

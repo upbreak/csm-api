@@ -55,5 +55,7 @@ type DeviceService interface {
 
 type WorkerService interface {
 	GetWorkerTotalList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error)
-	GetWorkerTotalCount(ctx context.Context, searchTime string) (int, error)
+	GetWorkerTotalCount(ctx context.Context, search entity.Worker) (int, error)
+	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error)
+	GetWorkerSiteBaseCount(ctx context.Context, search entity.Worker) (int, error)
 }
