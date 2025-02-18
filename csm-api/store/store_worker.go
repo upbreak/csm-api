@@ -239,7 +239,7 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 					) sorted_data
 					WHERE ROWNUM <= :3
 				)
-				WHERE RNUM > :34`, whereClause, order)
+				WHERE RNUM > :4`, whereClause, order)
 
 	if err := db.SelectContext(ctx, &sqls, query, search.SearchTime, search.Sno, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetWorkerSiteBaseList err: %v", err)
