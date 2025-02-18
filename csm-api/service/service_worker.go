@@ -30,11 +30,11 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return nil, fmt.Errorf("service_worker/OfPageSql err: %v", err)
+		return nil, fmt.Errorf("service_worker;total/OfPageSql err: %v", err)
 	}
 	searchSql := &entity.WorkerSql{}
 	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return nil, fmt.Errorf("service_worker/ConvertToSQLNulls err: %v", err)
+		return nil, fmt.Errorf("service_worker;total/ConvertToSQLNulls err: %v", err)
 	}
 
 	// 조회
@@ -46,7 +46,7 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 	// sql type -> reqular type 변환
 	list := &entity.Workers{}
 	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_worker/ConvertSliceToRegular err: %v", err)
+		return nil, fmt.Errorf("service_worker;total/ConvertSliceToRegular err: %v", err)
 	}
 
 	return list, nil
@@ -55,11 +55,62 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 // func: 전체 근로자 개수 조회
 // @param
 // - searchTime string: 조회 날짜
-func (s *ServiceWorker) GetWorkerTotalCount(ctx context.Context, searchTime string) (int, error) {
+func (s *ServiceWorker) GetWorkerTotalCount(ctx context.Context, search entity.Worker) (int, error) {
+	searchSql := &entity.WorkerSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_worker;total/ConvertToSQLNulls err: %v", err)
+	}
 
-	count, err := s.Store.GetWorkerTotalCount(ctx, s.DB, searchTime)
+	count, err := s.Store.GetWorkerTotalCount(ctx, s.DB, *searchSql)
 	if err != nil {
 		return 0, fmt.Errorf("service_worker/GetWorkerTotalCount err: %v", err)
+	}
+	return count, nil
+}
+
+// func: 현장 근로자 조회
+// @param
+// - page entity.PageSql: 정렬, 리스트 수
+// - search entity.WorkerSql: 검색 단어
+func (s *ServiceWorker) GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error) {
+	// regular type ->  sql type 변환
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return nil, fmt.Errorf("service_worker;site_base/OfPageSql err: %v", err)
+	}
+	searchSql := &entity.WorkerSql{}
+	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return nil, fmt.Errorf("service_worker;site_base/ConvertToSQLNulls err: %v", err)
+	}
+
+	// 조회
+	sqlList, err := s.Store.GetWorkerSiteBaseList(ctx, s.DB, pageSql, *searchSql)
+	if err != nil {
+		return nil, fmt.Errorf("service_worker/GetWorkerSiteBaseList err: %v", err)
+	}
+
+	// sql type -> reqular type 변환
+	list := &entity.Workers{}
+	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
+		return nil, fmt.Errorf("service_worker;site_base/ConvertSliceToRegular err: %v", err)
+	}
+
+	return list, nil
+}
+
+// func: 현장 근로자 개수 조회
+// @param
+// - searchTime string: 조회 날짜
+func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entity.Worker) (int, error) {
+	searchSql := &entity.WorkerSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_worker;site_base/ConvertToSQLNulls err: %v", err)
+	}
+
+	count, err := s.Store.GetWorkerSiteBaseCount(ctx, s.DB, *searchSql)
+	if err != nil {
+		return 0, fmt.Errorf("service_worker/GetWorkerSiteBaseCount err: %v", err)
 	}
 	return count, nil
 }
