@@ -59,7 +59,11 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer) (int, error) {
 	var count int
 
-	query := `SELECT COUNT(*) FROM IRIS_DEVICE_SET WHERE IS_USE = 'Y'`
+	query := `
+				SELECT COUNT(*) 
+				FROM IRIS_DEVICE_SET t1
+				LEFT OUTER JOIN IRIS_SITE_SET t2 
+				ON t1.SNO = t2.SNO`
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

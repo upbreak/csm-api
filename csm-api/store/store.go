@@ -53,3 +53,8 @@ type DeviceStore interface {
 	ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
 	RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error
 }
+
+type WorkerStore interface {
+	GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error)
+	GetWorkerTotalCount(ctx context.Context, db Queryer, searchTime string) (int, error)
+}

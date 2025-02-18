@@ -52,3 +52,8 @@ type DeviceService interface {
 	ModifyDevice(ctx context.Context, device entity.Device) error
 	RemoveDevice(ctx context.Context, dno int64) error
 }
+
+type WorkerService interface {
+	GetWorkerTotalList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error)
+	GetWorkerTotalCount(ctx context.Context, searchTime string) (int, error)
+}

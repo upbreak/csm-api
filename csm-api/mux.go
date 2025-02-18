@@ -74,7 +74,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Get("/jwt-validation", jwtVaildHandler.ServeHTTP)
 
-	// 현장관리 리스트 조회
+	// Begin::현장관리 리스트 조회
 	siteListHandler := &handler.SiteListHandler{
 		Service: &service.ServiceSite{
 			DB:    safeDb,
@@ -107,8 +107,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		Jwt: jwt,
 	}
 	mux.Get("/site", siteListHandler.ServeHTTP)
+	// End::현장관리 리스트 조회
 
-	//현장 데이터 조회
+	// Begin::현장 데이터 조회
 	siteNmListHandler := &handler.SiteNmListHandler{
 		Service: &service.ServiceSite{
 			DB:    safeDb,
@@ -116,8 +117,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 	}
 	mux.Get("/site-nm", siteNmListHandler.ServeHTTP)
+	// End::현장 데이터 조회
 
-	// 근태인식기
+	// Begin::근태인식기
 	// 조회
 	deviceListHandler := &handler.DeviceListHandler{
 		Service: &service.ServiceDevice{
@@ -146,10 +148,6 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
-	//mux.Get("/device", deviceListHandler.ServeHTTP)
-	//mux.Post("/device", deviceAddHandler.ServeHTTP)
-	//mux.Put("/device", deviceModifyHandler.ServeHTTP)
-	//mux.Delete("/device/{id}", deviceRemoveHandler.ServeHTTP)
 	mux.Route("/device", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", deviceListHandler.ServeHTTP)
@@ -157,14 +155,20 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Put("/", deviceModifyHandler.ServeHTTP)
 		r.Delete("/{id}", deviceRemoveHandler.ServeHTTP)
 	})
-	// 미들웨어를 사용하여 토큰 검사 후 ServeHTTP 실행
-	mux.Route("/test", func(r chi.Router) {
+	// End::근태인식기
+
+	// Begin::전체 근로자
+	// 조회
+	workerListHandler := handler.HandlerWorkerList{
+		Service: &service.ServiceWorker{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	//mux.Get("/worker/total", workerListHandler.ServeHttp)
+	mux.Route("/worker", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		// 테스트용 라우팅
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			_, _ = w.Write([]byte(`{"status": "ok"}`))
-		})
+		r.Get("/total", workerListHandler.ServeHttp)
 	})
 
 	// 미들웨어 사용하여 토큰 검사 후 ServeHTTP 실행
