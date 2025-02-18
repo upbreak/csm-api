@@ -12,13 +12,20 @@ const (
 )
 
 type Page struct {
-	PageNum int `json:"page_num"`
-	RowSize int `json:"row_size"`
+	PageNum int    `json:"page_num"`
+	RowSize int    `json:"row_size"`
+	Order   string `json:"order"`
 }
 
 type PageSql struct {
-	StartNum sql.NullInt64 `db:"page_num"`
-	EndNum   sql.NullInt64 `db:"row_size"`
+	StartNum sql.NullInt64  `db:"page_num"`
+	EndNum   sql.NullInt64  `db:"row_size"`
+	Order    sql.NullString `db:"order"`
+}
+
+type PageReq struct {
+	Page   Page `json:"page"`
+	Search any  `json:"search"`
 }
 
 func (s PageSql) OfPageSql(p Page) (PageSql, error) {
@@ -28,6 +35,12 @@ func (s PageSql) OfPageSql(p Page) (PageSql, error) {
 		s.EndNum = sql.NullInt64{Valid: true, Int64: int64(p.PageNum * p.RowSize)}
 	} else {
 		return PageSql{}, fmt.Errorf("PageNum or RowSize is zero")
+	}
+
+	if p.Order != "" {
+		s.Order = sql.NullString{Valid: true, String: p.Order}
+	} else {
+		s.Order = sql.NullString{Valid: false}
 	}
 
 	return s, nil
