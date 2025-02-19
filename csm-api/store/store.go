@@ -43,7 +43,9 @@ type CodeStore interface {
 type NoticeStore interface {
 	GetNoticeList(ctx context.Context, db Queryer, pageSql entity.PageSql) (*entity.NoticeSqls, error)
 	GetNoticeListCount(ctx context.Context, db Queryer) (int, error)
-	AddNotice(ctx context.Context, db Beginner, noticeSql *entity.NoticeSql) error
+	AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
+	ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
+	RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error
 }
 
 type DeviceStore interface {

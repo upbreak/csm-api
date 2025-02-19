@@ -21,7 +21,7 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*e
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 
-  if err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
@@ -56,8 +56,41 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) err
 	noticeSql := &entity.NoticeSql{}
 	noticeSql = noticeSql.OfNoticeSql(notice)
 
-	if err := s.Store.AddNotice(ctx, s.TDB, noticeSql); err != nil {
+	if err := s.Store.AddNotice(ctx, s.TDB, *noticeSql); err != nil {
 		return fmt.Errorf("service_notice/AddNotice err : %w", err)
+	}
+
+	return nil
+}
+
+// func: 공지사항 수정
+// @param
+// -notice entity.Notice: IDX, SNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
+func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) error {
+	noticeSql := &entity.NoticeSql{}
+	noticeSql = noticeSql.OfNoticeSql(notice)
+
+	if err := s.Store.ModifyNotice(ctx, s.TDB, *noticeSql); err != nil {
+		return fmt.Errorf("service_notice/ModifyNotice err: %w", err)
+	}
+
+	return nil
+}
+
+// func: 공지사항 삭제
+// @param
+// - IDX: 공지사항 인덱스
+func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx int64) error {
+	var idxSql entity.NoticeID
+
+	if idx != 0 {
+		idxSql = entity.NoticeID(idx)
+	} else {
+		return fmt.Errorf("idx parameter is missing")
+	}
+
+	if err := s.Store.RemoveNotice(ctx, s.TDB, idxSql); err != nil {
+		return fmt.Errorf("service_notice/RemomveNotice err: %w", err)
 	}
 
 	return nil

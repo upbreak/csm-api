@@ -89,7 +89,7 @@ type NoticeAddHandler struct {
 
 // func: 공지사항 추가
 // @param
-// - response: entity.Notice - json(raw)
+// - request: entity.Notice - json(raw)
 func (n *NoticeAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notice := entity.Notice{}
@@ -121,4 +121,102 @@ func (n *NoticeAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.StatusOK)
 		return
 	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
+
+}
+
+// 공지사항 수정
+type NoticeModifyHandler struct {
+	Service service.NoticeService
+}
+
+// func: 공지사항 수정
+// @param
+// - request: entity.Notice - json(raw)
+func (n *NoticeModifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// request 데이터 파싱
+	notice := entity.Notice{}
+	if err := json.NewDecoder(r.Body).Decode(&notice); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	if err := n.Service.ModifyNotice(ctx, notice); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+
+		return
+	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
+
+}
+
+// 공지사항 삭제
+type NoticeDeleteHandler struct {
+	Service service.NoticeService
+}
+
+// func: 공지사항 삭제
+// @param
+// - idx : 공지사항 인덱스
+func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	idx := r.PathValue("idx")
+
+	int64IDX, err := strconv.ParseInt(idx, 10, 64)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        ParsingError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+
+		return
+	}
+
+	if err := n.Service.RemoveNotice(ctx, int64IDX); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataRemoveFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+
+		return
+	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
+
 }

@@ -35,8 +35,8 @@ type NoticeSql struct {
 	Title   sql.NullString `db:"TITLE" validate:"required"`
 	Content sql.NullString `db:"CONTENT" validate:"required"`
 	ShowYN  sql.NullString `db:"SHOW_YN"`
-	RegUno  sql.NullInt64  `db:"REG_UNO" validate:"required"`
-	RegUser sql.NullString `db:"REG_USER" validate:"required"`
+	RegUno  sql.NullInt64  `db:"REG_UNO"`
+	RegUser sql.NullString `db:"REG_USER"`
 	RegDate sql.NullTime   `db:"REG_DATE"`
 	ModUno  sql.NullInt64  `db:"MOD_UNO"`
 	ModUser sql.NullString `db:"MOD_USER"`
@@ -74,10 +74,12 @@ func (n *Notices) ToNotices(noticeSqls *NoticeSqls) *Notices {
 }
 
 func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
+	n.Idx = notice.Idx
+
 	if notice.Sno != 0 {
 		n.Sno = sql.NullInt64{Valid: true, Int64: notice.Sno}
 	} else {
-		n.Sno = sql.NullInt64{Valid: false}
+		n.Sno = sql.NullInt64{Valid: true, Int64: 0}
 	}
 
 	if notice.SiteNm != "" {
