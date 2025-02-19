@@ -43,6 +43,7 @@ type NoticeService interface {
 	GetNoticeList(ctx context.Context, page entity.Page) (*entity.Notices, error)
 	GetNoticeListCount(ctx context.Context) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
+	ModifyNotice(ctx context.Context, notice entity.Notice) error
 }
 
 type DeviceService interface {

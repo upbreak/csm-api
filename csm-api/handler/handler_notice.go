@@ -89,7 +89,7 @@ type NoticeAddHandler struct {
 
 // func: 공지사항 추가
 // @param
-// - response: entity.Notice - json(raw)
+// - request: entity.Notice - json(raw)
 func (n *NoticeAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notice := entity.Notice{}
@@ -121,4 +121,53 @@ func (n *NoticeAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.StatusOK)
 		return
 	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
+
+}
+
+// 공지사항 수정
+type NoticeModifyHandler struct {
+	Service service.NoticeService
+}
+
+// func: 공지사항 수정
+// @param
+// - request: entity.Notice - json(raw)
+func (n *NoticeModifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// request 데이터 파싱
+	notice := entity.Notice{}
+	if err := json.NewDecoder(r.Body).Decode(&notice); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	if err := n.Service.ModifyNotice(ctx, notice); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+
+		return
+	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
+
 }

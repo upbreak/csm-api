@@ -33,6 +33,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 							n2.LOC_CODE,
 							n1.TITLE, 
 							n1.CONTENT, 
+							n1.SHOW_YN,
 							n1.REG_UNO, 
 							n1.REG_USER, 
 							n1.REG_DATE, 
@@ -79,10 +80,10 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer) (int, e
 // func: 공지사항 추가
 // @param
 // - notice entity.NoticeSql: SNO, TITLE, CONTENT, SHOW_YN, REG_UNO, REG_USER
-func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql *entity.NoticeSql) error {
+func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %v", err)
+		fmt.Println("Failed to begin transaction: %w", err)
 	}
 
 	query := `
@@ -122,6 +123,45 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql *enti
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
+	return nil
+}
+
+// func: 공지사항 수정
+// @param
+// - notice entity.NoticeSql: IDX, SNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
+func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		fmt.Println("Failed to begin transaction: %w", err)
+	}
+
+	query := `
+				UPDATE IRIS_NOTICE_BOARD
+				SET
+					SNO = :1,
+					TITLE = :2,
+					CONTENT = :3,
+					SHOW_YN = :4,
+					IS_USE = 'Y',
+					MOD_UNO = :5,	
+					MOD_USER = :6,
+					MOD_DATE = SYSDATE
+				WHERE 
+					IDX = :7
+			`
+
+	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("ModifyNotice fail: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
 
 	return nil
 }
