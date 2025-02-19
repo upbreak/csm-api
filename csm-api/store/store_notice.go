@@ -165,3 +165,37 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 
 	return nil
 }
+
+// func: 공지사항 삭제
+// @param
+// - idx: 공지사항 인덱스
+func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error {
+	tx, err := db.BeginTx(ctx, nil)
+
+	if err != nil {
+		fmt.Println("Failed to begint transaction: %w", err)
+	}
+
+	query := `
+		UPDATE IRIS_NOTICE_BOARD 
+		SET 
+			IS_USE = 'N'
+		WHERE 
+			IDX = :1
+			`
+
+	_, err = tx.ExecContext(ctx, query, idx)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("RemoveNotice fail: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return nil
+}

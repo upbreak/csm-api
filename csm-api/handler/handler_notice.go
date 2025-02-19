@@ -160,7 +160,56 @@ func (n *NoticeModifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			&ErrResponse{
 				Result:         Failure,
 				Message:        err.Error(),
-				Details:        BodyDataParseError,
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+
+		return
+	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
+
+}
+
+// 공지사항 삭제
+type NoticeDeleteHandler struct {
+	Service service.NoticeService
+}
+
+// func: 공지사항 삭제
+// @param
+// - idx : 공지사항 인덱스
+func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	idx := r.PathValue("idx")
+
+	int64IDX, err := strconv.ParseInt(idx, 10, 64)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        ParsingError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+
+		return
+	}
+
+	if err := n.Service.RemoveNotice(ctx, int64IDX); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataRemoveFailed,
 				HttpStatusCode: http.StatusInternalServerError,
 			},
 			http.StatusOK)

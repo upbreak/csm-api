@@ -76,3 +76,22 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 
 	return nil
 }
+
+// func: 공지사항 삭제
+// @param
+// - IDX: 공지사항 인덱스
+func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx int64) error {
+	var idxSql entity.NoticeID
+
+	if idx != 0 {
+		idxSql = entity.NoticeID(idx)
+	} else {
+		return fmt.Errorf("idx parameter is missing")
+	}
+
+	if err := s.Store.RemoveNotice(ctx, s.TDB, idxSql); err != nil {
+		return fmt.Errorf("service_notice/RemomveNotice err: %w", err)
+	}
+
+	return nil
+}

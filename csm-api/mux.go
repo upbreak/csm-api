@@ -199,10 +199,17 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			},
 		}
 		// 공지사항 삭제
+		noticeDeleteHandler := &handler.NoticeDeleteHandler{
+			Service: &service.ServiceNotice{
+				TDB:   safeDb,
+				Store: &r,
+			},
+		}
 
 		router.Post("/", noticeAddHandler.ServeHTTP)
 		router.Get("/", noticeListHandler.ServeHTTP)
 		router.Put("/", noticeModifyHandler.ServeHTTP)
+		router.Delete("/{idx}", noticeDeleteHandler.ServeHTTP)
 
 	})
 
