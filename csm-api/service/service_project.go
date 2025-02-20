@@ -60,3 +60,14 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity
 
 	return projectInfos, nil
 }
+
+func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error) {
+	sqlList, err := p.Store.GetProjectNmList(ctx, p.DB)
+	if err != nil {
+		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
+	}
+	projectInfos := &entity.ProjectInfos{}
+	projectInfos.ToProjectInfos(sqlList)
+
+	return projectInfos, nil
+}

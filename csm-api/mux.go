@@ -113,18 +113,37 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 		Jwt: jwt,
 	}
-	mux.Get("/site", siteListHandler.ServeHTTP)
+	mux.Route("/site", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/", siteListHandler.ServeHTTP)
+	})
 	// End::현장관리 리스트 조회
 
-	// Begin::현장 데이터 조회
+	// Begin::현장 이름 데이터 조회
 	siteNmListHandler := &handler.SiteNmListHandler{
 		Service: &service.ServiceSite{
 			DB:    safeDb,
 			Store: &r,
 		},
 	}
-	mux.Get("/site-nm", siteNmListHandler.ServeHTTP)
-	// End::현장 데이터 조회
+	mux.Route("/site-nm", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/", siteNmListHandler.ServeHTTP)
+	})
+	// End::현장 이름 데이터 조회
+
+	// Begin::프로젝트 이름 데이터 조회
+	projectNmHandler := &handler.HandlerProjectNm{
+		Service: &service.ServiceProject{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	mux.Route("/project-nm", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/", projectNmHandler.ServeHTTP)
+	})
+	// End::프로젝트 이름 데이터 조회
 
 	// Begin::근태인식기
 	// 조회
@@ -224,7 +243,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Route("/company", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/jon-info", companyJobInfoHandler.ServeHTTP)
+		r.Get("/job-info", companyJobInfoHandler.ServeHTTP)
 		r.Get("/site-manager", companySiteManagerHandler.ServeHTTP)
 		r.Get("/safe-manager", companySafeManagerHandler.ServeHTTP)
 		r.Get("/supervisor", companySupervisorHandler.ServeHTTP)
