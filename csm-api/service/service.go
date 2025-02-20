@@ -25,6 +25,7 @@ type SiteDateService interface {
 
 type ProjectService interface {
 	GetProjectList(ctx context.Context, sno int64) (*entity.ProjectInfos, error)
+	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
 }
 
 type ProjectDailyService interface {

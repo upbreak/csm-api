@@ -26,6 +26,7 @@ type SiteDateStore interface {
 
 type ProjectStore interface {
 	GetProjectList(ctx context.Context, db Queryer, sno int64) (*entity.ProjectInfoSqls, error)
+	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfoSqls, error)
 }
 
 type ProjectDailyStore interface {

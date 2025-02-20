@@ -71,3 +71,24 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 
 	return &projectInfoSqls, nil
 }
+
+func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfoSqls, error) {
+	projectInfoSqls := entity.ProjectInfoSqls{}
+
+	sql := `SELECT
+    			t1.SNO,
+				t1.JNO,
+				t2.JOB_NAME as PROJECT_NM
+			FROM
+				IRIS_SITE_JOB t1
+				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
+				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+			ORDER BY
+				t1.IS_DEFAULT DESC`
+	if err := db.SelectContext(ctx, &projectInfoSqls, sql); err != nil {
+		return &projectInfoSqls, fmt.Errorf("GetProjectNmList fail: %v", err)
+	}
+
+	return &projectInfoSqls, nil
+}
