@@ -62,3 +62,12 @@ type WorkerStore interface {
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error)
 	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error)
 }
+
+type CompanyStore interface {
+	GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfoSql, error)
+	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
+	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
+	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.SupervisorSqls, error)
+	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfoSqls, error)
+	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfosqls, error)
+}

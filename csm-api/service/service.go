@@ -61,3 +61,11 @@ type WorkerService interface {
 	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error)
 	GetWorkerSiteBaseCount(ctx context.Context, search entity.Worker) (int, error)
 }
+
+type CompanyService interface {
+	GetJobInfo(ctx context.Context, jno int64) (*entity.JobInfo, error)
+	GetSiteManagerList(ctx context.Context, jno int64) (*entity.Managers, error)
+	GetSafeManagerList(ctx context.Context, jno int64) (*entity.Managers, error)
+	GetSupervisorList(ctx context.Context, jno int64) (*entity.Supervisors, error)
+	GetCompanyInfoList(ctx context.Context, jno int64) (*entity.CompanyInfoResList, error)
+}

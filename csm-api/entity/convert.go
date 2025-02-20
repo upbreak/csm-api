@@ -16,7 +16,75 @@ import (
  * -
  */
 
-// func: (단일 일반 타입 → SQLNulls 타입 변환)
+// func: (일반 타입 → SQLNulls 타입 변환)
+// @param
+// - value: 일반 타입
+// @ex
+// - nullInt64 := ToSQLNulls(42).(sql.NullInt64)
+func ToSQLNulls[T any](value T) any {
+	switch v := any(value).(type) {
+	case string:
+		return sql.NullString{String: v, Valid: v != ""}
+	case int:
+		return sql.NullInt64{Int64: int64(v), Valid: v != 0}
+	case int64:
+		return sql.NullInt64{Int64: v, Valid: v != 0}
+	case float64:
+		return sql.NullFloat64{Float64: v, Valid: v != 0}
+	case bool:
+		return sql.NullBool{Bool: v, Valid: true} // false도 유효한 값
+	case time.Time:
+		return sql.NullTime{Time: v, Valid: !v.IsZero()}
+	default:
+		return nil
+	}
+}
+
+// func: (SQLNulls 타입 → 일반 타입 변환)
+// @Generic
+// - T any: 원하는 일반 타입
+// @param
+// - nullValue: SQLNulls 타입
+// @ex
+// - regularStr := ToRegular[string](nullValue)
+// - regularInt := ToRegular[int64](nullValue)
+// - regularFloat := ToRegular[float64](nullValue)
+// - regularBool := ToRegular[bool](nullValue)
+// - regularTime := ToRegular[time.Time](nullValue)
+func ToRegular[T any](nullValue any) T {
+	switch v := nullValue.(type) {
+	case sql.NullString:
+		if v.Valid {
+			return any(v.String).(T)
+		}
+		return any("").(T)
+	case sql.NullInt64:
+		if v.Valid {
+			return any(v.Int64).(T)
+		}
+		return any(int64(0)).(T)
+	case sql.NullFloat64:
+		if v.Valid {
+			return any(v.Float64).(T)
+		}
+		return any(float64(0)).(T)
+	case sql.NullBool:
+		if v.Valid {
+			return any(v.Bool).(T)
+		}
+		return any(false).(T)
+	case sql.NullTime:
+		if v.Valid {
+			return any(v.Time).(T)
+		}
+		return any(time.Time{}).(T)
+	default:
+		var zero T
+		return zero
+	}
+}
+
+// func: (단일 일반 타입 구조체 → SQLNulls 타입 구조체 변환)
 // @param
 // 첫 번째 매개변수(regular): 일반 타입 (포인터 X)
 // 두 번째 매개변수(sqlNulls): SQLNulls 타입 구조체 (포인터 O)
@@ -75,7 +143,7 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 	return nil
 }
 
-// func: (단일 SQLNulls 타입 → 일반 타입 변환)
+// func: (단일 SQLNulls 타입 구조체 → 일반 타입 구조체 변환)
 // @param
 // 첫 번째 매개변수(sqlNulls): SQLNulls 타입 구조체 (포인터 X)
 // 두 번째 매개변수(regular): 일반 타입 구조체 (포인터 O)
@@ -118,7 +186,7 @@ func ConvertToRegular(sqlNulls any, regular any) error {
 	return nil
 }
 
-// func: (일반 타입 슬라이스 → SQLNulls 타입 슬라이스 변환)
+// func: (일반 타입 구조체 슬라이스 → SQLNulls 타입 구조체 슬라이스 변환)
 // @param
 // 첫 번째 매개변수(regularSlice): 일반 타입 슬라이스 (포인터 X)
 // 두 번째 매개변수(sqlNullsSlice): SQLNulls 타입 슬라이스 (포인터 O)
@@ -163,7 +231,7 @@ func ConvertSliceToSQLNulls(regularSlice any, sqlNullsSlice any) error {
 	return nil
 }
 
-// func: (SQLNulls 타입 슬라이스 → 일반 타입 슬라이스 변환)
+// func: (SQLNulls 타입 구조체 슬라이스 → 일반 타입 구조체 슬라이스 변환)
 // @param
 // 첫 번째 매개변수(sqlNullsSlice): SQLNulls 타입 슬라이스 (포인터 X)
 // 두 번째 매개변수(regularSlice): 일반 타입 슬라이스 (포인터 O)
