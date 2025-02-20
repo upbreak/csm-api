@@ -40,8 +40,15 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 
 	// db연결 설정
 	var cleanup []func()
+	// safe 스키마 연결
 	safeDb, safeCleanup, err := store.New(ctx, cfg.Safe)
 	cleanup = append(cleanup, func() { safeCleanup() })
+	if err != nil {
+		return nil, cleanup, err
+	}
+	// timesheet 스키마 연결
+	timesheetDb, timeSheetCleanup, err := store.New(ctx, cfg.TimeSheet)
+	cleanup = append(cleanup, func() { timeSheetCleanup() })
 	if err != nil {
 		return nil, cleanup, err
 	}
@@ -172,12 +179,58 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
-	//mux.Get("/worker/site-base", workerSiteBaseListHandler.ServeHttp)
 	mux.Route("/worker", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/total", workerTotalListHandler.ServeHttp)
 		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
 	})
+	// End::근로자
+
+	// Begin::협력업체
+	// job(프로젝트) 정보
+	companyJobInfoHandler := handler.HandlerJobInfoCompany{
+		Service: &service.ServiceCompany{
+			SafeDB: safeDb,
+			Store:  &r,
+		},
+	}
+	// 현장소장
+	companySiteManagerHandler := handler.HandlerSiteManagerCompany{
+		Service: &service.ServiceCompany{
+			TimeSheetDB: timesheetDb,
+			Store:       &r,
+		},
+	}
+	// 안전관리자
+	companySafeManagerHandler := handler.HandlerSafeManagerCompany{
+		Service: &service.ServiceCompany{
+			SafeDB: safeDb,
+			Store:  &r,
+		},
+	}
+	// 관리감독자 정보
+	companySupervisorHandler := handler.HandlerSupervisorCompany{
+		Service: &service.ServiceCompany{
+			SafeDB: safeDb,
+			Store:  &r,
+		},
+	}
+	// 협력업체 정보
+	companyCompanyInfoHandler := handler.HandlerCompanyInfoCompany{
+		Service: &service.ServiceCompany{
+			SafeDB: safeDb,
+			Store:  &r,
+		},
+	}
+	mux.Route("/company", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/jon-info", companyJobInfoHandler.ServeHTTP)
+		r.Get("/site-manager", companySiteManagerHandler.ServeHTTP)
+		r.Get("/safe-manager", companySafeManagerHandler.ServeHTTP)
+		r.Get("/supervisor", companySupervisorHandler.ServeHTTP)
+		r.Get("/company-info", companyCompanyInfoHandler.ServeHTTP)
+	})
+	// End::협력업체
 
 	// 미들웨어 사용하여 토큰 검사 후 ServeHTTP 실행
 	mux.Route("/notice", func(router chi.Router) {
