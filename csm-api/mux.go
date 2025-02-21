@@ -17,10 +17,10 @@ import (
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-12
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-21
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 공지사항 기능 추가
  */
 
 // func:
@@ -179,7 +179,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
 	})
 
-	// 미들웨어 사용하여 토큰 검사 후 ServeHTTP 실행
+	// Begin::공지사항
 	mux.Route("/notice", func(router chi.Router) {
 		router.Use(handler.AuthMiddleware(jwt))
 
@@ -220,6 +220,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		router.Delete("/{idx}", noticeDeleteHandler.ServeHTTP)
 
 	})
+	// End::공지사항
 
 	// 라우팅:: end
 

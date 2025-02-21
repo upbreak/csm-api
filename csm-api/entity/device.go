@@ -109,6 +109,11 @@ func (d *DeviceSql) OfDeviceSql(device Device) *DeviceSql {
 	} else {
 		d.IsUse = sql.NullString{Valid: false} // NULL로 설정
 	}
+	if device.SiteNm != "" {
+		d.SiteNm = sql.NullString{Valid: true, String: device.SiteNm}
+	} else {
+		d.SiteNm = sql.NullString{Valid: false} // NULL로 설정
+	}
 	if device.RegUser != "" {
 		d.RegUser = sql.NullString{Valid: true, String: device.RegUser}
 	} else {
