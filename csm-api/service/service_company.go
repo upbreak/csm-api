@@ -96,6 +96,22 @@ func (s *ServiceCompany) GetSupervisorList(ctx context.Context, jno int64) (*ent
 	return list, nil
 }
 
+// func: 공종 정보 조회
+// @param
+func (s *ServiceCompany) GetWorkInfoList(ctx context.Context) (*entity.WorkInfos, error) {
+	sqlList, err := s.Store.GetWorkInfoList(ctx, s.SafeDB)
+	if err != nil {
+		return nil, fmt.Errorf("service_company/GetWorkInfoList err: %w", err)
+	}
+
+	list := &entity.WorkInfos{}
+	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
+		return nil, fmt.Errorf("service_company;workInfo/ConvertSliceToRegular err: %w", err)
+	}
+
+	return list, nil
+}
+
 // func: 협력업체 정보 조회
 // @param
 // - jno int64: 프로젝트 고유번호
@@ -146,17 +162,47 @@ func (s *ServiceCompany) GetCompanyInfoList(ctx context.Context, jno int64) (*en
 		return nil, fmt.Errorf("service_company;companyWorkInfo/ConvertSliceToRegular err: %w", err)
 	}
 
+	companyApiValues := entity.CompanyApiValues{}
+	duplicate := make(map[int64]bool)
+	for _, company := range companyApiReq.Value {
+		if !duplicate[int64(company.CompCno)] {
+			duplicate[int64(company.CompCno)] = true
+			temp := &entity.CompanyApiValue{}
+			temp.Jno = company.Jno
+			temp.CompCno = company.CompCno
+			temp.CompNameKr = company.CompNameKr
+			temp.WorkerName = company.WorkerName
+			companyApiValues = append(companyApiValues, temp)
+		}
+	}
+
+	matched := make(map[int]bool)
 	for _, item := range *list {
-		for _, company := range companyApiReq.Value {
+		for idx, company := range companyApiValues {
 			if item.Jno == int64(company.Jno) && item.Cno == int64(company.CompCno) {
 				item.CompNameKr = company.CompNameKr
-				item.CompCeoName = company.CompCeoName
+				item.WorkerName = company.WorkerName
+				matched[idx] = true
+				break
 			}
 		}
+
 		for _, work := range *workInfoList {
 			if item.Jno == work.Jno && item.Cno == work.Cno {
 				item.WorkInfo = append(item.WorkInfo, work.FuncNo)
 			}
+		}
+	}
+
+	for idx, company := range companyApiValues {
+		if !matched[idx] {
+			temp := &entity.CompanyInfoRes{}
+			temp.Jno = int64(company.Jno)
+			temp.Cno = int64(company.CompCno)
+			temp.CompNameKr = company.CompNameKr
+			temp.WorkerName = company.WorkerName
+			temp.WorkInfo = make([]int64, 0)
+			*list = append(*list, temp)
 		}
 	}
 

@@ -224,6 +224,40 @@ func (h *HandlerSupervisorCompany) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
 
+// struct: 관리감독자
+type HandlerWorkInfoCompany struct {
+	Service service.CompanyService
+}
+
+// func: 공종 정보 조회
+// @param
+func (h *HandlerWorkInfoCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	list, err := h.Service.GetWorkInfoList(ctx)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List entity.WorkInfos `json:"list"`
+		}{List: *list},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
 // struct: 협력업체 정보
 type HandlerCompanyInfoCompany struct {
 	Service service.CompanyService

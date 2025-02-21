@@ -115,14 +115,14 @@ type CompanyInfoSql struct {
 type CompanyInfoSqls []*CompanyInfoSql
 
 type CompanyInfoRes struct {
-	Jno         int64   `json:"jno"`
-	Cno         int64   `json:"cno"`
-	CompNameKr  string  `json:"comp_name_kr"`
-	CompCeoName string  `json:"comp_ceo_name"`
-	Id          string  `json:"id"`
-	Cellphone   string  `json:"cellphone"`
-	Email       string  `json:"email"`
-	WorkInfo    []int64 `json:"work_infos"`
+	Jno        int64   `json:"jno"`
+	Cno        int64   `json:"cno"`
+	CompNameKr string  `json:"comp_name_kr"`
+	WorkerName string  `json:"worker_name"`
+	Id         string  `json:"id"`
+	Cellphone  string  `json:"cellphone"`
+	Email      string  `json:"email"`
+	WorkInfo   []int64 `json:"work_infos"`
 }
 type CompanyInfoResList []*CompanyInfoRes
 
