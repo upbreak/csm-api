@@ -69,6 +69,7 @@ type CompanyStore interface {
 	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
 	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
 	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.SupervisorSqls, error)
+	GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfosqls, error)
 	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfoSqls, error)
 	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfosqls, error)
 }

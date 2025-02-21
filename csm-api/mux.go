@@ -234,6 +234,13 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store:  &r,
 		},
 	}
+	// 공종 정보
+	companyWorkInfoHandler := handler.HandlerWorkInfoCompany{
+		Service: &service.ServiceCompany{
+			SafeDB: safeDb,
+			Store:  &r,
+		},
+	}
 	// 협력업체 정보
 	companyCompanyInfoHandler := handler.HandlerCompanyInfoCompany{
 		Service: &service.ServiceCompany{
@@ -247,6 +254,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Get("/site-manager", companySiteManagerHandler.ServeHTTP)
 		r.Get("/safe-manager", companySafeManagerHandler.ServeHTTP)
 		r.Get("/supervisor", companySupervisorHandler.ServeHTTP)
+		r.Get("/work-info", companyWorkInfoHandler.ServeHTTP)
 		r.Get("/company-info", companyCompanyInfoHandler.ServeHTTP)
 	})
 	// End::협력업체

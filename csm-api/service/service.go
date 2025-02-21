@@ -68,5 +68,6 @@ type CompanyService interface {
 	GetSiteManagerList(ctx context.Context, jno int64) (*entity.Managers, error)
 	GetSafeManagerList(ctx context.Context, jno int64) (*entity.Managers, error)
 	GetSupervisorList(ctx context.Context, jno int64) (*entity.Supervisors, error)
+	GetWorkInfoList(ctx context.Context) (*entity.WorkInfos, error)
 	GetCompanyInfoList(ctx context.Context, jno int64) (*entity.CompanyInfoResList, error)
 }

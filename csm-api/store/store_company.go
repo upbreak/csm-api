@@ -147,6 +147,24 @@ func (r *Repository) GetSupervisorList(ctx context.Context, db Queryer, jno sql.
 	return &sqls, nil
 }
 
+// func: 공종 정보 조회
+// @param
+func (r *Repository) GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfosqls, error) {
+	sqls := entity.WorkInfosqls{}
+
+	query := `
+				SELECT 
+						 FUNC_NO, 
+						 FUNC_NAME
+					FROM COMMON.COMM_FUNC_QHSE
+				   WHERE IS_USE = 'Y'
+				ORDER BY SORT_NO`
+	if err := db.SelectContext(ctx, &sqls, query); err != nil {
+		return nil, fmt.Errorf("GetWorkInfoList err: %v", err)
+	}
+	return &sqls, nil
+}
+
 // func: 협력업체 정보 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
