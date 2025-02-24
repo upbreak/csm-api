@@ -7,24 +7,69 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-12
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-21
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 검색 및 정렬 조건 추가하여 데이터 조회하도록 변경
  */
 
 // func: 근태인식기 전체 조회
 // @param
 // - page entity.PageSql: 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql) (*entity.DeviceSqls, error) {
+func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql) (*entity.DeviceSqls, error) {
 	sqls := entity.DeviceSqls{}
 
-	query := `SELECT *
+	condition := "1=1"
+	if search.DeviceNm.Valid {
+		trimDeviceNm := strings.TrimSpace(search.DeviceNm.String)
+
+		if trimDeviceNm != "" {
+			condition += fmt.Sprintf(` AND LOWER(t1.DEVICE_NM) LIKE LOWER('%%%s%%')`, trimDeviceNm)
+		}
+	}
+	if search.DeviceSn.Valid {
+		trimDeviceSn := strings.TrimSpace(search.DeviceSn.String)
+
+		if trimDeviceSn != "" {
+			condition += fmt.Sprintf(` AND LOWER(t1.DEVICE_SN) LIKE LOWER('%%%s%%')`, trimDeviceSn)
+		}
+	}
+	if search.SiteNm.Valid {
+		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
+		fmt.Print(trimSiteNm)
+		if trimSiteNm != "" {
+			condition += fmt.Sprintf(` AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')`, trimSiteNm)
+		}
+	}
+	if search.Etc.Valid {
+		trimEtc := strings.TrimSpace(search.Etc.String)
+
+		if trimEtc != "" {
+			condition += fmt.Sprintf(` AND LOWER(t1.ETC) LIKE LOWER('%%%s%%')`, trimEtc)
+		}
+	}
+	if search.IsUse.Valid {
+		trimIsUse := strings.TrimSpace(search.IsUse.String)
+
+		if trimIsUse != "" {
+			condition += fmt.Sprintf(` AND t1.IS_USE = UPPER('%s')`, trimIsUse)
+		}
+	}
+
+	var order string
+	if page.Order.Valid {
+		order = page.Order.String
+	} else {
+		order = "NULL"
+	}
+
+	query := fmt.Sprintf(`SELECT *
 				FROM (
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
@@ -34,17 +79,24 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 							t2.SITE_NM,
 							t1.DEVICE_SN,
 							t1.DEVICE_NM,
+							t1.ETC,
 							t1.IS_USE,
 							t1.REG_DATE AS REG_DATE,
 							t1.MOD_DATE AS MOD_DATE
-						FROM IRIS_DEVICE_SET t1
-						LEFT OUTER JOIN IRIS_SITE_SET t2 ON t1.SNO = t2.SNO
--- 						WHERE t1.IS_USE = 'Y'
-						ORDER BY t1.REG_DATE DESC
+						FROM 
+							IRIS_DEVICE_SET t1
+						LEFT OUTER 
+							JOIN IRIS_SITE_SET t2 
+						ON 
+							t1.SNO = t2.SNO
+ 						WHERE 
+							%s
+						ORDER BY 
+							%s
 					) sorted_data
 					WHERE ROWNUM <= :1
 				)
-				WHERE RNUM > :2`
+				WHERE RNUM > :2`, condition, order)
 
 	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetDeviceList err: %v", err)
@@ -56,14 +108,57 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 // func: 근태인식기 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer) (int, error) {
+func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql) (int, error) {
 	var count int
 
-	query := `
-				SELECT COUNT(*) 
-				FROM IRIS_DEVICE_SET t1
-				LEFT OUTER JOIN IRIS_SITE_SET t2 
-				ON t1.SNO = t2.SNO`
+	condition := "1=1"
+	if search.DeviceNm.Valid {
+		trimDeviceNm := strings.TrimSpace(search.DeviceNm.String)
+
+		if trimDeviceNm != "" {
+			condition += fmt.Sprintf(` AND LOWER(t1.DEVICE_NM) LIKE LOWER('%%%s%%')`, trimDeviceNm)
+		}
+	}
+	if search.DeviceSn.Valid {
+		trimDeviceSn := strings.TrimSpace(search.DeviceSn.String)
+
+		if trimDeviceSn != "" {
+			condition += fmt.Sprintf(` AND LOWER(t1.DEVICE_SN) LIKE LOWER('%%%s%%')`, trimDeviceSn)
+		}
+	}
+	if search.SiteNm.Valid {
+		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
+
+		if trimSiteNm != "" {
+			condition += fmt.Sprintf(` AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')`, trimSiteNm)
+		}
+	}
+	if search.Etc.Valid {
+		trimEtc := strings.TrimSpace(search.Etc.String)
+
+		if trimEtc != "" {
+			condition += fmt.Sprintf(` AND LOWER(t1.ETC) LIKE LOWER('%%%s%%')`, trimEtc)
+		}
+	}
+	if search.IsUse.Valid {
+		trimIsUse := strings.TrimSpace(search.IsUse.String)
+
+		if trimIsUse != "" {
+			condition += fmt.Sprintf(` AND t1.IS_USE = UPPER('%s')`, trimIsUse)
+		}
+	}
+
+	query := fmt.Sprintf(`
+				SELECT 
+					COUNT(*) 
+				FROM 
+					IRIS_DEVICE_SET t1
+				LEFT OUTER 
+					JOIN IRIS_SITE_SET t2 
+				ON 
+					t1.SNO = t2.SNO
+				WHERE 
+					%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

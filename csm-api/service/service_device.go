@@ -11,10 +11,10 @@ import (
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-12
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-21
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 검색 및 정렬 조건 추가
  */
 
 // struct: 근태인식기 서비스 구조체
@@ -27,13 +27,16 @@ type ServiceDevice struct {
 // func: 근태인식기 조회
 // @param
 // - page entity.PageSql: 현재페이지 번호, 리스트 목록 개수
-func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page) (*entity.Devices, error) {
+func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, search entity.Device) (*entity.Devices, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
+	searchSql := entity.DeviceSql{}
+	searchSql = *searchSql.OfDeviceSql(search)
+
 	if err != nil {
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
-	dbList, err := s.Store.GetDeviceList(ctx, s.DB, pageSql)
+	dbList, err := s.Store.GetDeviceList(ctx, s.DB, pageSql, searchSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
@@ -47,8 +50,11 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page) (*e
 // func: 근태인식기 전체 개수 조회
 // @param
 // -
-func (s *ServiceDevice) GetDeviceListCount(ctx context.Context) (int, error) {
-	count, err := s.Store.GetDeviceListCount(ctx, s.DB)
+func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device) (int, error) {
+	searchSql := entity.DeviceSql{}
+	searchSql = *searchSql.OfDeviceSql(search)
+
+	count, err := s.Store.GetDeviceListCount(ctx, s.DB, searchSql)
 	if err != nil {
 		return 0, fmt.Errorf("service_device/GetDeviceListCount err: %w", err)
 	}

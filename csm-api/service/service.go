@@ -41,16 +41,16 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context, page entity.Page) (*entity.Notices, error)
-	GetNoticeListCount(ctx context.Context) (int, error)
+	GetNoticeList(ctx context.Context, page entity.Page, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx int64) error
 }
 
 type DeviceService interface {
-	GetDeviceList(ctx context.Context, page entity.Page) (*entity.Devices, error)
-	GetDeviceListCount(ctx context.Context) (int, error)
+	GetDeviceList(ctx context.Context, page entity.Page, search entity.Device) (*entity.Devices, error)
+	GetDeviceListCount(ctx context.Context, search entity.Device) (int, error)
 	AddDevice(ctx context.Context, device entity.Device) error
 	ModifyDevice(ctx context.Context, device entity.Device) error
 	RemoveDevice(ctx context.Context, dno int64) error
