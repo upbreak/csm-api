@@ -87,6 +87,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 								INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 							WHERE
 								TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
+							AND t1.sno > 100
 								%s
 							GROUP BY
 								t1.USER_ID, t1.USER_GUID
@@ -151,6 +152,7 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 					INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 				WHERE
 					TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
+				AND t1.sno > 100
 					%s`, whereClause)
 
 	if err := db.GetContext(ctx, &count, query, search.SearchTime); err != nil {
@@ -231,7 +233,8 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 							WHERE
 								TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
-								AND t1.SNO = :2
+							AND t1.sno > 100
+							AND t1.SNO = :2
 								%s
 							GROUP BY
 								t1.USER_ID, t1.USER_GUID
@@ -296,7 +299,8 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 					INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 				WHERE
 					TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
-					AND t1.SNO = :2
+				AND t1.sno > 100
+				AND t1.SNO = :2
 					%s`, whereClause)
 
 	if err := db.GetContext(ctx, &count, query, search.SearchTime, search.Sno); err != nil {

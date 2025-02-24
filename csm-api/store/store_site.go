@@ -87,7 +87,8 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sit
 					t1.ETC,
 					t1.REG_DATE,
 					t1.MOD_DATE
-				FROM IRIS_SITE_SET t1`
+				FROM IRIS_SITE_SET t1
+				WHERE sno > 100`
 	//WHERE t1.IS_USE ='Y'`
 
 	if err := db.SelectContext(ctx, &siteSqls, query); err != nil {

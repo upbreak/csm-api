@@ -39,7 +39,8 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 							t1.MOD_DATE AS MOD_DATE
 						FROM IRIS_DEVICE_SET t1
 						LEFT OUTER JOIN IRIS_SITE_SET t2 ON t1.SNO = t2.SNO
--- 						WHERE t1.IS_USE = 'Y'
+						WHERE t1.sno > 100
+-- 						AND t1.IS_USE = 'Y'
 						ORDER BY t1.REG_DATE DESC
 					) sorted_data
 					WHERE ROWNUM <= :1
@@ -62,8 +63,8 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer) (int, e
 	query := `
 				SELECT COUNT(*) 
 				FROM IRIS_DEVICE_SET t1
-				LEFT OUTER JOIN IRIS_SITE_SET t2 
-				ON t1.SNO = t2.SNO`
+				LEFT OUTER JOIN IRIS_SITE_SET t2 ON t1.SNO = t2.SNO
+				WHERE t1.sno > 100`
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
