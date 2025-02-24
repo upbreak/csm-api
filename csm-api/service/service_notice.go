@@ -16,16 +16,18 @@ type ServiceNotice struct {
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재 페이지번호, 리스트 목록 개수
-func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*entity.Notices, error) {
+func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, search entity.Notice) (*entity.Notices, error) {
 
 	pageSql := entity.PageSql{}
+	searchSql := &entity.NoticeSql{}
 	pageSql, err := pageSql.OfPageSql(page)
+	searchSql = searchSql.OfNoticeSql(search)
 
 	if err != nil {
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
-	noticeSqls, err := s.Store.GetNoticeList(ctx, s.DB, pageSql)
+	noticeSqls, err := s.Store.GetNoticeList(ctx, s.DB, pageSql, *searchSql)
 	if err != nil {
 		return &entity.Notices{}, fmt.Errorf("fail to list notice: %w", err)
 	}
@@ -39,8 +41,11 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page) (*e
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (s *ServiceNotice) GetNoticeListCount(ctx context.Context) (int, error) {
-	count, err := s.Store.GetNoticeListCount(ctx, s.DB)
+func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.Notice) (int, error) {
+	searchSql := &entity.NoticeSql{}
+	searchSql = searchSql.OfNoticeSql(search)
+
+	count, err := s.Store.GetNoticeListCount(ctx, s.DB, *searchSql)
 	if err != nil {
 		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
 	}

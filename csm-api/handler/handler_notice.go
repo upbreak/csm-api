@@ -29,9 +29,11 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	page := entity.Page{}
+	search := entity.Notice{}
 
 	pageNum := r.URL.Query().Get(entity.PageNumKey)
 	rowSize := r.URL.Query().Get(entity.RowSizeKey)
+	order := r.URL.Query().Get(entity.OrderKey)
 
 	if pageNum == "" || rowSize == "" {
 		RespondJSON(
@@ -49,14 +51,20 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
+	page.Order = order
 
-	notices, err := n.Service.GetNoticeList(ctx, page)
+	search.LocCode = r.URL.Query().Get("loc_code")
+	search.SiteNm = r.URL.Query().Get("site_nm")
+	search.Title = r.URL.Query().Get("title")
+	search.RegUser = r.URL.Query().Get("reg_user")
+
+	notices, err := n.Service.GetNoticeList(ctx, page, search)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	count, err := n.Service.GetNoticeListCount(ctx)
+	count, err := n.Service.GetNoticeListCount(ctx, search)
 	if err != nil {
 		RespondJSON(
 			ctx,

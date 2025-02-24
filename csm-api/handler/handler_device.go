@@ -5,18 +5,19 @@ import (
 	"csm-api/service"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-12
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-21
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 검색 및 정렬 조건 추가, url의 query parameter로 받음
  */
 
 // struct: 근태인식기 조회
@@ -32,9 +33,12 @@ func (d *DeviceListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// http get paramter를 저장할 구조체 생성
 	page := entity.Page{}
+	search := entity.Device{}
 
-	pageNum := r.URL.Query().Get("page_num")
-	rowSize := r.URL.Query().Get("row_size")
+	pageNum := r.URL.Query().Get(entity.PageNumKey)
+	rowSize := r.URL.Query().Get(entity.RowSizeKey)
+	order := r.URL.Query().Get(entity.OrderKey)
+
 	if pageNum == "" || rowSize == "" {
 		RespondJSON(
 			ctx,
@@ -50,9 +54,16 @@ func (d *DeviceListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
+	page.Order = order
+
+	search.DeviceNm = r.URL.Query().Get("device_nm")
+	search.DeviceSn = r.URL.Query().Get("device_sn")
+	search.SiteNm = r.URL.Query().Get("site_nm")
+	search.Etc = r.URL.Query().Get("etc")
+	search.IsUse = r.URL.Query().Get("is_use")
 
 	// 근태인식기 목록
-	list, err := d.Service.GetDeviceList(ctx, page)
+	list, err := d.Service.GetDeviceList(ctx, page, search)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -67,7 +78,7 @@ func (d *DeviceListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 근태인식기 전체 개수
-	count, err := d.Service.GetDeviceListCount(ctx)
+	count, err := d.Service.GetDeviceListCount(ctx, search)
 	if err != nil {
 		RespondJSON(
 			ctx,

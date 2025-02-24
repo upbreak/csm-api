@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 /**
@@ -20,9 +21,46 @@ import (
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.PageSql) (*entity.NoticeSqls, error) {
+func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error) {
 	sqls := entity.NoticeSqls{}
-	query := `SELECT * 
+
+	// 조건
+	condition := "n1.IS_USE = 'Y'"
+	if search.LocCode.Valid {
+		trimLocCode := strings.TrimSpace(search.LocCode.String)
+
+		if trimLocCode != "" {
+			condition += fmt.Sprintf(" AND UPPER(n2.LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+		}
+	}
+	if search.SiteNm.Valid {
+		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
+		if trimSiteNm != "" {
+			condition += fmt.Sprintf(" AND UPPER(n2.SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+		}
+	}
+	if search.Title.Valid {
+		trimTitle := strings.TrimSpace(search.Title.String)
+		if trimTitle != "" {
+			condition += fmt.Sprintf(" AND UPPER(n1.TITLE) LIKE UPPER('%%%s%%')", trimTitle)
+		}
+	}
+	if search.RegUser.Valid {
+		trimRegUser := strings.TrimSpace(search.RegUser.String)
+		if trimRegUser != "" {
+			condition += fmt.Sprintf(" AND UPPER(n1.REG_USER) LIKE UPPER('%%%s%%')", trimRegUser)
+		}
+	}
+
+	var order string
+	if page.Order.Valid {
+		order = page.Order.String
+	} else {
+		order = "n1.REG_DATE DESC"
+	}
+
+	query := fmt.Sprintf(`
+				SELECT * 
 			  	FROM (
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
@@ -44,13 +82,15 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 						ON 
 							n1.SNO = n2.SNO
 						WHERE 
-							n1.IS_USE = 'Y'
-						ORDER BY 
-							n1.REG_DATE DESC
+							%s
+						ORDER BY
+							%s
 						) sorted_data
 					WHERE ROWNUM <= :1
 			  	)
-			  	WHERE RNUM > :2`
+			  	WHERE RNUM > :2`,
+		condition, order)
+
 	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
 		fmt.Println("store/notice. NoticeList error")
 		return nil, err
@@ -62,10 +102,43 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer) (int, error) {
+func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search entity.NoticeSql) (int, error) {
 	var count int
 
-	query := `SELECT COUNT(*) FROM IRIS_NOTICE_BOARD WHERE IS_USE = 'Y'`
+	condition := "n1.IS_USE = 'Y'"
+	if search.LocCode.Valid {
+		trimLocCode := strings.TrimSpace(search.LocCode.String)
+
+		if trimLocCode != "" {
+			condition += fmt.Sprintf(" AND UPPER(n2.LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+		}
+	}
+	if search.SiteNm.Valid {
+		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
+		if trimSiteNm != "" {
+			condition += fmt.Sprintf(" AND UPPER(n2.SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+		}
+	}
+	if search.Title.Valid {
+		trimTitle := strings.TrimSpace(search.Title.String)
+		if trimTitle != "" {
+			condition += fmt.Sprintf(" AND UPPER(n1.TITLE) LIKE UPPER('%%%s%%')", trimTitle)
+		}
+	}
+	if search.RegUser.Valid {
+		trimRegUser := strings.TrimSpace(search.RegUser.String)
+		if trimRegUser != "" {
+			condition += fmt.Sprintf(" AND UPPER(n1.REG_USER) LIKE UPPER('%%%s%%')", trimRegUser)
+		}
+	}
+
+	query := fmt.Sprintf(`
+			SELECT COUNT(*) 
+			FROM 
+				IRIS_NOTICE_BOARD n1 LEFT OUTER JOIN IRIS_SITE_SET n2 
+			ON 
+				n1.SNO = n2.SNO 
+			WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

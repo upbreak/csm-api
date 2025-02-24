@@ -42,16 +42,16 @@ type CodeStore interface {
 }
 
 type NoticeStore interface {
-	GetNoticeList(ctx context.Context, db Queryer, pageSql entity.PageSql) (*entity.NoticeSqls, error)
-	GetNoticeListCount(ctx context.Context, db Queryer) (int, error)
+	GetNoticeList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error)
+	GetNoticeListCount(ctx context.Context, db Queryer, search entity.NoticeSql) (int, error)
 	AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error
 }
 
 type DeviceStore interface {
-	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql) (*entity.DeviceSqls, error)
-	GetDeviceListCount(ctx context.Context, db Queryer) (int, error)
+	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql) (*entity.DeviceSqls, error)
+	GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql) (int, error)
 	AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
 	ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
 	RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error
