@@ -84,6 +84,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
 				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+			WHERE t1.sno > 100
 			ORDER BY
 				t1.IS_DEFAULT DESC`
 	if err := db.SelectContext(ctx, &projectInfoSqls, sql); err != nil {
