@@ -51,7 +51,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//jwt 생성
-	tokenString, err := l.Jwt.GenerateToken(&auth.JWTClaims{UserId: user.UserId, UserName: user.UserName, IsSaved: login.IsSaved})
+	tokenString, err := l.Jwt.GenerateToken(&auth.JWTClaims{Uno: user.Uno, UserId: user.UserId, UserName: user.UserName, IsSaved: login.IsSaved})
 	if err != nil {
 		RespondJSON(
 			ctx,

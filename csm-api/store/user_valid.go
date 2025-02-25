@@ -10,6 +10,7 @@ func (r *Repository) GetUserValid(ctx context.Context, db Queryer, userId string
 	user := entity.User{}
 
 	sql := `SELECT
+			t1.UNO,
 		    t1.USER_ID,
 			t1.USER_NAME
 		FROM

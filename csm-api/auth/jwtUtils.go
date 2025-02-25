@@ -5,9 +5,10 @@ import (
 	"csm-api/clock"
 	"csm-api/config"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JWTUtils struct {
@@ -24,6 +25,7 @@ const (
 
 // claims 정의
 type JWTClaims struct {
+	Uno      int64   `json:"uno"`
 	UserId   string  `json:"user_id"`
 	UserName string  `json:"user_name"`
 	Role     JWTRole `json:"role"`
@@ -62,6 +64,7 @@ func (j *JWTUtils) GenerateToken(jwtClaims *JWTClaims) (string, error) {
 
 	// JWT 클레임 설정
 	claims := jwt.MapClaims{
+		"uno":      jwtClaims.Uno,
 		"userId":   jwtClaims.UserId,
 		"userName": jwtClaims.UserName,
 		"role":     jwtClaims.Role,
@@ -126,6 +129,7 @@ func (j *JWTUtils) ValidateJWT(r *http.Request) (*JWTClaims, error) {
 
 	// JWTClaims 매핑
 	jwtClaims := &JWTClaims{
+		Uno:      int64(claims["uno"].(float64)),
 		UserId:   claims["userId"].(string),
 		UserName: claims["userName"].(string),
 		IsSaved:  claims["isSaved"].(bool), // "아이디 저장" 여부 확인

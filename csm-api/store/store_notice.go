@@ -25,7 +25,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 	sqls := entity.NoticeSqls{}
 
 	// 조건
-	condition := "n1.IS_USE = 'Y'"
+	condition := "AND 1=1"
 	if search.LocCode.Valid {
 		trimLocCode := strings.TrimSpace(search.LocCode.String)
 
@@ -81,7 +81,8 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 							IRIS_NOTICE_BOARD n1 LEFT OUTER JOIN IRIS_SITE_SET n2 
 						ON 
 							n1.SNO = n2.SNO
-						WHERE 
+						WHERE
+							n1.IS_USE = 'Y' 
 							%s
 						ORDER BY
 							%s
@@ -105,7 +106,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search entity.NoticeSql) (int, error) {
 	var count int
 
-	condition := "n1.IS_USE = 'Y'"
+	condition := "AND 1=1"
 	if search.LocCode.Valid {
 		trimLocCode := strings.TrimSpace(search.LocCode.String)
 
@@ -138,7 +139,9 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 				IRIS_NOTICE_BOARD n1 LEFT OUTER JOIN IRIS_SITE_SET n2 
 			ON 
 				n1.SNO = n2.SNO 
-			WHERE %s`, condition)
+			WHERE
+				n1.IS_USE = 'Y' 
+				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
