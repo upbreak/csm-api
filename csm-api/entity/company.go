@@ -24,6 +24,7 @@ type JobInfo struct {
 	CompName      string `json:"comp_name"`
 	OrderCompName string `json:"order_comp_name"`
 	JobPmName     string `json:"job_pm_name"`
+	JobPmDutyName string `json:"job_pm_duty_name"`
 	CdNm          string `json:"cd_nm"`
 }
 type JobInfoSql struct {
@@ -35,6 +36,7 @@ type JobInfoSql struct {
 	CompName      sql.NullString `db:"COMP_NAME"`
 	OrderCompName sql.NullString `db:"ORDER_COMP_NAME"`
 	JobPmName     sql.NullString `db:"JOB_PM_NAME"`
+	JobPmDutyName sql.NullString `db:"DUTY_NAME"`
 	CdNm          sql.NullString `db:"CD_NM"`
 }
 
