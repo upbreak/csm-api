@@ -64,7 +64,8 @@ func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql
 					 m.JNO,
 					 U.UNO, 
 					 U.USER_NAME, 
-					 U.DUTY_NAME
+					 U.DUTY_NAME,
+					 U.USER_ID
 				FROM JOB_MEMBER_LIST M, 
 					 S_SYS_USER_SET U
 				WHERE M.COMP_TYPE = 'H'
@@ -90,6 +91,7 @@ func (r *Repository) GetSafeManagerList(ctx context.Context, db Queryer, jno sql
 						 U.UNO, 
 						 U.USER_NAME, 
 						 U.DUTY_NAME, 
+ 						 U.USER_ID,
 						 J.TEAM_LEADER
 					FROM JOB_MANAGER J,
 						 S_SYS_USER_SET U

@@ -48,6 +48,7 @@ type Manager struct {
 	Jno        int64  `json:"jno"`
 	UserName   string `json:"user_name"`
 	DutyName   string `json:"duty_name"`
+	UserId     string `json:"user_id"`
 	TeamLeader string `json:"team_leader"`
 }
 type Managers []*Manager
@@ -57,6 +58,7 @@ type ManagerSql struct {
 	Jno        sql.NullInt64  `db:"JNO"`
 	UserName   sql.NullString `db:"USER_NAME"`
 	DutyName   sql.NullString `db:"DUTY_NAME"`
+	UserId     sql.NullString `db:"USER_ID"`
 	TeamLeader sql.NullString `db:"TEAM_LEADER"`
 }
 type ManagerSqls []*ManagerSql
