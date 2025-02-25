@@ -85,8 +85,8 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 							t1.MOD_DATE AS MOD_DATE
 						FROM 
 							IRIS_DEVICE_SET t1
-						LEFT OUTER 
-							JOIN IRIS_SITE_SET t2 
+						LEFT OUTER JOIN 
+							IRIS_SITE_SET t2 
 						ON 
 							t1.SNO = t2.SNO
  						WHERE 
@@ -154,8 +154,8 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 					COUNT(*) 
 				FROM 
 					IRIS_DEVICE_SET t1
-				LEFT OUTER 
-					JOIN IRIS_SITE_SET t2 
+				LEFT OUTER JOIN 
+					IRIS_SITE_SET t2 
 				ON 
 					t1.SNO = t2.SNO
 				WHERE 

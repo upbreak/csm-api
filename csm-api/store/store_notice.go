@@ -30,25 +30,25 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 		trimLocCode := strings.TrimSpace(search.LocCode.String)
 
 		if trimLocCode != "" {
-			condition += fmt.Sprintf(" AND UPPER(n2.LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+			condition += fmt.Sprintf(" AND UPPER(S.LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
 		}
 	}
 	if search.SiteNm.Valid {
 		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
 		if trimSiteNm != "" {
-			condition += fmt.Sprintf(" AND UPPER(n2.SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+			condition += fmt.Sprintf(" AND UPPER(S.SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
 		}
 	}
 	if search.Title.Valid {
 		trimTitle := strings.TrimSpace(search.Title.String)
 		if trimTitle != "" {
-			condition += fmt.Sprintf(" AND UPPER(n1.TITLE) LIKE UPPER('%%%s%%')", trimTitle)
+			condition += fmt.Sprintf(" AND UPPER(N.TITLE) LIKE UPPER('%%%s%%')", trimTitle)
 		}
 	}
 	if search.RegUser.Valid {
 		trimRegUser := strings.TrimSpace(search.RegUser.String)
 		if trimRegUser != "" {
-			condition += fmt.Sprintf(" AND UPPER(n1.REG_USER) LIKE UPPER('%%%s%%')", trimRegUser)
+			condition += fmt.Sprintf(" AND UPPER(N.REG_USER) LIKE UPPER('%%%s%%')", trimRegUser)
 		}
 	}
 
@@ -56,7 +56,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = "n1.REG_DATE DESC"
+		order = "N.REG_DATE DESC"
 	}
 
 	query := fmt.Sprintf(`
@@ -65,24 +65,27 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
 						SELECT 
-							n1.IDX,
-							n1.SNO, 
-							n2.SITE_NM,
-							n2.LOC_CODE,
-							n1.TITLE, 
-							n1.CONTENT, 
-							n1.SHOW_YN,
-							n1.REG_UNO, 
-							n1.REG_USER, 
-							n1.REG_DATE, 
-							n1.MOD_USER, 
-							n1.MOD_DATE 
+							N.IDX,
+							N.SNO, 
+							S.SITE_NM,
+							S.LOC_CODE,
+							N.TITLE, 
+							N.CONTENT, 
+							N.SHOW_YN,
+							N.REG_UNO, 
+							N.REG_USER, 
+							N.REG_DATE,
+							U.DUTY_NAME, 
+							N.MOD_USER, 
+							N.MOD_DATE 
 						FROM 
-							IRIS_NOTICE_BOARD n1 LEFT OUTER JOIN IRIS_SITE_SET n2 
-						ON 
-							n1.SNO = n2.SNO
+							IRIS_NOTICE_BOARD N 
+						INNER JOIN
+							S_SYS_USER_SET U ON N.REG_UNO = U.UNO
+						LEFT OUTER JOIN 
+							IRIS_SITE_SET S ON	N.SNO = S.SNO
 						WHERE
-							n1.IS_USE = 'Y' 
+							N.IS_USE = 'Y' 
 							%s
 						ORDER BY
 							%s
