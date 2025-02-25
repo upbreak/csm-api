@@ -25,7 +25,7 @@ import (
 func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql) (*entity.DeviceSqls, error) {
 	sqls := entity.DeviceSqls{}
 
-	condition := "1=1"
+	condition := "AND 1=1"
 	if search.DeviceNm.Valid {
 		trimDeviceNm := strings.TrimSpace(search.DeviceNm.String)
 
@@ -42,7 +42,7 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 	}
 	if search.SiteNm.Valid {
 		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
-		fmt.Print(trimSiteNm)
+
 		if trimSiteNm != "" {
 			condition += fmt.Sprintf(` AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')`, trimSiteNm)
 		}
@@ -90,6 +90,7 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 						ON 
 							t1.SNO = t2.SNO
  						WHERE 
+							t1.SNO > 100
 							%s
 						ORDER BY 
 							%s
@@ -111,7 +112,7 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql) (int, error) {
 	var count int
 
-	condition := "1=1"
+	condition := "AND 1=1"
 	if search.DeviceNm.Valid {
 		trimDeviceNm := strings.TrimSpace(search.DeviceNm.String)
 
@@ -158,6 +159,7 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 				ON 
 					t1.SNO = t2.SNO
 				WHERE 
+					t1.SNO > 100
 					%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
