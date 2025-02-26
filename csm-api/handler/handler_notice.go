@@ -56,7 +56,7 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	search.LocCode = r.URL.Query().Get("loc_code")
 	search.SiteNm = r.URL.Query().Get("site_nm")
 	search.Title = r.URL.Query().Get("title")
-	search.RegUser = r.URL.Query().Get("reg_user")
+	search.UserInfo = r.URL.Query().Get("user_info")
 
 	notices, err := n.Service.GetNoticeList(ctx, page, search)
 	if err != nil {

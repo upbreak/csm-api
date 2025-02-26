@@ -15,7 +15,8 @@ import (
  * @modified 최종 수정일:
  * @modifiedBy 최종 수정자:
  * @modified description
- * -
+ * - 검색기능 추가
+ * - UserInfo 추가
  */
 
 // func: 공지사항 전체 조회
@@ -25,30 +26,30 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 	sqls := entity.NoticeSqls{}
 
 	// 조건
-	condition := "AND 1=1"
+	condition := "1=1"
 	if search.LocCode.Valid {
 		trimLocCode := strings.TrimSpace(search.LocCode.String)
 
 		if trimLocCode != "" {
-			condition += fmt.Sprintf(" AND UPPER(S.LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+			condition += fmt.Sprintf(" AND UPPER(LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
 		}
 	}
 	if search.SiteNm.Valid {
 		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
 		if trimSiteNm != "" {
-			condition += fmt.Sprintf(" AND UPPER(S.SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
 		}
 	}
 	if search.Title.Valid {
 		trimTitle := strings.TrimSpace(search.Title.String)
 		if trimTitle != "" {
-			condition += fmt.Sprintf(" AND UPPER(N.TITLE) LIKE UPPER('%%%s%%')", trimTitle)
+			condition += fmt.Sprintf(" AND UPPER(TITLE) LIKE UPPER('%%%s%%')", trimTitle)
 		}
 	}
-	if search.RegUser.Valid {
-		trimRegUser := strings.TrimSpace(search.RegUser.String)
-		if trimRegUser != "" {
-			condition += fmt.Sprintf(" AND UPPER(N.REG_USER) LIKE UPPER('%%%s%%')", trimRegUser)
+	if search.UserInfo.Valid {
+		trimUserInfo := strings.TrimSpace(search.UserInfo.String)
+		if trimUserInfo != "" {
+			condition += fmt.Sprintf(" AND UPPER(USER_INFO) LIKE UPPER('%%%s%%')", trimUserInfo)
 		}
 	}
 
@@ -56,36 +57,42 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = "N.REG_DATE DESC"
+		order = "REG_DATE DESC"
 	}
 
 	query := fmt.Sprintf(`
+				WITH Notice AS (
+					SELECT 
+						N.IDX,
+						N.SNO, 
+						S.SITE_NM,
+						S.LOC_CODE,
+						N.TITLE, 
+						N.CONTENT, 
+						N.SHOW_YN,
+						N.REG_UNO, 
+						N.REG_USER, 
+						N.REG_DATE,
+						U.DUTY_NAME, 
+						N.REG_USER || ' ' || U.DUTY_NAME as USER_INFO, 
+						N.MOD_USER, 
+						N.MOD_DATE 
+					FROM 
+						IRIS_NOTICE_BOARD N 
+					INNER JOIN
+						S_SYS_USER_SET U ON N.REG_UNO = U.UNO
+					LEFT OUTER JOIN 
+						IRIS_SITE_SET S ON	N.SNO = S.SNO
+					WHERE
+						N.IS_USE = 'Y'
+				)
 				SELECT * 
 			  	FROM (
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
-						SELECT 
-							N.IDX,
-							N.SNO, 
-							S.SITE_NM,
-							S.LOC_CODE,
-							N.TITLE, 
-							N.CONTENT, 
-							N.SHOW_YN,
-							N.REG_UNO, 
-							N.REG_USER, 
-							N.REG_DATE,
-							U.DUTY_NAME, 
-							N.MOD_USER, 
-							N.MOD_DATE 
-						FROM 
-							IRIS_NOTICE_BOARD N 
-						INNER JOIN
-							S_SYS_USER_SET U ON N.REG_UNO = U.UNO
-						LEFT OUTER JOIN 
-							IRIS_SITE_SET S ON	N.SNO = S.SNO
+						SELECT *
+						FROM Notice
 						WHERE
-							N.IS_USE = 'Y' 
 							%s
 						ORDER BY
 							%s
@@ -109,48 +116,69 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search entity.NoticeSql) (int, error) {
 	var count int
 
-	condition := "AND 1=1"
+	condition := "1=1"
 	if search.LocCode.Valid {
 		trimLocCode := strings.TrimSpace(search.LocCode.String)
 
 		if trimLocCode != "" {
-			condition += fmt.Sprintf(" AND UPPER(n2.LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+			condition += fmt.Sprintf(" AND UPPER(LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
 		}
 	}
 	if search.SiteNm.Valid {
 		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
 		if trimSiteNm != "" {
-			condition += fmt.Sprintf(" AND UPPER(n2.SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
 		}
 	}
 	if search.Title.Valid {
 		trimTitle := strings.TrimSpace(search.Title.String)
 		if trimTitle != "" {
-			condition += fmt.Sprintf(" AND UPPER(n1.TITLE) LIKE UPPER('%%%s%%')", trimTitle)
+			condition += fmt.Sprintf(" AND UPPER(TITLE) LIKE UPPER('%%%s%%')", trimTitle)
 		}
 	}
-	if search.RegUser.Valid {
-		trimRegUser := strings.TrimSpace(search.RegUser.String)
-		if trimRegUser != "" {
-			condition += fmt.Sprintf(" AND UPPER(n1.REG_USER) LIKE UPPER('%%%s%%')", trimRegUser)
+	if search.UserInfo.Valid {
+		trimUserInfo := strings.TrimSpace(search.UserInfo.String)
+		if trimUserInfo != "" {
+			condition += fmt.Sprintf(" AND UPPER(USER_INFO) LIKE UPPER('%%%s%%')", trimUserInfo)
 		}
 	}
 
 	query := fmt.Sprintf(`
+			WITH Notice AS (
+				SELECT 
+					N.IDX,
+					N.SNO, 
+					S.SITE_NM,
+					S.LOC_CODE,
+					N.TITLE, 
+					N.CONTENT, 
+					N.SHOW_YN,
+					N.REG_UNO, 
+					N.REG_USER, 
+					N.REG_DATE,
+					U.DUTY_NAME, 
+					N.REG_USER || ' ' || U.DUTY_NAME as USER_INFO, 
+					N.MOD_USER, 
+					N.MOD_DATE 
+				FROM 
+					IRIS_NOTICE_BOARD N 
+				INNER JOIN
+					S_SYS_USER_SET U ON N.REG_UNO = U.UNO
+				LEFT OUTER JOIN 
+					IRIS_SITE_SET S ON	N.SNO = S.SNO
+				WHERE
+					N.IS_USE = 'Y'
+			)
 			SELECT COUNT(*) 
-			FROM 
-				IRIS_NOTICE_BOARD n1 LEFT OUTER JOIN IRIS_SITE_SET n2 
-			ON 
-				n1.SNO = n2.SNO 
+			FROM  Notice
 			WHERE
-				n1.IS_USE = 'Y' 
 				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetNoticeListCount fail: %w", err)
+		return 0, fmt.Errorf("store/notice. GetNoticeListCount fail: %w", err)
 	}
 	return count, nil
 
@@ -162,7 +190,7 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %w", err)
+		fmt.Println("store/notice. Failed to begin transaction: %w", err)
 	}
 
 	query := `
@@ -195,11 +223,11 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
-		return fmt.Errorf("AddNotice fail %v", err)
+		return fmt.Errorf("store/notice. AddNotice fail %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		return fmt.Errorf("store/notice. failed to commit transaction: %v", err)
 	}
 
 	return nil
@@ -211,7 +239,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %w", err)
+		fmt.Println("store/notice. Failed to begin transaction: %w", err)
 	}
 
 	query := `
@@ -235,11 +263,11 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
-		return fmt.Errorf("ModifyNotice fail: %v", err)
+		return fmt.Errorf("store/notice. ModifyNotice fail: %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		return fmt.Errorf("store/notice. failed to commit transaction: %v", err)
 	}
 
 	return nil
@@ -252,7 +280,7 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx entity.N
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
-		fmt.Println("Failed to begint transaction: %w", err)
+		fmt.Println("store/notice. Failed to begint transaction: %w", err)
 	}
 
 	query := `
@@ -269,11 +297,11 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx entity.N
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
-		return fmt.Errorf("RemoveNotice fail: %v", err)
+		return fmt.Errorf("store/notice. RemoveNotice fail: %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		return fmt.Errorf("store/notice. failed to commit transaction: %v", err)
 	}
 
 	return nil

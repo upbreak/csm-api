@@ -10,10 +10,10 @@ import (
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-18
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-26
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 현장소장 및 안전관리자 UserId, UserInfo 추가
  */
 
 // func: job 정보 조회
@@ -65,7 +65,8 @@ func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql
 					 U.UNO, 
 					 U.USER_NAME, 
 					 U.DUTY_NAME,
-					 U.USER_ID
+					 U.USER_ID,
+					 U.USER_NAME || ' ' || U.DUTY_NAME || ' (' || U.USER_ID || ')' AS USER_INFO
 				FROM JOB_MEMBER_LIST M, 
 					 S_SYS_USER_SET U
 				WHERE M.COMP_TYPE = 'H'

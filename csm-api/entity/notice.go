@@ -20,6 +20,7 @@ type Notice struct {
 	RegUser      string    `json:"reg_user"`
 	RegDate      time.Time `json:"reg_date"`
 	UserDutyName string    `json:"user_duty_name"`
+	UserInfo     string    `json:"user_info"`
 	ModUno       int64     `json:"mod_uno"`
 	ModUser      string    `json:"mod_user"`
 	ModDate      time.Time `json:"mod_date"`
@@ -40,6 +41,7 @@ type NoticeSql struct {
 	RegUser      sql.NullString `db:"REG_USER"`
 	RegDate      sql.NullTime   `db:"REG_DATE"`
 	UserDutyName sql.NullString `db:"DUTY_NAME"`
+	UserInfo     sql.NullString `db:"USER_INFO"`
 	ModUno       sql.NullInt64  `db:"MOD_UNO"`
 	ModUser      sql.NullString `db:"MOD_USER"`
 	ModDate      sql.NullTime   `db:"MOD_DATE"`
@@ -60,6 +62,7 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.RegUser = noticeSql.RegUser.String
 	n.RegDate = noticeSql.RegDate.Time
 	n.UserDutyName = noticeSql.UserDutyName.String
+	n.UserInfo = noticeSql.UserInfo.String
 	n.ModUno = noticeSql.RegUno.Int64
 	n.ModUser = noticeSql.ModUser.String
 	n.ModDate = noticeSql.ModDate.Time
@@ -137,6 +140,12 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.UserDutyName = sql.NullString{Valid: true, String: notice.UserDutyName}
 	} else {
 		n.UserDutyName = sql.NullString{Valid: false}
+	}
+
+	if notice.UserInfo != "" {
+		n.UserInfo = sql.NullString{Valid: true, String: notice.UserInfo}
+	} else {
+		n.UserInfo = sql.NullString{Valid: false}
 	}
 
 	if notice.ModUno != 0 {

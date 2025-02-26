@@ -8,10 +8,10 @@ import (
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-18
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-26
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 현장소장 및 안전관리자 userId, UserInfo 추가
  */
 
 // struct: Begin:job 정보
@@ -50,6 +50,7 @@ type Manager struct {
 	DutyName   string `json:"duty_name"`
 	UserId     string `json:"user_id"`
 	TeamLeader string `json:"team_leader"`
+	UserInfo   string `json:"user_info"`
 }
 type Managers []*Manager
 
@@ -60,6 +61,7 @@ type ManagerSql struct {
 	DutyName   sql.NullString `db:"DUTY_NAME"`
 	UserId     sql.NullString `db:"USER_ID"`
 	TeamLeader sql.NullString `db:"TEAM_LEADER"`
+	UserInfo   sql.NullString `db:"USER_INFO"`
 }
 type ManagerSqls []*ManagerSql
 
