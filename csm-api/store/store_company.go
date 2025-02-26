@@ -10,10 +10,10 @@ import (
 /**
  * @author 작성자: 김진우
  * @created 작성일: 2025-02-18
- * @modified 최종 수정일:
- * @modifiedBy 최종 수정자:
+ * @modified 최종 수정일: 2025-02-26
+ * @modifiedBy 최종 수정자: 정지영
  * @modified description
- * -
+ * - 현장소장 및 안전관리자 UserId, UserInfo 추가
  */
 
 // func: job 정보 조회
@@ -32,6 +32,7 @@ func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt
 					t2.comp_name,
 					t2.order_comp_name,
 					t2.job_pm_name,
+					t6.duty_name,
 					t5.cd_nm
 				FROM
 					IRIS_SITE_JOB t1
@@ -39,6 +40,7 @@ func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt
 					INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 					INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 					INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
+					INNER JOIN S_SYS_USER_SET t6 ON t2.JOB_PM = t6.UNO
 				WHERE 
 					t1.JNO = :1`
 	if err := db.GetContext(ctx, &sqlData, query, jno); err != nil {
@@ -62,7 +64,9 @@ func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql
 					 m.JNO,
 					 U.UNO, 
 					 U.USER_NAME, 
-					 U.DUTY_NAME
+					 U.DUTY_NAME,
+					 U.USER_ID,
+					 U.USER_NAME || ' ' || U.DUTY_NAME || ' (' || U.USER_ID || ')' AS USER_INFO
 				FROM JOB_MEMBER_LIST M, 
 					 S_SYS_USER_SET U
 				WHERE M.COMP_TYPE = 'H'
@@ -88,6 +92,7 @@ func (r *Repository) GetSafeManagerList(ctx context.Context, db Queryer, jno sql
 						 U.UNO, 
 						 U.USER_NAME, 
 						 U.DUTY_NAME, 
+ 						 U.USER_ID,
 						 J.TEAM_LEADER
 					FROM JOB_MANAGER J,
 						 S_SYS_USER_SET U
