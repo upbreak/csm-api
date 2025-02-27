@@ -16,6 +16,7 @@ import (
 
 // struct: Begin:job 정보
 type JobInfo struct {
+	RowNum        int64  `json:"rnum"`
 	Jno           int64  `json:"jno"`
 	JobName       string `json:"job_name"`
 	JobNo         string `json:"job_no"`
@@ -27,7 +28,9 @@ type JobInfo struct {
 	JobPmDutyName string `json:"job_pm_duty_name"`
 	CdNm          string `json:"cd_nm"`
 }
+type JobInfos []*JobInfo
 type JobInfoSql struct {
+	RowNum        sql.NullInt64  `db:"RNUM"`
 	Jno           sql.NullInt64  `db:"JNO"`
 	JobName       sql.NullString `db:"JOB_NAME"`
 	JobNo         sql.NullString `db:"JOB_NO"`
@@ -39,6 +42,7 @@ type JobInfoSql struct {
 	JobPmDutyName sql.NullString `db:"DUTY_NAME"`
 	CdNm          sql.NullString `db:"CD_NM"`
 }
+type JobInfoSqls []*JobInfoSql
 
 // struct: End:job 정보
 
