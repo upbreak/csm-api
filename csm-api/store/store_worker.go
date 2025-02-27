@@ -3,10 +3,10 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 )
 
 /**
@@ -25,37 +25,12 @@ import (
 func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error) {
 	sqls := entity.WorkerSqls{}
 
-	whereClause := ""
-	if search.SiteNm.Valid {
-		trimmedSiteNm := strings.TrimSpace(search.SiteNm.String)
-		if trimmedSiteNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')", trimmedSiteNm)
-		}
-	}
-
-	if search.JobName.Valid {
-		trimmedJobName := strings.TrimSpace(search.JobName.String)
-		if trimmedJobName != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t4.JOB_NAME) LIKE LOWER('%%%s%%')", trimmedJobName)
-		}
-	}
-	if search.UserNm.Valid {
-		trimmedUserNm := strings.TrimSpace(search.UserNm.String)
-		if trimmedUserNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.USER_NM) LIKE LOWER('%%%s%%')", trimmedUserNm)
-		}
-	}
-	if search.Department.Valid {
-		trimmedDepartment := strings.TrimSpace(search.Department.String)
-		if trimmedDepartment != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.DEPARTMENT) LIKE LOWER('%%%s%%')", trimmedDepartment)
-		}
-	}
-
-	// 기본 WHERE 조건 추가
-	if whereClause == "" {
-		whereClause = " AND 1=1" // WHERE 절이 비어있을 때 기본 조건 추가
-	}
+	condition := ""
+	condition = utils.StringWhereConvert(condition, search.SiteNm, "t2.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t4.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
+	condition = utils.TimeBetweenWhereConvert(condition, search.SearchStartTime, search.SearchEndTime, "t1.RECOG_TIME")
 
 	var order string
 	if page.Order.Valid {
@@ -86,18 +61,17 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 								INNER JOIN IRIS_SITE_JOB t3 ON t1.JNO = t3.JNO
 								INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 							WHERE
-								TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
-							AND t1.sno > 100
+							t1.sno > 100
 								%s
 							GROUP BY
 								t1.USER_ID, t1.USER_GUID
 							ORDER BY %s
 					) sorted_data
-					WHERE ROWNUM <= :2
+					WHERE ROWNUM <= :1
 				)
-				WHERE RNUM > :3`, whereClause, order)
+				WHERE RNUM > :2`, condition, order)
 
-	if err := db.SelectContext(ctx, &sqls, query, search.SearchTime, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetWorkerTotalList err: %v", err)
 	}
 
@@ -110,37 +84,12 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error) {
 	var count int
 
-	whereClause := ""
-	if search.SiteNm.Valid {
-		trimmedSiteNm := strings.TrimSpace(search.SiteNm.String)
-		if trimmedSiteNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')", trimmedSiteNm)
-		}
-	}
-
-	if search.JobName.Valid {
-		trimmedJobName := strings.TrimSpace(search.JobName.String)
-		if trimmedJobName != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t4.JOB_NAME) LIKE LOWER('%%%s%%')", trimmedJobName)
-		}
-	}
-	if search.UserNm.Valid {
-		trimmedUserNm := strings.TrimSpace(search.UserNm.String)
-		if trimmedUserNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.USER_NM) LIKE LOWER('%%%s%%')", trimmedUserNm)
-		}
-	}
-	if search.Department.Valid {
-		trimmedDepartment := strings.TrimSpace(search.Department.String)
-		if trimmedDepartment != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.DEPARTMENT) LIKE LOWER('%%%s%%')", trimmedDepartment)
-		}
-	}
-
-	// 기본 WHERE 조건 추가
-	if whereClause == "" {
-		whereClause = " AND 1=1" // WHERE 절이 비어있을 때 기본 조건 추가
-	}
+	condition := ""
+	condition = utils.StringWhereConvert(condition, search.SiteNm, "t2.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t4.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
+	condition = utils.TimeBetweenWhereConvert(condition, search.SearchStartTime, search.SearchEndTime, "t1.RECOG_TIME")
 
 	query := fmt.Sprintf(`
 				SELECT 
@@ -151,11 +100,10 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 					INNER JOIN IRIS_SITE_JOB t3 ON t1.JNO = t3.JNO
 					INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 				WHERE
-					TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
-				AND t1.sno > 100
-					%s`, whereClause)
+				    t1.sno > 100
+					%s`, condition)
 
-	if err := db.GetContext(ctx, &count, query, search.SearchTime); err != nil {
+	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
@@ -171,37 +119,12 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error) {
 	sqls := entity.WorkerSqls{}
 
-	whereClause := ""
-	if search.SiteNm.Valid {
-		trimmedSiteNm := strings.TrimSpace(search.SiteNm.String)
-		if trimmedSiteNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')", trimmedSiteNm)
-		}
-	}
-
-	if search.JobName.Valid {
-		trimmedJobName := strings.TrimSpace(search.JobName.String)
-		if trimmedJobName != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t4.JOB_NAME) LIKE LOWER('%%%s%%')", trimmedJobName)
-		}
-	}
-	if search.UserNm.Valid {
-		trimmedUserNm := strings.TrimSpace(search.UserNm.String)
-		if trimmedUserNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.USER_NM) LIKE LOWER('%%%s%%')", trimmedUserNm)
-		}
-	}
-	if search.Department.Valid {
-		trimmedDepartment := strings.TrimSpace(search.Department.String)
-		if trimmedDepartment != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.DEPARTMENT) LIKE LOWER('%%%s%%')", trimmedDepartment)
-		}
-	}
-
-	// 기본 WHERE 조건 추가
-	if whereClause == "" {
-		whereClause = " AND 1=1" // WHERE 절이 비어있을 때 기본 조건 추가
-	}
+	condition := ""
+	condition = utils.StringWhereConvert(condition, search.SiteNm, "t2.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t4.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
+	condition = utils.TimeBetweenWhereConvert(condition, search.SearchStartTime, search.SearchEndTime, "t1.RECOG_TIME")
 
 	var order string
 	if page.Order.Valid {
@@ -232,19 +155,18 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								INNER JOIN IRIS_SITE_JOB t3 ON t1.JNO = t3.JNO
 								INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 							WHERE
-								TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
-							AND t1.sno > 100
-							AND t1.SNO = :2
+								t1.sno > 100
+							AND t1.SNO = :1
 								%s
 							GROUP BY
 								t1.USER_ID, t1.USER_GUID
 							ORDER BY %s
 					) sorted_data
-					WHERE ROWNUM <= :3
+					WHERE ROWNUM <= :2
 				)
-				WHERE RNUM > :4`, whereClause, order)
+				WHERE RNUM > :3`, condition, order)
 
-	if err := db.SelectContext(ctx, &sqls, query, search.SearchTime, search.Sno, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &sqls, query, search.Sno, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetWorkerSiteBaseList err: %v", err)
 	}
 
@@ -257,37 +179,12 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error) {
 	var count int
 
-	whereClause := ""
-	if search.SiteNm.Valid {
-		trimmedSiteNm := strings.TrimSpace(search.SiteNm.String)
-		if trimmedSiteNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t2.SITE_NM) LIKE LOWER('%%%s%%')", trimmedSiteNm)
-		}
-	}
-
-	if search.JobName.Valid {
-		trimmedJobName := strings.TrimSpace(search.JobName.String)
-		if trimmedJobName != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t4.JOB_NAME) LIKE LOWER('%%%s%%')", trimmedJobName)
-		}
-	}
-	if search.UserNm.Valid {
-		trimmedUserNm := strings.TrimSpace(search.UserNm.String)
-		if trimmedUserNm != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.USER_NM) LIKE LOWER('%%%s%%')", trimmedUserNm)
-		}
-	}
-	if search.Department.Valid {
-		trimmedDepartment := strings.TrimSpace(search.Department.String)
-		if trimmedDepartment != "" {
-			whereClause += fmt.Sprintf(" AND LOWER(t1.DEPARTMENT) LIKE LOWER('%%%s%%')", trimmedDepartment)
-		}
-	}
-
-	// 기본 WHERE 조건 추가
-	if whereClause == "" {
-		whereClause = " AND 1=1" // WHERE 절이 비어있을 때 기본 조건 추가
-	}
+	condition := ""
+	condition = utils.StringWhereConvert(condition, search.SiteNm, "t2.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t4.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
+	condition = utils.TimeBetweenWhereConvert(condition, search.SearchStartTime, search.SearchEndTime, "t1.RECOG_TIME")
 
 	query := fmt.Sprintf(`
 				SELECT 
@@ -298,12 +195,11 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 					INNER JOIN IRIS_SITE_JOB t3 ON t1.JNO = t3.JNO
 					INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
 				WHERE
-					TO_CHAR(t1.RECOG_TIME, 'YYYY-MM-DD') = :1
-				AND t1.sno > 100
-				AND t1.SNO = :2
-					%s`, whereClause)
+					t1.sno > 100
+				AND t1.SNO = :1
+					%s`, condition)
 
-	if err := db.GetContext(ctx, &count, query, search.SearchTime, search.Sno); err != nil {
+	if err := db.GetContext(ctx, &count, query, search.Sno); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
