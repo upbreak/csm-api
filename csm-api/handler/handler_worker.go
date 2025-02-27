@@ -37,8 +37,10 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	jobName := r.URL.Query().Get("job_name")
 	userNm := r.URL.Query().Get("user_nm")
 	department := r.URL.Query().Get("department")
-	searchTime := r.URL.Query().Get("search_time")
-	if pageNum == "" || rowSize == "" || searchTime == "" {
+	searchStartTime := r.URL.Query().Get("search_start_time")
+	searchEndTime := r.URL.Query().Get("search_end_time")
+
+	if pageNum == "" || rowSize == "" || searchStartTime == "" || searchEndTime == "" {
 		RespondJSON(
 			ctx,
 			w,
@@ -59,7 +61,8 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	search.JobName = jobName
 	search.UserNm = userNm
 	search.Department = department
-	search.SearchTime = searchTime
+	search.SearchStartTime = searchStartTime
+	search.SearchEndTime = searchEndTime
 
 	// 조회
 	list, err := h.Service.GetWorkerTotalList(ctx, page, search)
@@ -124,8 +127,10 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	jobName := r.URL.Query().Get("job_name")
 	userNm := r.URL.Query().Get("user_nm")
 	department := r.URL.Query().Get("department")
-	searchTime := r.URL.Query().Get("search_time")
-	if pageNum == "" || rowSize == "" || searchTime == "" || sno == "" {
+	searchStartTime := r.URL.Query().Get("search_start_time")
+	searchEndTime := r.URL.Query().Get("search_end_time")
+
+	if pageNum == "" || rowSize == "" || searchStartTime == "" || searchEndTime == "" || sno == "" {
 		RespondJSON(
 			ctx,
 			w,
@@ -147,7 +152,8 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	search.JobName = jobName
 	search.UserNm = userNm
 	search.Department = department
-	search.SearchTime = searchTime
+	search.SearchStartTime = searchStartTime
+	search.SearchEndTime = searchEndTime
 
 	// 조회
 	list, err := h.Service.GetWorkerSiteBaseList(ctx, page, search)
