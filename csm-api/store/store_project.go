@@ -3,10 +3,14 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"fmt"
 )
 
+// func: 현장 프로젝트 조회
+// @param
+// - sno int64 현장 번호
 func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) (*entity.ProjectInfoSqls, error) {
 	projectInfoSqls := entity.ProjectInfoSqls{}
 
@@ -72,6 +76,9 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 	return &projectInfoSqls, nil
 }
 
+// func: 프로젝트 조회(이름)
+// @param
+// -
 func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfoSqls, error) {
 	projectInfoSqls := entity.ProjectInfoSqls{}
 
@@ -92,4 +99,101 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 	}
 
 	return &projectInfoSqls, nil
+}
+
+// func: 프로젝트 전체 조회
+// @param
+// -
+func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
+	sqlData := entity.JobInfoSqls{}
+
+	condition := ""
+	condition = utils.StringWhereConvert(condition, search.JobNo, "t2.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName, "t2.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName, "t2.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t2.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName, "t2.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd, "t2.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd, "t2.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm, "t5.CD_NM")
+
+	var order string
+	if pageSql.Order.Valid {
+		order = pageSql.Order.String
+	} else {
+		order = "JOB_NO ASC"
+	}
+
+	query := fmt.Sprintf(`
+				SELECT *
+				FROM (
+					SELECT ROWNUM AS RNUM, sorted_data.*
+					FROM (
+						SELECT 
+							t1.JNO,
+							t2.JOB_NAME,
+							t2.JOB_NO,
+							t2.JOB_SD,
+							t2.JOB_ED,
+							t2.COMP_NAME,
+							t2.ORDER_COMP_NAME,
+							t2.JOB_PM_NAME,
+							t5.CD_NM
+						FROM
+							IRIS_SITE_JOB t1
+							INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+							INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
+							INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+							INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
+						WHERE t1.SNO > 100
+						%s
+						ORDER BY %s
+					) sorted_data
+					WHERE ROWNUM <= :1
+				)
+				WHERE RNUM > :2`, condition, order)
+
+	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+		return nil, fmt.Errorf("GetUsedProjectList err: %w", err)
+	}
+
+	return &sqlData, nil
+}
+
+// func: 프로젝트 전체 조회 개수
+// @param
+// -
+func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
+	var count int
+
+	condition := ""
+	condition = utils.StringWhereConvert(condition, search.JobNo, "t2.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName, "t2.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName, "t2.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t2.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName, "t2.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd, "t2.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd, "t2.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm, "t5.CD_NM")
+
+	query := fmt.Sprintf(`
+				SELECT 
+					COUNT(*)
+				FROM
+					IRIS_SITE_JOB t1
+					INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+					INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
+					INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+					INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
+				WHERE t1.SNO > 100
+				%s`, condition)
+
+	if err := db.GetContext(ctx, &count, query); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("GetUsedProjectCount err: %v", err)
+	}
+
+	return count, nil
 }
