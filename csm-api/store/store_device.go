@@ -92,10 +92,9 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
  						WHERE 
 							t1.SNO > 100
 							%s
-						ORDER BY 
-							%s
 					) sorted_data
 					WHERE ROWNUM <= :1
+					ORDER BY %s
 				)
 				WHERE RNUM > :2`, condition, order)
 

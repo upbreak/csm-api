@@ -6,7 +6,7 @@ import (
 )
 
 type Device struct {
-	RowNum   int64     `json:"row_num"`
+	RowNum   int64     `json:"rnum"`
 	Dno      int64     `json:"dno"`       // 홍채인식기 고유번호
 	Sno      int64     `json:"sno"`       // 현장 고유번호
 	DeviceSn string    `json:"device_sn"` // 홍채인식기 시리얼번호
