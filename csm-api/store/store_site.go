@@ -104,3 +104,33 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sit
 	}
 	return &siteSqls, nil
 }
+
+// func: 현장 상태 조회
+// @param
+// -
+func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error) {
+	siteSqls := entity.SiteSqls{}
+
+	query := `
+				SELECT 
+					t1.SNO,
+					NVL(t2.CURRENT_SITE_STATS, 'C') CURRENT_SITE_STATS
+				FROM IRIS_RECD_SET t1
+				LEFT JOIN (
+					SELECT SNO, 
+						CASE 
+							WHEN COUNT(CASE WHEN TRANS_TYPE = 'Clock in' THEN 1 END) >= 5 THEN 'Y'
+							ELSE 'C'
+						END AS CURRENT_SITE_STATS
+					FROM IRIS_RECD_SET 
+					WHERE SNO > 100 
+					AND TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
+					GROUP by SNO
+				) t2 ON t1.SNO = t2.SNO
+				WHERE t1.SNO > 100
+				GROUP by t1.SNO, t2.CURRENT_SITE_STATS`
+	if err := db.SelectContext(ctx, &siteSqls, query, targetDate); err != nil {
+		return &siteSqls, fmt.Errorf("getSiteStatsList fail: %w", err)
+	}
+	return &siteSqls, nil
+}

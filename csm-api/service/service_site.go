@@ -91,3 +91,17 @@ func (s *ServiceSite) GetSiteNmList(ctx context.Context) (*entity.Sites, error) 
 
 	return sites, nil
 }
+
+// func: 현장 상태 조회
+// @param
+// -
+func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
+	siteSqls, err := s.Store.GetSiteStatsList(ctx, s.DB, targetDate)
+	if err != nil {
+		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteStatsList err: %w", err)
+	}
+	sites := &entity.Sites{}
+	sites.ToSites(siteSqls)
+
+	return sites, nil
+}

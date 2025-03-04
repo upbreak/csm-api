@@ -17,6 +17,7 @@ type ProjectInfo struct {
 	ModUser          string    `json:"mod_user"`
 	ModUno           string    `json:"mod_uno"`
 	ProjectType      string    `json:"project_type"`
+	ProjectTypeNm    string    `json:"project_type_nm"`
 	ProjectNo        string    `json:"project_no"`
 	ProjectNm        string    `json:"project_nm"`
 	ProjectYear      int64     `json:"project_year"`
@@ -34,16 +35,18 @@ type ProjectInfo struct {
 	OrderCompJobName string    `json:"order_comp_job_name"`
 	ProjectLocName   string    `json:"project_loc_name"`
 	JobPm            string    `json:"job_pm"`
+	JobPmNm          string    `json:"job_pm_nm"`
 	JobPe            string    `json:"job_pe"`
 	ProjectStdt      time.Time `json:"project_stdt"`
 	ProjectEddt      time.Time `json:"project_eddt"`
 	ProjectRegDate   time.Time `json:"project_reg_date"`
 	ProjectModDate   time.Time `json:"project_mod_date"`
 	ProjectState     string    `json:"project_state"`
+	ProjectStateNm   string    `json:"project_state_nm"`
 	MocNo            string    `json:"moc_no"`
 	WoNo             string    `json:"wo_no"`
 
-	ProjectPmList    *UserPmPeInfos `json:"project_pm_list"`
+	ProjectPeList    *UserPmPeInfos `json:"project_pe_list"`
 	DailyContentList *ProjectDailys `json:"daily_content_list"`
 }
 
@@ -61,6 +64,7 @@ type ProjectInfoSql struct {
 	ModUser          sql.NullString `db:"MOD_USER"`
 	ModUno           sql.NullString `db:"MOD_UNO"`
 	ProjectType      sql.NullString `db:"PROJECT_TYPE"`
+	ProjectTypeNm    sql.NullString `db:"PROJECT_TYPE_NM"`
 	ProjectNo        sql.NullString `db:"PROJECT_NO"`
 	ProjectNm        sql.NullString `db:"PROJECT_NM"`
 	ProjectYear      sql.NullInt64  `db:"PROJECT_YEAR"`
@@ -78,12 +82,14 @@ type ProjectInfoSql struct {
 	OrderCompJobName sql.NullString `db:"ORDER_COMP_JOB_NAME"`
 	ProjectLocName   sql.NullString `db:"PROJECT_LOC_NAME"`
 	JobPm            sql.NullString `db:"JOB_PM"`
+	JobPmNm          sql.NullString `db:"JOB_PM_NAME"`
 	JobPe            sql.NullString `db:"JOB_PE"`
 	ProjectStdt      sql.NullTime   `db:"PROJECT_STDT"`
 	ProjectEddt      sql.NullTime   `db:"PROJECT_EDDT"`
 	ProjectRegDate   sql.NullTime   `db:"PROJECT_REG_DATE"`
 	ProjectModDate   sql.NullTime   `db:"PROJECT_MOD_DATE"`
 	ProjectState     sql.NullString `db:"PROJECT_STATE"`
+	ProjectStateNm   sql.NullString `db:"PROJECT_STATE_NM"`
 	MocNo            sql.NullString `db:"MOC_NO"`
 	WoNo             sql.NullString `db:"WO_NO"`
 }
@@ -102,6 +108,7 @@ func (p *ProjectInfo) ToProjectInfo(projectInfoSql *ProjectInfoSql) *ProjectInfo
 	p.ModUser = projectInfoSql.ModUser.String
 	p.ModUno = projectInfoSql.ModUno.String
 	p.ProjectType = projectInfoSql.ProjectType.String
+	p.ProjectTypeNm = projectInfoSql.ProjectTypeNm.String
 	p.ProjectNo = projectInfoSql.ProjectNo.String
 	p.ProjectNm = projectInfoSql.ProjectNm.String
 	p.ProjectYear = projectInfoSql.ProjectYear.Int64
@@ -117,14 +124,16 @@ func (p *ProjectInfo) ToProjectInfo(projectInfoSql *ProjectInfoSql) *ProjectInfo
 	p.OrderCompNick = projectInfoSql.OrderCompNick.String
 	p.OrderCompName = projectInfoSql.OrderCompName.String
 	p.OrderCompJobName = projectInfoSql.OrderCompJobName.String
-	p.ProjectLocName = projectInfoSql.ProjectLoc.String
+	p.ProjectLocName = projectInfoSql.ProjectLocName.String
 	p.JobPe = projectInfoSql.JobPe.String
+	p.JobPmNm = projectInfoSql.JobPmNm.String
 	p.JobPe = projectInfoSql.JobPe.String
 	p.ProjectStdt = projectInfoSql.ProjectStdt.Time
 	p.ProjectEddt = projectInfoSql.ProjectEddt.Time
 	p.ProjectRegDate = projectInfoSql.ProjectRegDate.Time
 	p.ProjectModDate = projectInfoSql.ProjectModDate.Time
 	p.ProjectState = projectInfoSql.ProjectState.String
+	p.ProjectStateNm = projectInfoSql.ProjectStateNm.String
 	p.MocNo = projectInfoSql.MocNo.String
 	p.WoNo = projectInfoSql.WoNo.String
 

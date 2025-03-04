@@ -13,6 +13,7 @@ type GetUserValidService interface {
 type SiteService interface {
 	GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
 	GetSiteNmList(ctx context.Context) (*entity.Sites, error)
+	GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
 }
 
 type SitePosService interface {

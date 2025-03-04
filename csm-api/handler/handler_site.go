@@ -152,3 +152,65 @@ func (s *SiteNmListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
+
+// struct | func: 현장 상태 조회
+type SiteStatsHandler struct {
+	Service service.SiteService
+}
+
+func (s *SiteStatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// GET 요청에서 파라미터 값 읽기
+	targetDateString := r.URL.Query().Get("targetDate")
+	if targetDateString == "" {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "targetDate parameter is missing",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+	targetDate, err := time.Parse("2006-01-02", targetDateString)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "Error parsing targetDate",
+				Details:        ParsingError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	list, err := s.Service.GetSiteStatsList(ctx, targetDate)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List entity.Sites `json:"list"`
+		}{List: *list},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
