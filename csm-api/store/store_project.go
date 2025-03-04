@@ -34,6 +34,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 				t1.MOD_USER,
 				t1.MOD_UNO,
 				t2.JOB_TYPE as PROJECT_TYPE,
+				t6.CD_NM AS PROJECT_TYPE_NM,
 				t2.JOB_NO as PROJECT_NO,
 				t2.JOB_NAME as PROJECT_NM,
 				t2.JOB_YEAR as PROJECT_YEAR,
@@ -51,12 +52,14 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 				t2.ORDER_COMP_JOB_NAME,
 				t2.JOB_LOC_NAME as PROJECT_LOC_NAME,
 				t2.JOB_PM,
+				t2.JOB_PM_NAME,
 				t2.JOB_PE,
 				TO_DATE(t2.JOB_SD, 'YYYY-MM-DD') as PROJECT_STDT,
 				TO_DATE(t2.JOB_ED, 'YYYY-MM-DD') as PROJECT_EDDT,
 				TO_DATE(t2.REG_DATE, 'YYYY-MM-DD HH24:MI:SS') as PROJECT_REG_DATE,
 				TO_DATE(t2.MOD_DATE, 'YYYY-MM-DD HH24:MI:SS') as PROJECT_MOD_DATE,
 				t2.JOB_STATE as PROJECT_STATE,
+				t5.CD_NM as PROJECT_STATE_NM,
 				t2.MOC_NO,
 				t2.WO_NO
 			FROM
@@ -64,6 +67,8 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
 				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+				INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
+				INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE AND t6.major_cd = 'JOB_TYPE'
 			WHERE
 				t1.SNO > 100
 				AND (:1 IS NULL OR t1.SNO = :2)
