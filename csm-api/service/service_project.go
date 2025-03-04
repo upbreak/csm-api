@@ -118,3 +118,32 @@ func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.
 
 	return count, nil
 }
+
+// func: 진행중 프로젝트 전체 조회
+// @param
+// -
+func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+	}
+
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+	}
+
+	jobInfoSqls, err := p.Store.GetAllProjectList(ctx, p.DB, pageSql, *searchSql)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
+	}
+
+	jobInfos := &entity.JobInfos{}
+	if err = entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project;all/ConvertSliceToReqular error: %w", err)
+	}
+
+	return jobInfos, nil
+
+}

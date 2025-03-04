@@ -136,3 +136,93 @@ func (h *HandlerUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
+
+type HandlerAllProject struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerAllProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	page := entity.Page{}
+	search := entity.JobInfo{}
+
+	pageNum := r.URL.Query().Get("page_num")
+	rowSize := r.URL.Query().Get("row_size")
+	order := r.URL.Query().Get("order")
+	jobNo := r.URL.Query().Get("job_no")
+	compName := r.URL.Query().Get("comp_name")
+	orderCompName := r.URL.Query().Get("order_comp_name")
+	jobName := r.URL.Query().Get("job_name")
+	jobPmName := r.URL.Query().Get("job_pm_name")
+	jobSd := r.URL.Query().Get("job_sd")
+	jobEd := r.URL.Query().Get("job_ed")
+	cdNm := r.URL.Query().Get("cd_nm")
+
+	if pageNum == "" || rowSize == "" {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+
+	page.PageNum, _ = strconv.Atoi(pageNum)
+	page.RowSize, _ = strconv.Atoi(rowSize)
+	page.Order = order
+	search.JobNo = jobNo
+	search.CompName = compName
+	search.OrderCompName = orderCompName
+	search.JobName = jobName
+	search.JobPmName = jobPmName
+	search.JobSd = jobSd
+	search.JobEd = jobEd
+	search.CdNm = cdNm
+
+	list, err := h.Service.GetAllProjectList(ctx, page, search)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	// count, err := h.Service.GetAllProjectCount(ctx, page, search)
+
+	// if err != nil {
+	// 	RespondJSON(
+	// 		ctx,
+	// 		w,
+	// 		&ErrResponse{
+	// 			Result:         Failure,
+	// 			Message:        err.Error(),
+	// 			HttpStatusCode: http.StatusInternalServerError,
+	// 		},
+	// 		http.StatusOK)
+	// 	return
+	// }
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List entity.JobInfos `json:"list"`
+			// Count int64           `json:"count"`
+		}{List: *list}, // , Count: count},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+
+}

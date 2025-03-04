@@ -28,6 +28,7 @@ type ProjectService interface {
 	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
 	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error)
 	GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
+	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error)
 }
 
 type ProjectDailyService interface {

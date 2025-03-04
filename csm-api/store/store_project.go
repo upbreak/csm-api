@@ -197,3 +197,67 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 
 	return count, nil
 }
+
+// func: 프로젝트 전체 조회
+// @param
+// -
+func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
+	sqlData := entity.JobInfoSqls{}
+
+	condition := "1 = 1"
+	condition = utils.StringWhereConvert(condition, search.JobNo, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm, "SC.CD_NM")
+
+	var order string
+	if pageSql.Order.Valid {
+		order = pageSql.Order.String
+	} else {
+		order = "JNO DESC"
+	}
+
+	query := fmt.Sprintf(`
+				SELECT *
+				FROM (
+					SELECT ROWNUM AS RNUM, sorted_data.*
+					FROM (
+						SELECT 
+							J.JNO, 
+							J.JOB_NAME, 
+							J.JOB_NO, 
+							J.JOB_SD, 
+							J.JOB_ED, 
+							J.COMP_NAME, 
+							J.ORDER_COMP_NAME, 
+							J.JOB_PM_NAME, 
+							SC.CD_NM 
+						FROM 
+							S_JOB_INFO J 
+						INNER JOIN 
+							TIMESHEET.job_kind_code JC 
+						ON 
+							J.job_code = JC.kind_code 
+						INNER JOIN 
+							TIMESHEET.SYS_CODE_SET SC 
+						ON 
+							J.job_state = SC.minor_cd 
+							AND SC.MAJOR_CD = 'JOB_STATE' 
+							AND SC.MINOR_CD = 'Y'
+						WHERE %s
+						ORDER BY %s
+					) sorted_data
+					WHERE ROWNUM <= :1
+				)
+				WHERE RNUM > :2`, condition, order)
+
+	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+		return nil, fmt.Errorf("GetUsedProjectList err: %w", err)
+	}
+
+	return &sqlData, nil
+}

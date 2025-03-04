@@ -29,6 +29,7 @@ type ProjectStore interface {
 	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfoSqls, error)
 	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
 	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
+	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
 }
 
 type ProjectDailyStore interface {
