@@ -151,10 +151,29 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+
+	// 진행중인 프로젝트 전체 조회
+	allProjectHandler := &handler.HandlerAllProject{
+		Service: &service.ServiceProject{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+
+	// 조직도 프로젝트 정보
+	staffProjectHandler := &handler.HandlerStaffProject{
+		Service: &service.ServiceProject{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+
 	mux.Route("/project", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/used", usedProjectHandler.ServeHTTP)
+		r.Get("/all", allProjectHandler.ServeHTTP)
 		r.Get("/nm", projectNmHandler.ServeHTTP)
+		r.Get("/staff/{uno}", staffProjectHandler.ServeHTTP)
 	})
 	// End::프로젝트 조회
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"strings"
@@ -29,6 +30,14 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
 	for _, projectInfo := range *projectInfos {
 		var unoList []int
+		// pm uno 조회
+		if &projectInfo.JobPm != nil && projectInfo.JobPm != "" {
+			uno, err := strconv.Atoi(projectInfo.JobPm)
+			if err != nil {
+				return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(projectInfo.JobPm) parse err")
+			}
+			unoList = append(unoList, uno)
+		}
 
 		// pe uno 조회
 		if &projectInfo.JobPe != nil && projectInfo.JobPe != "" {
@@ -42,7 +51,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity
 			}
 		}
 
-		// pe 정보 일괄 조회
+		// pm, pe 정보 일괄 조회
 		userPmPeList, err := p.UserService.GetUserInfoPmPeList(ctx, unoList)
 		if err != nil {
 			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
@@ -109,4 +118,115 @@ func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.
 	}
 
 	return count, nil
+}
+
+// func: 진행중 프로젝트 전체 조회
+// @param
+// -
+func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+	}
+
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+	}
+
+	jobInfoSqls, err := p.Store.GetAllProjectList(ctx, p.DB, pageSql, *searchSql)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
+	}
+
+	jobInfos := &entity.JobInfos{}
+	if err = entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project;all/ConvertSliceToReqular error: %w", err)
+	}
+
+	return jobInfos, nil
+
+}
+
+// func: 진행중 프로젝트 개수 조회
+// @param
+// -
+func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+	}
+
+	count, err := p.Store.GetAllProjectCount(ctx, p.DB, *searchSql)
+	if err != nil {
+		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)
+	}
+
+	return count, nil
+}
+
+// func: 조직도 확인
+// @param
+// - UNO
+func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error) {
+	var unoSql sql.NullInt64
+
+	if uno != 0 {
+		unoSql = sql.NullInt64{Valid: true, Int64: uno}
+	} else {
+		unoSql = sql.NullInt64{Valid: false}
+	}
+
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+	}
+
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+
+	}
+
+	jobInfoSqls, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, *searchSql, unoSql)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("seravice_project/GetStaffProjectList: %w", err)
+	}
+
+	jobInfos := &entity.JobInfos{}
+	if err := entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("seravice_project;staff/ConvertSliceToReqular error %w", err)
+	}
+
+	return jobInfos, nil
+
+}
+
+// func: 조직도 확인 개수
+// @param
+// - UNO
+func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error) {
+	var unoSql sql.NullInt64
+
+	if uno != 0 {
+		unoSql = sql.NullInt64{Valid: true, Int64: uno}
+	} else {
+		unoSql = sql.NullInt64{Valid: false}
+	}
+
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+
+	}
+
+	count, err := p.Store.GetStaffProjectCount(ctx, p.DB, *searchSql, unoSql)
+	if err != nil {
+		return 0, fmt.Errorf("service_project/GetStaffProjectCount error: %w", err)
+	}
+
+	return count, nil
+
 }
