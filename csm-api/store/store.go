@@ -14,6 +14,7 @@ type GetUserValidStore interface {
 type SiteStore interface {
 	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
 	GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error)
+	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
 }
 
 type SitePosStore interface {

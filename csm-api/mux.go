@@ -81,7 +81,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Get("/jwt-validation", jwtVaildHandler.ServeHTTP)
 
-	// Begin::현장관리 리스트 조회
+	// Begin::현장관리
+	// 현장관리 조회
 	siteListHandler := &handler.SiteListHandler{
 		Service: &service.ServiceSite{
 			DB:    safeDb,
@@ -113,24 +114,27 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 		Jwt: jwt,
 	}
-	mux.Route("/site", func(r chi.Router) {
-		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", siteListHandler.ServeHTTP)
-	})
-	// End::현장관리 리스트 조회
-
-	// Begin::현장 이름 데이터 조회
+	// 현장 이름 리스트 조회
 	siteNmListHandler := &handler.SiteNmListHandler{
 		Service: &service.ServiceSite{
 			DB:    safeDb,
 			Store: &r,
 		},
 	}
-	mux.Route("/site-nm", func(r chi.Router) {
+	// 현장 상태 리스트 조회
+	siteStatsHandler := &handler.SiteStatsHandler{
+		Service: &service.ServiceSite{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	mux.Route("/site", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", siteNmListHandler.ServeHTTP)
+		r.Get("/", siteListHandler.ServeHTTP)
+		r.Get("/nm", siteNmListHandler.ServeHTTP)
+		r.Get("/stats", siteStatsHandler.ServeHTTP)
 	})
-	// End::현장 이름 데이터 조회
+	// End::현장관리
 
 	// Begin::프로젝트 조회
 	// 프로젝트 이름 데이터 조회
