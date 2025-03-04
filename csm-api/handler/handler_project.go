@@ -200,27 +200,27 @@ func (h *HandlerAllProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// count, err := h.Service.GetAllProjectCount(ctx, page, search)
+	count, err := h.Service.GetAllProjectCount(ctx, search)
 
-	// if err != nil {
-	// 	RespondJSON(
-	// 		ctx,
-	// 		w,
-	// 		&ErrResponse{
-	// 			Result:         Failure,
-	// 			Message:        err.Error(),
-	// 			HttpStatusCode: http.StatusInternalServerError,
-	// 		},
-	// 		http.StatusOK)
-	// 	return
-	// }
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
 
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			List entity.JobInfos `json:"list"`
-			// Count int64           `json:"count"`
-		}{List: *list}, // , Count: count},
+			List  entity.JobInfos `json:"list"`
+			Count int             `json:"count"`
+		}{List: *list, Count: count},
 	}
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)

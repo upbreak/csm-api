@@ -147,3 +147,20 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 	return jobInfos, nil
 
 }
+
+// func: 진행중 프로젝트 개수 조회
+// @param
+// -
+func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+	}
+
+	count, err := p.Store.GetAllProjectCount(ctx, p.DB, *searchSql)
+	if err != nil {
+		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)
+	}
+
+	return count, nil
+}

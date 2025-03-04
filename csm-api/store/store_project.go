@@ -198,7 +198,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 	return count, nil
 }
 
-// func: 프로젝트 전체 조회
+// func: 진행중 프로젝트 전체 조회
 // @param
 // -
 func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
@@ -256,8 +256,47 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 				WHERE RNUM > :2`, condition, order)
 
 	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
-		return nil, fmt.Errorf("GetUsedProjectList err: %w", err)
+		return nil, fmt.Errorf("GetAllProjectList err: %w", err)
 	}
 
 	return &sqlData, nil
+}
+
+// func: 진행중 프로젝트 개수 조회
+// @param
+// -
+func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
+	var count int
+
+	condition := "1 = 1"
+	condition = utils.StringWhereConvert(condition, search.JobNo, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm, "SC.CD_NM")
+	query := fmt.Sprintf(`
+				SELECT 
+					count(*)
+				FROM 
+					S_JOB_INFO J 
+				INNER JOIN 
+					TIMESHEET.job_kind_code JC 
+				ON 
+					J.job_code = JC.kind_code 
+				INNER JOIN 
+					TIMESHEET.SYS_CODE_SET SC 
+				ON 
+					J.job_state = SC.minor_cd 
+					AND SC.MAJOR_CD = 'JOB_STATE' 
+					AND SC.MINOR_CD = 'Y'
+				WHERE %s`, condition)
+
+	if err := db.GetContext(ctx, &count, query); err != nil {
+		return 0, fmt.Errorf("GetAllProjectCount err: %w", err)
+	}
+
+	return count, nil
 }
