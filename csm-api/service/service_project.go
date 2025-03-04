@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"strings"
@@ -29,6 +30,14 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
 	for _, projectInfo := range *projectInfos {
 		var unoList []int
+		// pm uno 조회
+		if &projectInfo.JobPm != nil && projectInfo.JobPm != "" {
+			uno, err := strconv.Atoi(projectInfo.JobPm)
+			if err != nil {
+				return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(projectInfo.JobPm) parse err")
+			}
+			unoList = append(unoList, uno)
+		}
 
 		// pe uno 조회
 		if &projectInfo.JobPe != nil && projectInfo.JobPe != "" {
@@ -42,7 +51,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity
 			}
 		}
 
-		// pe 정보 일괄 조회
+		// pm, pe 정보 일괄 조회
 		userPmPeList, err := p.UserService.GetUserInfoPmPeList(ctx, unoList)
 		if err != nil {
 			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
@@ -155,4 +164,42 @@ func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.J
 	}
 
 	return count, nil
+}
+
+// func: 조직도 확인
+// @param
+// - UNO
+func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error) {
+	var unoSql sql.NullInt64
+
+	if uno != 0 {
+		unoSql = sql.NullInt64{Valid: true, Int64: uno}
+	} else {
+		unoSql = sql.NullInt64{Valid: false}
+	}
+
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+	}
+
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+
+	}
+
+	jobInfoSqls, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, *searchSql, unoSql)
+	if err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("seravice_project/GetStaffProjectList: %w", err)
+	}
+
+	jobInfos := &entity.JobInfos{}
+	if err := entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
+		return &entity.JobInfos{}, fmt.Errorf("seravice_project/:staff/ConvertSliceToReqular error %w", err)
+	}
+
+	return jobInfos, nil
+
 }

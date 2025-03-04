@@ -32,6 +32,7 @@ type ProjectStore interface {
 	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
 	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
 	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
+	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfoSql, uno sql.NullInt64) (*entity.JobInfoSqls, error)
 }
 
 type ProjectDailyStore interface {
