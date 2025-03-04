@@ -197,9 +197,36 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 
 	jobInfos := &entity.JobInfos{}
 	if err := entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("seravice_project/:staff/ConvertSliceToReqular error %w", err)
+		return &entity.JobInfos{}, fmt.Errorf("seravice_project;staff/ConvertSliceToReqular error %w", err)
 	}
 
 	return jobInfos, nil
+
+}
+
+// func: 조직도 확인 개수
+// @param
+// - UNO
+func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error) {
+	var unoSql sql.NullInt64
+
+	if uno != 0 {
+		unoSql = sql.NullInt64{Valid: true, Int64: uno}
+	} else {
+		unoSql = sql.NullInt64{Valid: false}
+	}
+
+	searchSql := &entity.JobInfoSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
+
+	}
+
+	count, err := p.Store.GetStaffProjectCount(ctx, p.DB, *searchSql, unoSql)
+	if err != nil {
+		return 0, fmt.Errorf("service_project/GetStaffProjectCount error: %w", err)
+	}
+
+	return count, nil
 
 }

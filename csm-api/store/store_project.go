@@ -369,3 +369,41 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 
 	return &sqlData, nil
 }
+
+// func: 조직도 확인 개수
+// @param
+// - UNO
+func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfoSql, uno sql.NullInt64) (int, error) {
+	var count int
+
+	condition := "1=1"
+	condition = utils.StringWhereConvert(condition, searchSql.JobNo, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, searchSql.CompName, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.OrderCompName, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobName, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobPmName, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobSd, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, searchSql.JobEd, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, searchSql.CdNm, "SC.CD_NM")
+
+	query := fmt.Sprintf(`
+				SELECT 
+					COUNT(*)
+				FROM S_JOB_INFO J 
+				INNER JOIN 
+					(SELECT * FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) JM 
+				ON 
+					J.JNO = JM.JNO 
+				INNER JOIN 
+					TIMESHEET.SYS_CODE_SET SC 
+				ON 
+					J.job_state = SC.minor_cd 
+					AND  SC.MAJOR_CD = 'JOB_STATE'
+				WHERE %s`, condition)
+
+	if err := db.GetContext(ctx, &count, query, uno); err != nil {
+		return 0, fmt.Errorf("GetStaffProjectCount err: %w", err)
+	}
+
+	return count, nil
+}

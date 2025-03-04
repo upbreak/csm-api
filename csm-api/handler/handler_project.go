@@ -291,12 +291,27 @@ func (h *HandlerStaffProject) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			http.StatusOK)
 	}
 
+	count, err := h.Service.GetStaffProjectCount(ctx, search, int64UNO)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+	}
+
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			List entity.JobInfos `json:"list"`
-			// Count : int `json:"count"`,
-		}{List: *list},
+			List  entity.JobInfos `json:"list"`
+			Count int             `json:"count"`
+		}{List: *list, Count: count},
 	}
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
+
 }
