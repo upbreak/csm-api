@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"fmt"
 	"time"
 )
@@ -25,6 +26,7 @@ type ServiceSite struct {
 	ProjectDailyService ProjectDailyService
 	SitePosService      SitePosService
 	SiteDateService     SiteDateService
+	WhetherApiService   WhetherApiService
 }
 
 // func: 현장 관리 리스트 조회
@@ -67,7 +69,18 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		}
 		site.SitePos = sitePosData
 
-		// 현장 날씨 조회
+		// 현장 날짜 조회
+		now := time.Now()
+		baseDate := now.Format("20060102")
+		baseTime := now.Format("1504")
+		nx, ny := utils.LatLonToXY(sitePosData.Latitude, sitePosData.Longitude)
+		siteWhether, err := s.WhetherApiService.GetWhetherSrtNcst(baseDate, baseTime, nx, ny)
+		if err != nil {
+			return &entity.Sites{}, fmt.Errorf("service_site/GetWhetherSrt err: %w", err)
+		}
+		site.Whether = siteWhether
+
+		// 현장 날짜 조회
 		siteDateData, err := s.SiteDateService.GetSiteDateData(ctx, sno)
 		if err != nil {
 			return &entity.Sites{}, fmt.Errorf("service_site/GetSiteDateData err: %w", err)

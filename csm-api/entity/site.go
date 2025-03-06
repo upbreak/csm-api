@@ -39,9 +39,10 @@ type Site struct {
 	DefaultProjectNo   string    `json:"default_project_no"`
 	CurrentSiteStats   string    `json:"current_site_stats"`
 
-	ProjectList *ProjectInfos `json:"project_list"`
-	SitePos     *SitePos      `json:"site_pos"`
-	SiteDate    *SiteDate     `json:"site_date"`
+	ProjectList *ProjectInfos       `json:"project_list"`
+	SitePos     *SitePos            `json:"site_pos"`
+	SiteDate    *SiteDate           `json:"site_date"`
+	Whether     WhetherSrtEntityRes `json:"whether"`
 }
 
 // struct: 현장 데이터 json 배열 구조체
