@@ -203,7 +203,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 	return count, nil
 }
 
-// func: 진행중 프로젝트 전체 조회
+// func: 프로젝트 전체 조회
 // @param
 // -
 func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
@@ -252,7 +252,6 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 						ON 
 							J.job_state = SC.minor_cd 
 							AND SC.MAJOR_CD = 'JOB_STATE' 
-							AND SC.MINOR_CD = 'Y'
 						WHERE %s
 						ORDER BY %s
 					) sorted_data
@@ -267,7 +266,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	return &sqlData, nil
 }
 
-// func: 진행중 프로젝트 개수 조회
+// func: 프로젝트 개수 조회
 // @param
 // -
 func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
@@ -296,7 +295,6 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 				ON 
 					J.job_state = SC.minor_cd 
 					AND SC.MAJOR_CD = 'JOB_STATE' 
-					AND SC.MINOR_CD = 'Y'
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
@@ -355,7 +353,7 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 						TIMESHEET.SYS_CODE_SET SC 
 					ON 
 						J.job_state = SC.minor_cd 
-						AND  SC.MAJOR_CD = 'JOB_STATE'
+						AND SC.MAJOR_CD = 'JOB_STATE'
 					WHERE %s
 					ORDER BY %s
 					) sorted_data
@@ -398,7 +396,7 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 					TIMESHEET.SYS_CODE_SET SC 
 				ON 
 					J.job_state = SC.minor_cd 
-					AND  SC.MAJOR_CD = 'JOB_STATE'
+					AND SC.MAJOR_CD = 'JOB_STATE'
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, uno); err != nil {
@@ -406,4 +404,117 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 	}
 
 	return count, nil
+}
+
+// func: 조직도 조회
+// @param
+// - JNO
+func (r *Repository) GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error) {
+	sqlData := entity.OrganizationSqls{}
+	query := fmt.Sprintf(`
+				SELECT 
+					JM.JNO, 
+					JM.FUNC_NAME, 
+					JM.CHARGE_DETAIL, 
+					JM.MEMBER_NAME AS USER_NAME, 
+					JM.GRADE_NAME AS DUTY_NAME, 
+					JM.DEPT_NAME, 
+					JM.CELL, 
+					JM.TEL, 
+					JM.EMAIL, 
+					JM.IS_USE, 
+					JM.CO_ID, 
+					SC.CD_NM, 
+					JM.UNO 
+				FROM 
+					JOB_MEMBER_LIST JM 
+				INNER JOIN 
+					SYS_CODE_SET SC 
+				ON 
+					JM.CHARGE = SC.MINOR_CD AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
+				WHERE JNO = :1 AND COMP_TYPE = 'O'`)
+
+	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
+		return nil, fmt.Errorf("GetClientOrganization err: %w", err)
+	}
+
+	return &sqlData, nil
+
+}
+
+func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error) {
+	sqlData := entity.OrganizationSqls{}
+
+	query := fmt.Sprintf(`
+					WITH MEMBER_LIST AS (
+						SELECT * FROM JOB_MEMBER_LIST
+						WHERE JNO = :1
+					)
+					,HITECH AS (
+							SELECT 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, U.USER_NAME, U.DUTY_NAME, U.DEPT_NAME, U.CELL, U.TEL, U.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO 
+							FROM 
+								MEMBER_LIST M 
+							INNER JOIN 
+								(SELECT 
+									UNO, USER_NAME, DUTY_NAME, DEPT_NAME, CELL, TEL, EMAIL 
+								FROM 
+									S_SYS_USER_SET 
+								ORDER BY 
+									DUTY_ID) U 
+							ON 
+								M.UNO = U.UNO 
+							INNER JOIN 
+								SYS_CODE_SET SC 
+							ON 
+								M.CHARGE = SC.MINOR_CD 
+								AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
+							WHERE 
+								COMP_TYPE = 'H'
+						UNION
+							SELECT 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, M.MEMBER_NAME AS USER_NAME, M.GRADE_NAME AS DUTY_NAME, M.DEPT_NAME, M.CELL, M.TEL, M.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO 
+							FROM 
+								MEMBER_LIST M 
+							INNER JOIN 
+								SYS_CODE_SET SC 
+							ON 
+								M.CHARGE = SC.MINOR_CD 
+								AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
+							WHERE 
+								COMP_TYPE = 'H' 
+								AND UNO IS NULL
+					)
+					SELECT 
+						C.FUNC_TITLE AS FUNC_NAME, 
+						H.JNO, 
+						H.CHARGE_DETAIL, 
+						H.USER_NAME, 
+						H.DUTY_NAME, 
+						H.DEPT_NAME, 
+						H.CELL , 
+						H.TEL, 
+						H.EMAIL, 
+						H.IS_USE, 
+						H.CO_ID, 
+						H.CD_NM, 
+						H.UNO
+					FROM 
+						COMMON.V_COMM_FUNC_CODE C 
+					INNER JOIN 
+						HITECH H ON H.FUNC_CODE = C.FUNC_NO 
+					ORDER BY 
+						CASE WHEN 
+							func_name = 'PM' 
+						THEN 0 
+						ELSE 1 
+						END, 
+						func_code, 
+						CD_NM DESC
+					`)
+
+	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
+		return nil, fmt.Errorf("GetHitechOrganization err: %w", err)
+	}
+	return &sqlData, nil
 }

@@ -168,12 +168,21 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 	}
 
+	// 조직도 정보
+	organizationHandler := &handler.HandlerOrganization{
+		Service: &service.ServiceProject{
+			DB:    timesheetDb,
+			Store: &r,
+		},
+	}
+
 	mux.Route("/project", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/used", usedProjectHandler.ServeHTTP)
 		r.Get("/all", allProjectHandler.ServeHTTP)
 		r.Get("/nm", projectNmHandler.ServeHTTP)
 		r.Get("/staff/{uno}", staffProjectHandler.ServeHTTP)
+		r.Get("/organization/{jno}", organizationHandler.ServeHTTP)
 	})
 	// End::프로젝트 조회
 
