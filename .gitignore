@@ -1,6 +1,7 @@
 .idea/*
 db_config.go
 jwt_config.go
+api_config.go
 *.tar
 jenkins-credentials
 

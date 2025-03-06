@@ -80,3 +80,7 @@ type CompanyService interface {
 	GetWorkInfoList(ctx context.Context) (*entity.WorkInfos, error)
 	GetCompanyInfoList(ctx context.Context, jno int64) (*entity.CompanyInfoResList, error)
 }
+
+type WhetherApiService interface {
+	GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error)
+}

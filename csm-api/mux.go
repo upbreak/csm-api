@@ -61,6 +61,12 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		return nil, cleanup, err
 	}
 
+	// api config 생성
+	apiCfg, err := config.GetApiConfig()
+	if err != nil {
+		return nil, cleanup, err
+	}
+
 	// 라우팅:: begin
 	// 로그인
 	loginHandler := &handler.LoginHandler{
@@ -107,6 +113,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 				DB:    safeDb,
 				Store: &r,
 			},
+			WhetherApiService: &service.ServiceWhether{
+				ApiKey: apiCfg,
+			},
 		},
 		CodeService: &service.ServiceCode{
 			DB:    safeDb,
@@ -135,6 +144,19 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Get("/stats", siteStatsHandler.ServeHTTP)
 	})
 	// End::현장관리
+
+	// Begin:: api 호출
+	// 기상청 초단기 실황
+	handlerWhetherSrt := &handler.HandlerWhetherSrtNcst{
+		Service: &service.ServiceWhether{
+			ApiKey: apiCfg,
+		},
+	}
+	mux.Route("/api", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/whether/srt", handlerWhetherSrt.ServeHTTP)
+	})
+	// End:: api 호출
 
 	// Begin::프로젝트 조회
 	// 프로젝트 이름 데이터 조회
