@@ -27,6 +27,7 @@ const (
 	DataAddFailed       ErrDetailsRole = "Data Add Failed"
 	DataModifyFailed    ErrDetailsRole = "Data Modify Failed"
 	DataRemoveFailed    ErrDetailsRole = "Data Remove Failed"
+	CallApiFailed       ErrDetailsRole = "Call Api Failed"
 )
 
 type ErrResponse struct {
