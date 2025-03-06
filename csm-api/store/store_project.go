@@ -442,7 +442,7 @@ func (r *Repository) GetClientOrganization(ctx context.Context, db Queryer, jno 
 
 }
 
-func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error) {
+func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error) {
 	sqlData := entity.OrganizationSqls{}
 
 	query := fmt.Sprintf(`
@@ -486,35 +486,53 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 								AND UNO IS NULL
 					)
 					SELECT 
-						C.FUNC_TITLE AS FUNC_NAME, 
-						H.JNO, 
+						H.JNO,
 						H.CHARGE_DETAIL, 
 						H.USER_NAME, 
-						H.DUTY_NAME, 
+						H.DUTY_NAME,
 						H.DEPT_NAME, 
-						H.CELL , 
+						H.CELL, 
 						H.TEL, 
 						H.EMAIL, 
-						H.IS_USE, 
+						H.IS_USE,
 						H.CO_ID, 
 						H.CD_NM, 
 						H.UNO
 					FROM 
-						COMMON.V_COMM_FUNC_CODE C 
-					INNER JOIN 
-						HITECH H ON H.FUNC_CODE = C.FUNC_NO 
-					ORDER BY 
-						CASE WHEN 
-							func_name = 'PM' 
-						THEN 0 
-						ELSE 1 
-						END, 
-						func_code, 
+						HITECH H
+					WHERE
+						H.FUNC_CODE = :2
+					ORDER BY  
 						CD_NM DESC
 					`)
 
-	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
+	if err := db.SelectContext(ctx, &sqlData, query, jno, funcNo); err != nil {
 		return nil, fmt.Errorf("GetHitechOrganization err: %w", err)
 	}
+	return &sqlData, nil
+}
+
+func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error) {
+
+	sqlData := entity.FuncNameSqls{}
+
+	query := fmt.Sprintf(`
+		SELECT 
+			FUNC_NO, FUNC_TITLE
+		FROM
+			COMMON.V_COMM_FUNC_CODE
+		ORDER BY 
+			CASE WHEN 
+				FUNC_TITLE = 'PM' 
+				THEN 0 
+				ELSE 1 
+				END, 
+			FUNC_NO
+	`)
+
+	if err := db.SelectContext(ctx, &sqlData, query); err != nil {
+		return nil, fmt.Errorf("GetFuncNameList err: %w", err)
+	}
+
 	return &sqlData, nil
 }

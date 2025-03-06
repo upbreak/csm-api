@@ -2,6 +2,20 @@ package entity
 
 import "database/sql"
 
+type FuncName struct {
+	FuncName string `json:"func_name"`
+	FuncNo   int64  `json:"func_no"`
+}
+
+type FuncNames []*FuncName
+
+type FuncNameSql struct {
+	FuncName sql.NullString `db:"FUNC_TITLE"`
+	FuncNo   sql.NullInt64  `db:"FUNC_NO"`
+}
+
+type FuncNameSqls []*FuncNameSql
+
 type Organization struct {
 	Jno          int64  `json:"jno"`
 	FuncName     string `json:"func_name"`
@@ -37,3 +51,10 @@ type OrganizationSql struct {
 }
 
 type OrganizationSqls []*OrganizationSql
+
+type OrganizationPartition struct {
+	FuncName         string         `json:"func_name"`
+	OrganizationList *Organizations `json:"organizations"`
+}
+
+type OrganizationPartitions []*OrganizationPartition

@@ -351,19 +351,21 @@ func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			http.StatusOK)
 	}
 
-	client, err := h.Service.GetClientOrganization(ctx, int64JNO)
-	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
-	}
+	// 고객사 조직도 조회
+	// client, err := h.Service.GetClientOrganization(ctx, int64JNO)
+	// if err != nil {
+	// 	RespondJSON(
+	// 		ctx,
+	// 		w,
+	// 		&ErrResponse{
+	// 			Result:         Failure,
+	// 			Message:        err.Error(),
+	// 			HttpStatusCode: http.StatusInternalServerError,
+	// 		},
+	// 		http.StatusOK)
+	// }
 
+	// 계약사 조직도 조회
 	hitech, err := h.Service.GetHitechOrganization(ctx, int64JNO)
 	if err != nil {
 		RespondJSON(
@@ -380,9 +382,9 @@ func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			Client entity.Organizations `json:"client"`
-			Hitech entity.Organizations `json:"hitech"`
-		}{Client: *client, Hitech: *hitech},
+			// Client entity.OrganizationPartitions `json:"client"`
+			Hitech entity.OrganizationPartitions `json:"hitech"`
+		}{Hitech: *hitech}, //Client: *client,
 	}
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
