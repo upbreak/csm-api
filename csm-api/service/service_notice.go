@@ -56,7 +56,7 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 
 // func: 공지사항 추가
 // @param
-// - notice entity.Notice: SNO, TITLE, CONTENT, SHOW_YN, REG_UNO, REG_USER
+// - notice entity.Notice: SNO, TITLE, CONTENT, SHOW_YN, PERIOD_CODE, REG_UNO, REG_USER
 func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) error {
 	noticeSql := &entity.NoticeSql{}
 	noticeSql = noticeSql.OfNoticeSql(notice)
@@ -99,4 +99,22 @@ func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx int64) error {
 	}
 
 	return nil
+}
+
+// func: 공지 기간 조회
+// @param
+// -
+func (s *ServiceNotice) GetNoticePeriod(ctx context.Context) (*entity.NoticePeriods, error) {
+
+	periodSqls, err := s.Store.GetNoticePeriod(ctx, s.DB)
+	if err != nil {
+		return &entity.NoticePeriods{}, fmt.Errorf("service_notice/GetNoticePeriod err: %w", err)
+	}
+
+	periods := &entity.NoticePeriods{}
+	if err = entity.ConvertSliceToRegular(*periodSqls, periods); err != nil {
+		return &entity.NoticePeriods{}, fmt.Errorf("service_notice/ConvertSliceToRegular error: %w", err)
+	}
+
+	return periods, nil
 }

@@ -33,6 +33,8 @@ type ProjectService interface {
 	GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
 	GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error)
+	GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error)
+	GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 }
 
 type ProjectDailyService interface {
@@ -53,6 +55,7 @@ type NoticeService interface {
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx int64) error
+	GetNoticePeriod(ctx context.Context) (*entity.NoticePeriods, error)
 }
 
 type DeviceService interface {

@@ -120,7 +120,7 @@ func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.
 	return count, nil
 }
 
-// func: 진행중 프로젝트 전체 조회
+// func: 프로젝트 전체 조회
 // @param
 // -
 func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
@@ -149,7 +149,7 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 
 }
 
-// func: 진행중 프로젝트 개수 조회
+// func: 프로젝트 개수 조회
 // @param
 // -
 func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
@@ -192,12 +192,12 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 
 	jobInfoSqls, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, *searchSql, unoSql)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("seravice_project/GetStaffProjectList: %w", err)
+		return &entity.JobInfos{}, fmt.Errorf("service_project/GetStaffProjectList: %w", err)
 	}
 
 	jobInfos := &entity.JobInfos{}
 	if err := entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("seravice_project;staff/ConvertSliceToReqular error %w", err)
+		return &entity.JobInfos{}, fmt.Errorf("service_project;staff/ConvertSliceToReqular error %w", err)
 	}
 
 	return jobInfos, nil
@@ -229,4 +229,110 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 
 	return count, nil
 
+}
+
+// func: 조직도 공종 조회
+// @param
+// -
+// func (p *ServiceProject) GetFuncName(ctx context.Context) (*entity.FuncNames, error) {
+
+// 	funcNameSqls, err := p.Store.GetFuncNameList(ctx, p.DB)
+// 	if err != nil {
+// 		return &entity.FuncNames{}, fmt.Errorf("service_projcet/GetFuncNameList: %w", err)
+// 	}
+
+// 	funcNames := &entity.FuncNames{}
+// 	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
+// 		return &entity.FuncNames{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
+// 	}
+
+// 	return funcNames, nil
+
+// }
+
+// func: 조직도 조회: 고객사
+// @param
+// - JNO
+func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error) {
+	var jnoSql sql.NullInt64
+
+	if jno != 0 {
+		jnoSql = sql.NullInt64{Valid: true, Int64: jno}
+	} else {
+		jnoSql = sql.NullInt64{Valid: false}
+	}
+
+	clientSql := &entity.OrganizationSqls{}
+	clientSql, err := p.Store.GetClientOrganization(ctx, p.DB, jnoSql)
+	if err != nil {
+		return &entity.OrganizationPartition{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
+	}
+
+	client := &entity.Organizations{}
+	if err := entity.ConvertSliceToRegular(*clientSql, client); err != nil {
+		return &entity.OrganizationPartition{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
+	}
+
+	organization := &entity.OrganizationPartition{}
+	if len(*client) != 0 {
+		organization.FuncName = (*client)[0].FuncName
+	}
+	organization.OrganizationList = client
+
+	return organization, nil
+}
+
+// func: 조직도 조회: 계약자(외부직원, 내부직원, 협력사)
+// @param
+// - JNO
+func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error) {
+	var jnoSql sql.NullInt64
+
+	if jno != 0 {
+		jnoSql = sql.NullInt64{Valid: true, Int64: jno}
+	} else {
+		jnoSql = sql.NullInt64{Valid: false}
+	}
+
+	funcNameSqls, err := p.Store.GetFuncNameList(ctx, p.DB)
+	if err != nil {
+		return &entity.OrganizationPartitions{}, fmt.Errorf("service_projcet/GetFuncNameList: %w", err)
+	}
+
+	funcNames := &entity.FuncNames{}
+	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
+		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
+	}
+
+	organizations := entity.OrganizationPartitions{}
+	for _, funcName := range *funcNames {
+		var funcNoSql sql.NullInt64
+		if funcName.FuncNo != 0 {
+			funcNoSql = sql.NullInt64{Valid: true, Int64: funcName.FuncNo}
+		} else {
+			funcNoSql = sql.NullInt64{Valid: false}
+		}
+
+		organization := entity.OrganizationPartition{}
+		hitechSql := &entity.OrganizationSqls{}
+		hitechSql, err := p.Store.GetHitechOrganization(ctx, p.DB, jnoSql, funcNoSql)
+		if err != nil {
+			return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/GetHitechOrganization: %w", err)
+		}
+		if len(*hitechSql) == 0 {
+			continue
+		}
+
+		hitech := &entity.Organizations{}
+		if err := entity.ConvertSliceToRegular(*hitechSql, hitech); err != nil {
+			return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/ConvertSliceToRegular: %w", err)
+		}
+
+		organization.FuncName = funcName.FuncName
+		organization.OrganizationList = hitech
+
+		organizations = append(organizations, &organization)
+	}
+
+	return &organizations, nil
 }

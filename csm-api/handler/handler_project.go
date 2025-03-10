@@ -236,6 +236,18 @@ func (h *HandlerStaffProject) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	uno := r.PathValue("uno")
 
 	int64UNO, err := strconv.ParseInt(uno, 10, 64)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+	}
 
 	page := entity.Page{}
 	search := entity.JobInfo{}
@@ -312,6 +324,69 @@ func (h *HandlerStaffProject) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			Count int             `json:"count"`
 		}{List: *list, Count: count},
 	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+
+}
+
+type HandlerOrganization struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	jno := r.PathValue("jno")
+	int64JNO, err := strconv.ParseInt(jno, 10, 64)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing dd",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+	}
+
+	// 고객사 조직도 조회
+	client, err := h.Service.GetClientOrganization(ctx, int64JNO)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+	}
+
+	// 계약사 조직도 조회
+	hitech, err := h.Service.GetHitechOrganization(ctx, int64JNO)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			Client entity.OrganizationPartition  `json:"client"`
+			Hitech entity.OrganizationPartitions `json:"hitech"`
+		}{Client: *client, Hitech: *hitech},
+	}
+
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 
 }

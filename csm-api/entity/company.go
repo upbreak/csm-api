@@ -18,6 +18,7 @@ import (
 type JobInfo struct {
 	RowNum        int64  `json:"rnum"`
 	Jno           int64  `json:"jno"`
+	Sno           int64  `json:"sno"`
 	JobName       string `json:"job_name"`
 	JobNo         string `json:"job_no"`
 	JobSd         string `json:"job_sd"`
@@ -32,6 +33,7 @@ type JobInfos []*JobInfo
 type JobInfoSql struct {
 	RowNum        sql.NullInt64  `db:"RNUM"`
 	Jno           sql.NullInt64  `db:"JNO"`
+	Sno           sql.NullInt64  `db:"SNO"`
 	JobName       sql.NullString `db:"JOB_NAME"`
 	JobNo         sql.NullString `db:"JOB_NO"`
 	JobSd         sql.NullString `db:"JOB_SD"`

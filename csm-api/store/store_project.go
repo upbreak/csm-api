@@ -136,6 +136,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 					FROM (
 						SELECT 
 							t1.JNO,
+							t1.SNO,
 							t2.JOB_NAME,
 							t2.JOB_NO,
 							t2.JOB_SD,
@@ -165,7 +166,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 	return &sqlData, nil
 }
 
-// func: 프로젝트 전체 조회 개수
+// func: 관리 중인 프로젝트 전체 조회 개수
 // @param
 // -
 func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
@@ -203,7 +204,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 	return count, nil
 }
 
-// func: 진행중 프로젝트 전체 조회
+// func: 프로젝트 전체 조회
 // @param
 // -
 func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
@@ -232,7 +233,8 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
 						SELECT 
-							J.JNO, 
+							J.JNO,
+							S.SNO, 
 							J.JOB_NAME, 
 							J.JOB_NO, 
 							J.JOB_SD, 
@@ -247,12 +249,15 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 							TIMESHEET.job_kind_code JC 
 						ON 
 							J.job_code = JC.kind_code 
+						LEFT JOIN 
+							IRIS_SITE_JOB S
+						ON
+							S.JNO = J.JNO
 						INNER JOIN 
 							TIMESHEET.SYS_CODE_SET SC 
 						ON 
 							J.job_state = SC.minor_cd 
 							AND SC.MAJOR_CD = 'JOB_STATE' 
-							AND SC.MINOR_CD = 'Y'
 						WHERE %s
 						ORDER BY %s
 					) sorted_data
@@ -267,7 +272,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	return &sqlData, nil
 }
 
-// func: 진행중 프로젝트 개수 조회
+// func: 프로젝트 개수 조회
 // @param
 // -
 func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
@@ -296,7 +301,6 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 				ON 
 					J.job_state = SC.minor_cd 
 					AND SC.MAJOR_CD = 'JOB_STATE' 
-					AND SC.MINOR_CD = 'Y'
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
@@ -336,7 +340,8 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 			SELECT ROWNUM AS RNUM, sorted_data.*
 				FROM (
 					SELECT 
-						J.JNO, 
+						J.JNO,
+						S.SNO,
 						J.JOB_NAME, 
 						J.JOB_NO, 
 						J.JOB_SD, 
@@ -350,12 +355,16 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 					INNER JOIN 
 						(SELECT * FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) JM 
 					ON 
-						J.JNO = JM.JNO 
+						J.JNO = JM.JNO
+					LEFT JOIN
+						IRIS_SITE_JOB S
+					ON
+						S.JNO = J.JNO
 					INNER JOIN 
 						TIMESHEET.SYS_CODE_SET SC 
 					ON 
 						J.job_state = SC.minor_cd 
-						AND  SC.MAJOR_CD = 'JOB_STATE'
+						AND SC.MAJOR_CD = 'JOB_STATE'
 					WHERE %s
 					ORDER BY %s
 					) sorted_data
@@ -398,7 +407,7 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 					TIMESHEET.SYS_CODE_SET SC 
 				ON 
 					J.job_state = SC.minor_cd 
-					AND  SC.MAJOR_CD = 'JOB_STATE'
+					AND SC.MAJOR_CD = 'JOB_STATE'
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, uno); err != nil {
@@ -406,4 +415,143 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 	}
 
 	return count, nil
+}
+
+// func: 조직도 조회-고객사
+// @param
+// - JNO
+func (r *Repository) GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error) {
+	sqlData := entity.OrganizationSqls{}
+	query := fmt.Sprintf(`
+				SELECT 
+					JM.JNO, 
+					JM.FUNC_NAME, 
+					JM.CHARGE_DETAIL, 
+					JM.MEMBER_NAME AS USER_NAME, 
+					JM.GRADE_NAME AS DUTY_NAME, 
+					J.ORDER_COMP_NAME AS DEPT_NAME,
+					JM.EMAIL, 
+					JM.IS_USE, 
+					JM.CO_ID, 
+					SC.CD_NM, 
+					JM.UNO,
+					CASE WHEN LENGTH(JM.CELL) > 6 THEN  JM.CELL ELSE '' END CELL, 
+					CASE WHEN LENGTH(JM.TEL) > 6 THEN  JM.TEL ELSE '' END TEL	
+
+				FROM 
+					JOB_MEMBER_LIST JM 
+				INNER JOIN 
+					JOB_INFO J 
+				ON 
+					J.JNO = JM.JNO
+				INNER JOIN 
+					SYS_CODE_SET SC 
+				ON 
+					JM.CHARGE = SC.MINOR_CD AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
+				WHERE JM.JNO = :1 AND COMP_TYPE = 'O'`)
+
+	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
+		return nil, fmt.Errorf("GetClientOrganization err: %w", err)
+	}
+
+	return &sqlData, nil
+
+}
+
+// func: 조직도 조회-계약자
+// @param
+// - JNO
+func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error) {
+	sqlData := entity.OrganizationSqls{}
+
+	query := fmt.Sprintf(`
+					WITH MEMBER_LIST AS (
+						SELECT * FROM JOB_MEMBER_LIST
+						WHERE JNO = :1
+					)
+					,HITECH AS (
+							SELECT 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, U.USER_NAME, U.DUTY_NAME, U.DEPT_NAME, U.CELL, U.TEL, U.EMAIL, U.IS_USE, M.CO_ID, SC.CD_NM, M.UNO 
+							FROM 
+								MEMBER_LIST M 
+							INNER JOIN 
+								(SELECT 
+									UNO, USER_NAME, DUTY_NAME, DEPT_NAME, CELL, TEL, EMAIL, IS_USE 
+								FROM 
+									S_SYS_USER_SET 
+								ORDER BY 
+									DUTY_ID) U 
+							ON 
+								M.UNO = U.UNO 
+							INNER JOIN 
+								SYS_CODE_SET SC 
+							ON 
+								M.CHARGE = SC.MINOR_CD 
+								AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
+							WHERE 
+								COMP_TYPE = 'H'
+						UNION
+							SELECT 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, M.MEMBER_NAME AS USER_NAME, M.GRADE_NAME AS DUTY_NAME, M.DEPT_NAME, M.CELL, M.TEL, M.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO 
+							FROM 
+								MEMBER_LIST M 
+							INNER JOIN 
+								SYS_CODE_SET SC 
+							ON 
+								M.CHARGE = SC.MINOR_CD 
+								AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
+							WHERE 
+								COMP_TYPE = 'H' 
+								AND UNO IS NULL
+					)
+					SELECT 
+						H.JNO,
+						H.CHARGE_DETAIL, 
+						H.USER_NAME, 
+						H.DUTY_NAME,
+						H.DEPT_NAME, 
+						H.EMAIL, 
+						H.IS_USE,
+						H.CO_ID, 
+						H.CD_NM, 
+						H.UNO,
+						CASE WHEN LENGTH(H.CELL) > 6 THEN  H.CELL ELSE '' END CELL, 
+						CASE WHEN LENGTH(H.TEL) > 6 THEN  H.TEL ELSE '' END TEL
+					FROM 
+						HITECH H
+					WHERE
+						H.FUNC_CODE = :2
+					ORDER BY  
+						CD_NM DESC
+					`)
+
+	if err := db.SelectContext(ctx, &sqlData, query, jno, funcNo); err != nil {
+		return nil, fmt.Errorf("GetHitechOrganization err: %w", err)
+	}
+	return &sqlData, nil
+}
+
+func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error) {
+
+	sqlData := entity.FuncNameSqls{}
+
+	query := fmt.Sprintf(`
+		SELECT 
+			FUNC_NO, FUNC_TITLE
+		FROM
+			COMMON.V_COMM_FUNC_CODE
+		ORDER BY 
+			CASE WHEN 
+				FUNC_TITLE = 'PM' 
+				THEN 0 
+				ELSE 1 
+				END, 
+			FUNC_NO
+	`)
+
+	if err := db.SelectContext(ctx, &sqlData, query); err != nil {
+		return nil, fmt.Errorf("GetFuncNameList err: %w", err)
+	}
+
+	return &sqlData, nil
 }

@@ -34,6 +34,9 @@ type ProjectStore interface {
 	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
 	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfoSql, uno sql.NullInt64) (*entity.JobInfoSqls, error)
 	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfoSql, uno sql.NullInt64) (int, error)
+	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
+	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
+	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
 }
 
 type ProjectDailyStore interface {
@@ -54,6 +57,7 @@ type NoticeStore interface {
 	AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error
+	GetNoticePeriod(ctx context.Context, db Queryer) (*entity.NoticePeriodSqls, error)
 }
 
 type DeviceStore interface {
