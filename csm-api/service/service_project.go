@@ -253,7 +253,7 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 // func: 조직도 조회: 고객사
 // @param
 // - JNO
-func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (*entity.Organizations, error) {
+func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error) {
 	var jnoSql sql.NullInt64
 
 	if jno != 0 {
@@ -265,15 +265,21 @@ func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (
 	clientSql := &entity.OrganizationSqls{}
 	clientSql, err := p.Store.GetClientOrganization(ctx, p.DB, jnoSql)
 	if err != nil {
-		return &entity.Organizations{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
+		return &entity.OrganizationPartition{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
 	}
 
 	client := &entity.Organizations{}
 	if err := entity.ConvertSliceToRegular(*clientSql, client); err != nil {
-		return &entity.Organizations{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
+		return &entity.OrganizationPartition{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
 	}
 
-	return client, nil
+	organization := &entity.OrganizationPartition{}
+	if len(*client) != 0 {
+		organization.FuncName = (*client)[0].FuncName
+	}
+	organization.OrganizationList = client
+
+	return organization, nil
 }
 
 // func: 조직도 조회: 계약자(외부직원, 내부직원, 협력사)
