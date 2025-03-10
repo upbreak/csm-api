@@ -6,3 +6,4 @@ api_config.go
 jenkins-credentials
 
 csm-api.exe
+csm-api/.idea

@@ -5,6 +5,26 @@ import (
 	"time"
 )
 
+// 공지 기간
+type NoticePeriod struct {
+	PeriodCode string `json:"period_code"`
+	NoticeNM   string `json:"notice_nm"`
+	// Day      int64  `json:"day"`
+	// Month    int64  `json:"month"`
+}
+
+type NoticePeriods []*NoticePeriod
+
+type NoticePeriodSql struct {
+	PeriodCode sql.NullString `db:"PERIOD_CODE"`
+	NoticeNM   sql.NullString `db:"NOTICE_NM"`
+	// Day      sql.NullInt64  `db:"DAY"`
+	// Month    sql.NullInt64  `db:"MONTH"`
+}
+
+type NoticePeriodSqls []*NoticePeriodSql
+
+// 공지사항
 type NoticeID int64
 
 type Notice struct {
@@ -12,7 +32,7 @@ type Notice struct {
 	Idx          NoticeID  `json:"idx"`
 	Sno          int64     `json:"sno"`
 	SiteNm       string    `json:"site_nm"`
-	LocCode      string    `json:"loc_code"`
+	LocName      string    `json:"loc_name"`
 	Title        string    `json:"title"`
 	Content      string    `json:"content"`
 	ShowYN       string    `json:"show_yn"`
@@ -24,6 +44,9 @@ type Notice struct {
 	ModUno       int64     `json:"mod_uno"`
 	ModUser      string    `json:"mod_user"`
 	ModDate      time.Time `json:"mod_date"`
+	PeriodCode   string    `json:"period_code"`
+	NoticeNm     string    `json:"notice_nm"`
+	PostingDate  time.Time `json:"posting_date"`
 }
 
 type Notices []*Notice
@@ -33,7 +56,7 @@ type NoticeSql struct {
 	Idx          NoticeID       `db:"IDX"`
 	Sno          sql.NullInt64  `db:"SNO"`
 	SiteNm       sql.NullString `db:"SITE_NM"`
-	LocCode      sql.NullString `db:"LOC_CODE"`
+	LocName      sql.NullString `db:"LOC_NAME"`
 	Title        sql.NullString `db:"TITLE" validate:"required"`
 	Content      sql.NullString `db:"CONTENT" validate:"required"`
 	ShowYN       sql.NullString `db:"SHOW_YN"`
@@ -45,6 +68,9 @@ type NoticeSql struct {
 	ModUno       sql.NullInt64  `db:"MOD_UNO"`
 	ModUser      sql.NullString `db:"MOD_USER"`
 	ModDate      sql.NullTime   `db:"MOD_DATE"`
+	PeriodCode   sql.NullString `db:"PERIOD_CODE"`
+	NoticeNm     sql.NullString `db:"NOTICE_NM"`
+	PostingDate  sql.NullTime   `db:"POSTING_DATE"`
 }
 
 type NoticeSqls []*NoticeSql
@@ -54,7 +80,7 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.Idx = noticeSql.Idx
 	n.Sno = noticeSql.Sno.Int64
 	n.SiteNm = noticeSql.SiteNm.String
-	n.LocCode = noticeSql.LocCode.String
+	n.LocName = noticeSql.LocName.String
 	n.Title = noticeSql.Title.String
 	n.Content = noticeSql.Content.String
 	n.ShowYN = noticeSql.ShowYN.String
@@ -66,6 +92,9 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.ModUno = noticeSql.RegUno.Int64
 	n.ModUser = noticeSql.ModUser.String
 	n.ModDate = noticeSql.ModDate.Time
+	n.PeriodCode = noticeSql.PeriodCode.String
+	n.NoticeNm = noticeSql.NoticeNm.String
+	n.PostingDate = noticeSql.PostingDate.Time
 
 	return n
 }
@@ -94,10 +123,10 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.SiteNm = sql.NullString{Valid: false}
 	}
 
-	if notice.LocCode != "" {
-		n.LocCode = sql.NullString{Valid: true, String: notice.LocCode}
+	if notice.LocName != "" {
+		n.LocName = sql.NullString{Valid: true, String: notice.LocName}
 	} else {
-		n.LocCode = sql.NullString{Valid: false}
+		n.LocName = sql.NullString{Valid: false}
 	}
 
 	if notice.Title != "" {
@@ -164,6 +193,23 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.ModDate = sql.NullTime{Valid: true, Time: notice.ModDate}
 	} else {
 		n.ModDate = sql.NullTime{Valid: false}
+	}
+
+	if notice.PeriodCode != "" {
+		n.PeriodCode = sql.NullString{Valid: true, String: notice.PeriodCode}
+	} else {
+		n.PeriodCode = sql.NullString{Valid: false}
+	}
+	if notice.NoticeNm != "" {
+		n.NoticeNm = sql.NullString{Valid: true, String: notice.NoticeNm}
+	} else {
+		n.NoticeNm = sql.NullString{Valid: false}
+	}
+
+	if notice.PostingDate.IsZero() != true {
+		n.PostingDate = sql.NullTime{Valid: true, Time: notice.PostingDate}
+	} else {
+		n.PostingDate = sql.NullTime{Valid: false}
 	}
 
 	return n

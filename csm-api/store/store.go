@@ -57,6 +57,7 @@ type NoticeStore interface {
 	AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error
+	GetNoticePeriod(ctx context.Context, db Queryer) (*entity.NoticePeriodSqls, error)
 }
 
 type DeviceStore interface {

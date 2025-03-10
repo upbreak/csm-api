@@ -53,7 +53,7 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 
-	search.LocCode = r.URL.Query().Get("loc_code")
+	search.LocName = r.URL.Query().Get("loc_name")
 	search.SiteNm = r.URL.Query().Get("site_nm")
 	search.Title = r.URL.Query().Get("title")
 	search.UserInfo = r.URL.Query().Get("user_info")
@@ -227,4 +227,38 @@ func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
 
+}
+
+// 공지기간 조회
+type NoticePeriodHandler struct {
+	Service service.NoticeService
+}
+
+// func: 공지기간 조회
+// @params
+// -
+func (n *NoticePeriodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	noticePeriods, err := n.Service.GetNoticePeriod(ctx)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			Periods entity.NoticePeriods `json:"periods"`
+		}{Periods: *noticePeriods},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }

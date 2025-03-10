@@ -357,10 +357,19 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			},
 		}
 
+		// 공지기간 조회
+		noticePeriodHandler := &handler.NoticePeriodHandler{
+			Service: &service.ServiceNotice{
+				DB:    safeDb,
+				Store: &r,
+			},
+		}
+
 		router.Post("/", noticeAddHandler.ServeHTTP)
 		router.Get("/", noticeListHandler.ServeHTTP)
 		router.Put("/", noticeModifyHandler.ServeHTTP)
 		router.Delete("/{idx}", noticeDeleteHandler.ServeHTTP)
+		router.Get("/period", noticePeriodHandler.ServeHTTP)
 
 	})
 	// End::공지사항

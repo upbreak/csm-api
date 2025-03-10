@@ -55,6 +55,7 @@ type NoticeService interface {
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx int64) error
+	GetNoticePeriod(ctx context.Context) (*entity.NoticePeriods, error)
 }
 
 type DeviceService interface {

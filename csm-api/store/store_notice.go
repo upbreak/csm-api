@@ -27,11 +27,11 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 
 	// 조건
 	condition := "1=1"
-	if search.LocCode.Valid {
-		trimLocCode := strings.TrimSpace(search.LocCode.String)
+	if search.LocName.Valid {
+		trimLocName := strings.TrimSpace(search.LocName.String)
 
-		if trimLocCode != "" {
-			condition += fmt.Sprintf(" AND UPPER(LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+		if trimLocName != "" {
+			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimLocName)
 		}
 	}
 	if search.SiteNm.Valid {
@@ -66,7 +66,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 						N.IDX,
 						N.SNO, 
 						S.SITE_NM,
-						S.LOC_CODE,
+						S.LOC_NAME,
 						N.TITLE, 
 						N.CONTENT, 
 						N.SHOW_YN,
@@ -76,15 +76,21 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 						U.DUTY_NAME, 
 						N.REG_USER || ' ' || U.DUTY_NAME as USER_INFO, 
 						N.MOD_USER, 
-						N.MOD_DATE 
+						N.MOD_DATE,
+						N.POSTING_PERIOD AS PERIOD_CODE,
+						N.POSTING_DATE,
+						C.CODE_NM AS NOTICE_NM
 					FROM 
 						IRIS_NOTICE_BOARD N 
 					INNER JOIN
 						S_SYS_USER_SET U ON N.REG_UNO = U.UNO
 					LEFT OUTER JOIN 
 						IRIS_SITE_SET S ON	N.SNO = S.SNO
+					INNER JOIN
+						IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 					WHERE
 						N.IS_USE = 'Y'
+						AND N.POSTING_DATE > SYSDATE
 				)
 				SELECT * 
 			  	FROM (
@@ -117,11 +123,11 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 	var count int
 
 	condition := "1=1"
-	if search.LocCode.Valid {
-		trimLocCode := strings.TrimSpace(search.LocCode.String)
+	if search.LocName.Valid {
+		trimLocName := strings.TrimSpace(search.LocName.String)
 
-		if trimLocCode != "" {
-			condition += fmt.Sprintf(" AND UPPER(LOC_CODE) LIKE UPPER('%%%s%%')", trimLocCode)
+		if trimLocName != "" {
+			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimLocName)
 		}
 	}
 	if search.SiteNm.Valid {
@@ -149,7 +155,7 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 					N.IDX,
 					N.SNO, 
 					S.SITE_NM,
-					S.LOC_CODE,
+					S.LOC_NAME,
 					N.TITLE, 
 					N.CONTENT, 
 					N.SHOW_YN,
@@ -166,8 +172,11 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 					S_SYS_USER_SET U ON N.REG_UNO = U.UNO
 				LEFT OUTER JOIN 
 					IRIS_SITE_SET S ON	N.SNO = S.SNO
+				INNER JOIN
+					IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 				WHERE
 					N.IS_USE = 'Y'
+					AND N.POSTING_DATE > SYSDATE
 			)
 			SELECT COUNT(*) 
 			FROM  Notice
@@ -203,9 +212,11 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					IS_USE,
 					REG_UNO,
 					REG_USER,
-					REG_DATE
+					REG_DATE,
+					POSTING_PERIOD,
+					POSTING_DATE
 				)
-				VALUES (
+				SELECT
 					SEQ_IRIS_NOTICE_BOARD.NEXTVAL,
 					:1,
 					:2,
@@ -214,10 +225,14 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					'Y',
 					:5,
 					:6,
-					SYSDATE
-		)`
+					SYSDATE,
+					C.CODE,
+					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04
+				FROM IRIS_CODE_SET C
+				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :7 
+		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PeriodCode)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -252,12 +267,22 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 					IS_USE = 'Y',
 					MOD_UNO = :5,	
 					MOD_USER = :6,
-					MOD_DATE = SYSDATE
+					MOD_DATE = SYSDATE,
+					(POSTING_PERIOD,
+					POSTING_DATE) = (
+						SELECT
+							C.CODE, ADD_MONTHS(N.REG_DATE, C.UDF_VAL_03) + C.UDF_VAL_04
+						FROM 
+							IRIS_CODE_SET C
+						INNER JOIN
+							IRIS_NOTICE_BOARD N ON N.IDX = :7
+						WHERE C.CODE = :8 AND C.P_CODE = 'NOTICE_PERIOD'
+					)
 				WHERE 
-					IDX = :7
+					IDX = :9
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx, noticeSql.PeriodCode, noticeSql.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -305,4 +330,28 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx entity.N
 	}
 
 	return nil
+}
+
+// func: 공지기간 조회
+// @param
+// -
+func (r *Repository) GetNoticePeriod(ctx context.Context, db Queryer) (*entity.NoticePeriodSqls, error) {
+	periodSqls := entity.NoticePeriodSqls{}
+
+	query := fmt.Sprintf(`
+		SELECT
+			CODE AS PERIOD_CODE,
+			CODE_NM AS NOTICE_NM
+		FROM
+			IRIS_CODE_SET
+		WHERE
+			P_CODE = 'NOTICE_PERIOD'
+	`)
+
+	if err := db.SelectContext(ctx, &periodSqls, query); err != nil {
+		return &entity.NoticePeriodSqls{}, fmt.Errorf("store/notice. GetNoticePeriod %w", err)
+	}
+
+	return &periodSqls, nil
+
 }
