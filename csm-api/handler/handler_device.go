@@ -61,9 +61,10 @@ func (d *DeviceListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	search.SiteNm = r.URL.Query().Get("site_nm")
 	search.Etc = r.URL.Query().Get("etc")
 	search.IsUse = r.URL.Query().Get("is_use")
+	retrySearchText := r.URL.Query().Get("retry_search_text")
 
 	// 근태인식기 목록
-	list, err := d.Service.GetDeviceList(ctx, page, search)
+	list, err := d.Service.GetDeviceList(ctx, page, search, retrySearchText)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -78,7 +79,7 @@ func (d *DeviceListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 근태인식기 전체 개수
-	count, err := d.Service.GetDeviceListCount(ctx, search)
+	count, err := d.Service.GetDeviceListCount(ctx, search, retrySearchText)
 	if err != nil {
 		RespondJSON(
 			ctx,

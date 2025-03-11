@@ -22,7 +22,7 @@ import (
 // func: 근태인식기 전체 조회
 // @param
 // - page entity.PageSql: 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql) (*entity.DeviceSqls, error) {
+func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql, retry string) (*entity.DeviceSqls, error) {
 	sqls := entity.DeviceSqls{}
 
 	condition := "AND 1=1"
@@ -62,6 +62,12 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 		}
 	}
 
+	var columns []string
+	columns = append(columns, "t2.SITE_NM")
+	columns = append(columns, "t1.DEVICE_SN")
+	columns = append(columns, "t1.DEVICE_NM")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
 	var order string
 	if page.Order.Valid {
 		order = page.Order.String
@@ -91,12 +97,12 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 							t1.SNO = t2.SNO
  						WHERE 
 							t1.SNO > 100
-							%s
+							%s %s
 					) sorted_data
 					WHERE ROWNUM <= :1
 					ORDER BY %s
 				)
-				WHERE RNUM > :2`, condition, order)
+				WHERE RNUM > :2`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetDeviceList err: %v", err)
@@ -108,7 +114,7 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 // func: 근태인식기 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql) (int, error) {
+func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql, retry string) (int, error) {
 	var count int
 
 	condition := "AND 1=1"
@@ -148,6 +154,12 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 		}
 	}
 
+	var columns []string
+	columns = append(columns, "t2.SITE_NM")
+	columns = append(columns, "t1.DEVICE_SN")
+	columns = append(columns, "t1.DEVICE_NM")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
 	query := fmt.Sprintf(`
 				SELECT 
 					COUNT(*) 
@@ -159,7 +171,7 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 					t1.SNO = t2.SNO
 				WHERE 
 					t1.SNO > 100
-					%s`, condition)
+					%s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
