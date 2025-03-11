@@ -27,7 +27,7 @@ type ServiceDevice struct {
 // func: 근태인식기 조회
 // @param
 // - page entity.PageSql: 현재페이지 번호, 리스트 목록 개수
-func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, search entity.Device) (*entity.Devices, error) {
+func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, search entity.Device, retry string) (*entity.Devices, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	searchSql := entity.DeviceSql{}
@@ -36,7 +36,7 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 	if err != nil {
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
-	dbList, err := s.Store.GetDeviceList(ctx, s.DB, pageSql, searchSql)
+	dbList, err := s.Store.GetDeviceList(ctx, s.DB, pageSql, searchSql, retry)
 	if err != nil {
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
@@ -50,11 +50,11 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 // func: 근태인식기 전체 개수 조회
 // @param
 // -
-func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device) (int, error) {
+func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device, retry string) (int, error) {
 	searchSql := entity.DeviceSql{}
 	searchSql = *searchSql.OfDeviceSql(search)
 
-	count, err := s.Store.GetDeviceListCount(ctx, s.DB, searchSql)
+	count, err := s.Store.GetDeviceListCount(ctx, s.DB, searchSql, retry)
 	if err != nil {
 		return 0, fmt.Errorf("service_device/GetDeviceListCount err: %w", err)
 	}

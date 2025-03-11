@@ -47,3 +47,40 @@ func TimeBetweenWhereConvert(condition string, sqlValue1 sql.NullString, sqlValu
 	}
 	return condition
 }
+
+func RetrySearchTextConvert(retry string, columns []string) string {
+	where := ""
+	if retry == "" {
+		return ""
+	}
+	keyArr := strings.Split(retry, "~")
+
+	if len(keyArr) > 0 {
+		for _, key := range keyArr {
+			arr := strings.Split(key, ":")
+			if arr[0] == "ALL" {
+				values := strings.Split(arr[1], "|")
+				for _, value := range values {
+					var temp []string
+					for _, column := range columns {
+						s := fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, strings.TrimSpace(value))
+						temp = append(temp, s)
+					}
+					where += fmt.Sprintf(`AND (%s)`, strings.Join(temp, " OR "))
+				}
+			} else {
+				for _, column := range columns {
+					values := strings.Split(arr[1], "|")
+					if strings.Contains(column, arr[0]) {
+						for _, value := range values {
+							where += fmt.Sprintf(`AND LOWER(%s) LIKE LOWER('%%%s%%')`, column, strings.TrimSpace(value))
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return where
+}
