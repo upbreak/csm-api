@@ -25,7 +25,8 @@ type SiteDateService interface {
 }
 
 type ProjectService interface {
-	GetProjectList(ctx context.Context, sno int64) (*entity.ProjectInfos, error)
+	GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error)
+	GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
 	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error)
 	GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error)

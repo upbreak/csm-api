@@ -46,7 +46,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		sno := site.Sno
 
 		// 프로젝트 리스트 조회
-		projectInfos, err := s.ProjectService.GetProjectList(ctx, sno)
+		projectInfos, err := s.ProjectService.GetProjectList(ctx, sno, targetDate)
 		if err != nil {
 			return &entity.Sites{}, fmt.Errorf("service_site/GetProjectList err: %w", err)
 		}
