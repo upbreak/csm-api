@@ -9,6 +9,7 @@ import (
 
 type ServiceSiteDate struct {
 	DB    store.Queryer
+	TDB   store.Beginner
 	Store store.SiteDateStore
 }
 
@@ -25,3 +26,5 @@ func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*enti
 
 	return siteDate, nil
 }
+
+//func ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) error

@@ -4,6 +4,7 @@ import (
 	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/service"
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -116,6 +117,46 @@ func (s *SiteListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 
+}
+
+// struct: 현장 관리 수정 핸들러 구조체
+type SiteModifyHandler struct {
+	Service service.SiteService
+}
+
+func (s *SiteModifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	site := entity.Site{}
+	if err := json.NewDecoder(r.Body).Decode(&site); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	if err := s.Service.ModifySite(ctx, site); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
 }
 
 // struct: 현장 데이터 조회 핸들러 구조체

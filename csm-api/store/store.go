@@ -19,6 +19,7 @@ type SiteStore interface {
 
 type SitePosStore interface {
 	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePosSql, error)
+	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePosSql) error
 }
 
 type SiteDateStore interface {

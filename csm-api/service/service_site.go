@@ -20,13 +20,14 @@ import (
 
 // struct: 현장 데이터 서비스 구조체
 type ServiceSite struct {
-	DB                  store.Queryer
-	Store               store.SiteStore
-	ProjectService      ProjectService
-	ProjectDailyService ProjectDailyService
-	SitePosService      SitePosService
-	SiteDateService     SiteDateService
-	WhetherApiService   WhetherApiService
+	DB                      store.Queryer
+	Store                   store.SiteStore
+	ProjectService          ProjectService
+	ProjectDailyService     ProjectDailyService
+	SitePosService          SitePosService
+	SiteDateService         SiteDateService
+	WhetherApiService       WhetherApiService
+	AddressSearchAPIService AddressSearchAPIService
 }
 
 // func: 현장 관리 리스트 조회
@@ -69,7 +70,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		}
 		site.SitePos = sitePosData
 
-		// 현장 날짜 조회
+		// 현장 날씨 조회
 		now := time.Now()
 		baseDate := now.Format("20060102")
 		baseTime := now.Format("1504")
@@ -117,4 +118,27 @@ func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time
 	sites.ToSites(siteSqls)
 
 	return sites, nil
+}
+
+func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
+
+	sitePos := *site.SitePos
+	point, err := s.AddressSearchAPIService.GetAPILatitudeLongtitude(site.SitePos.RoadAddress)
+	if err != nil {
+		return fmt.Errorf("service_site/GetApiLatitudeLongtitude err: %w", err)
+	}
+	sitePos.Latitude = point.Latitude
+	sitePos.Longitude = point.Longitude
+
+	if err := s.SitePosService.ModifySitePos(ctx, site.Sno, sitePos); err != nil {
+		return fmt.Errorf("service_site/ModifySitePos err: %v\n", err)
+	}
+
+	//siteDate := *site.SiteDate
+	//if err := s.SiteDateService.ModifySiteDate(ctx, site.Sno, siteDate); err != nil {
+	//	return fmt.Errorf("service_site/ModifySiteDate err: %v\n", err)
+	//}
+
+	return nil
+
 }

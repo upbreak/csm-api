@@ -20,6 +20,11 @@ type SiteRes struct {
 	Code Codes `json:"code"`
 }
 
+type Point struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
 // struct: 현장 데이터 json용 구조체
 type Site struct {
 	Sno                int64     `json:"sno"`

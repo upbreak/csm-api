@@ -19,6 +19,9 @@ type SitePos struct {
 	Latitude              float64   `json:"latitude"`
 	Longitude             float64   `json:"longitude"`
 	RegDate               time.Time `json:"reg_date"`
+	RoadAddress           string    `json:"road_address"`
+	ZoneCode              string    `json:"zone_code"`
+	BuildingName          string    `json:"building_name"`
 }
 
 type SitePosSql struct {
@@ -35,6 +38,9 @@ type SitePosSql struct {
 	Latitude              sql.NullFloat64 `db:"LATITUDE"`
 	Longitude             sql.NullFloat64 `db:"LONGITUDE"`
 	RegDate               sql.NullTime    `db:"REG_DATE"`
+	RoadAddress           sql.NullString  `db:"UDF_VAL_01"`
+	ZoneCode              sql.NullString  `db:"UDF_VAL_02"`
+	BuildingName          sql.NullString  `db:"UDF_VAL_03"`
 }
 
 func (s *SitePos) ToSitePos(sql *SitePosSql) *SitePos {
@@ -51,6 +57,9 @@ func (s *SitePos) ToSitePos(sql *SitePosSql) *SitePos {
 	s.Latitude = sql.Latitude.Float64
 	s.Longitude = sql.Longitude.Float64
 	s.RegDate = sql.RegDate.Time
+	s.RoadAddress = sql.RoadAddress.String
+	s.ZoneCode = sql.ZoneCode.String
+	s.BuildingName = sql.BuildingName.String
 
 	return s
 }
