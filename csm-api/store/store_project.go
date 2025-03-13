@@ -6,12 +6,13 @@ import (
 	"csm-api/utils"
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 // func: 현장 프로젝트 조회
 // @param
-// - sno int64 현장 번호
-func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) (*entity.ProjectInfoSqls, error) {
+// - sno int64 현장 번호, targetDate time.Time: 현재시간
+func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.ProjectInfoSqls, error) {
 	projectInfoSqls := entity.ProjectInfoSqls{}
 
 	// sno 변환: 0이면 NULL 처리, 아니면 Valid 값으로 설정
@@ -22,8 +23,53 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 		snoParam = sql.NullInt64{Valid: false}
 	}
 
-	sql := `SELECT
-				t1.SNO,
+	sql := `
+			WITH base AS (
+			  SELECT 
+				SNO,
+				JNO,
+				USER_ID,
+				USER_NM,
+				NVL(USER_NM, ' ') AS user_nm_norm,
+				TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') AS recog_date,
+				NVL(DEPARTMENT, ' ') AS dept_norm
+			  FROM IRIS_RECD_SET
+			  WHERE SNO > 100
+			  AND (:1 IS NULL OR SNO = :2)
+			),
+			worker_counts AS (
+			  SELECT 
+				SNO,
+				JNO,
+				COUNT(DISTINCT USER_ID || '-' || recog_date) AS WORKER_COUNT_ALL,
+				COUNT(DISTINCT CASE 
+								 WHEN recog_date = TO_CHAR(:3, 'YYYY-MM-DD')
+								 THEN USER_ID || '-' || recog_date
+								 END) AS WORKER_COUNT_DATE,
+				COUNT(DISTINCT CASE 
+								 WHEN recog_date = TO_CHAR(:4, 'YYYY-MM-DD')
+								  AND INSTR(dept_norm, '하이테크') > 0
+								 THEN USER_ID || '-' || recog_date
+								 END) AS WORKER_COUNT_HTENC,
+				COUNT(DISTINCT CASE 
+								 WHEN recog_date = TO_CHAR(:5, 'YYYY-MM-DD')
+								  AND INSTR(dept_norm, '하이테크') = 0
+								  AND (INSTR(dept_norm, '관리') > 0 
+									   OR INSTR(user_nm_norm, '관리') > 0)
+								 THEN USER_ID || '-' || recog_date
+								 END) AS WORKER_COUNT_MANAGER,
+				COUNT(DISTINCT CASE 
+								 WHEN recog_date = TO_CHAR(:6, 'YYYY-MM-DD')
+								  AND INSTR(dept_norm, '하이테크') = 0
+								  AND (INSTR(dept_norm, '관리') = 0 
+									   AND INSTR(user_nm_norm, '관리') = 0)
+								 THEN USER_ID || '-' || recog_date
+								 END) AS WORKER_COUNT_NOT_MANAGER
+			  FROM base
+			  GROUP BY SNO, JNO
+			)
+			SELECT
+			  t1.SNO,
 				t1.JNO,
 				t1.IS_USE,
 				t1.IS_DEFAULT,
@@ -33,14 +79,14 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 				t1.MOD_DATE,
 				t1.MOD_USER,
 				t1.MOD_UNO,
-				t2.JOB_TYPE as PROJECT_TYPE,
+				t2.JOB_TYPE AS PROJECT_TYPE,
 				t6.CD_NM AS PROJECT_TYPE_NM,
-				t2.JOB_NO as PROJECT_NO,
-				t2.JOB_NAME as PROJECT_NM,
-				t2.JOB_YEAR as PROJECT_YEAR,
-				t2.JOB_LOC as PROJECT_LOC,
-				t2.JOB_CODE as PROJECT_CODE,
-				t4.KIND_NAME as PROJECT_CODE_NAME,
+				t2.JOB_NO AS PROJECT_NO,
+				t2.JOB_NAME AS PROJECT_NM,
+				t2.JOB_YEAR AS PROJECT_YEAR,
+				t2.JOB_LOC AS PROJECT_LOC,
+				t2.JOB_CODE AS PROJECT_CODE,
+				t4.KIND_NAME AS PROJECT_CODE_NAME,
 				t3.SITE_NM,
 				t2.COMP_CODE,
 				t2.COMP_NICK,
@@ -50,35 +96,161 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64) 
 				t2.ORDER_COMP_NICK,
 				t2.ORDER_COMP_NAME,
 				t2.ORDER_COMP_JOB_NAME,
-				t2.JOB_LOC_NAME as PROJECT_LOC_NAME,
+				t2.JOB_LOC_NAME AS PROJECT_LOC_NAME,
 				t2.JOB_PM,
 				t2.JOB_PM_NAME,
 				t2.JOB_PE,
-				TO_DATE(t2.JOB_SD, 'YYYY-MM-DD') as PROJECT_STDT,
-				TO_DATE(t2.JOB_ED, 'YYYY-MM-DD') as PROJECT_EDDT,
-				TO_DATE(t2.REG_DATE, 'YYYY-MM-DD HH24:MI:SS') as PROJECT_REG_DATE,
-				TO_DATE(t2.MOD_DATE, 'YYYY-MM-DD HH24:MI:SS') as PROJECT_MOD_DATE,
-				t2.JOB_STATE as PROJECT_STATE,
-				t5.CD_NM as PROJECT_STATE_NM,
+				TO_DATE(t2.JOB_SD, 'YYYY-MM-DD') AS PROJECT_STDT,
+				TO_DATE(t2.JOB_ED, 'YYYY-MM-DD') AS PROJECT_EDDT,
+				TO_DATE(t2.REG_DATE, 'YYYY-MM-DD HH24:MI:SS') AS PROJECT_REG_DATE,
+				TO_DATE(t2.MOD_DATE, 'YYYY-MM-DD HH24:MI:SS') AS PROJECT_MOD_DATE,
+				t2.JOB_STATE AS PROJECT_STATE,
+				t5.CD_NM AS PROJECT_STATE_NM,
 				t2.MOC_NO,
-				t2.WO_NO
-			FROM
-				IRIS_SITE_JOB t1
-				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
-				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
-				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
-				INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
-				INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE AND t6.major_cd = 'JOB_TYPE'
-			WHERE
-				t1.SNO > 100
-				AND (:1 IS NULL OR t1.SNO = :2)
-			ORDER BY
-				t1.IS_DEFAULT DESC`
-	if err := db.SelectContext(ctx, &projectInfoSqls, sql, snoParam, snoParam); err != nil {
+				t2.WO_NO,
+				NVL(wc.WORKER_COUNT_ALL, 0) AS WORKER_COUNT_ALL,
+				NVL(wc.WORKER_COUNT_DATE, 0) AS WORKER_COUNT_DATE,
+				NVL(wc.WORKER_COUNT_HTENC, 0) AS WORKER_COUNT_HTENC,
+				NVL(wc.WORKER_COUNT_MANAGER, 0) AS WORKER_COUNT_MANAGER,
+				NVL(wc.WORKER_COUNT_NOT_MANAGER, 0) AS WORKER_COUNT_NOT_MANAGER
+			FROM IRIS_SITE_JOB t1
+			INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+			INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
+			INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+			INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state 
+				 AND t5.major_cd = 'JOB_STATE'
+			INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE 
+				 AND t6.major_cd = 'JOB_TYPE' 
+			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO 
+				 AND t1.JNO = wc.JNO
+			WHERE t1.SNO > 100
+			AND (:7 IS NULL OR t1.SNO = :8)`
+	if err := db.SelectContext(ctx, &projectInfoSqls, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
 		return &projectInfoSqls, fmt.Errorf("getProjectList fail: %v", err)
 	}
 
 	return &projectInfoSqls, nil
+}
+
+// func: 프로젝트 근로자 수 조회
+// @param
+// - sno int64 현장 번호, targetDate time.Time: 현재시간
+func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfoSqls, error) {
+	sqlList := entity.ProjectInfoSqls{}
+
+	query := `
+				WITH base AS (
+				  SELECT 
+					SNO,
+					JNO,
+					USER_ID,
+					USER_NM,
+					NVL(USER_NM, ' ') AS user_nm_norm,
+					TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') AS recog_date,
+					NVL(DEPARTMENT, ' ') AS dept_norm
+				  FROM IRIS_RECD_SET
+				  WHERE SNO > 100
+				),
+				worker_counts AS (
+				  SELECT 
+					SNO,
+					JNO,
+					COUNT(DISTINCT USER_ID || '-' || recog_date) AS WORKER_COUNT_ALL,
+					COUNT(DISTINCT CASE 
+									 WHEN recog_date = TO_CHAR(:1, 'YYYY-MM-DD')
+									 THEN USER_ID || '-' || recog_date
+									 END) AS WORKER_COUNT_DATE,
+					COUNT(DISTINCT CASE 
+									 WHEN recog_date = TO_CHAR(:2, 'YYYY-MM-DD')
+									  AND INSTR(dept_norm, '하이테크') > 0
+									 THEN USER_ID || '-' || recog_date
+									 END) AS WORKER_COUNT_HTENC,
+					COUNT(DISTINCT CASE 
+									 WHEN recog_date = TO_CHAR(:3, 'YYYY-MM-DD')
+									  AND INSTR(dept_norm, '하이테크') = 0
+									  AND (INSTR(dept_norm, '관리') > 0 
+										   OR INSTR(user_nm_norm, '관리') > 0)
+									 THEN USER_ID || '-' || recog_date
+									 END) AS WORKER_COUNT_MANAGER,
+					COUNT(DISTINCT CASE 
+									 WHEN recog_date = TO_CHAR(:4, 'YYYY-MM-DD')
+									  AND INSTR(dept_norm, '하이테크') = 0
+									  AND (INSTR(dept_norm, '관리') = 0 
+										   AND INSTR(user_nm_norm, '관리') = 0)
+									 THEN USER_ID || '-' || recog_date
+									 END) AS WORKER_COUNT_NOT_MANAGER
+				  FROM base
+				  GROUP BY SNO, JNO
+				)
+				SELECT 
+					t1.SNO,
+					t1.JNO,
+					NVL(wc.WORKER_COUNT_ALL, 0) AS WORKER_COUNT_ALL,
+					NVL(wc.WORKER_COUNT_DATE, 0) AS WORKER_COUNT_DATE,
+					NVL(wc.WORKER_COUNT_HTENC, 0) AS WORKER_COUNT_HTENC,
+					NVL(wc.WORKER_COUNT_MANAGER, 0) AS WORKER_COUNT_MANAGER,
+					NVL(wc.WORKER_COUNT_NOT_MANAGER, 0) AS WORKER_COUNT_NOT_MANAGER
+				FROM IRIS_SITE_JOB t1
+				LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO 
+					 AND t1.JNO = wc.JNO
+				WHERE t1.SNO > 100`
+
+	if err := db.SelectContext(ctx, &sqlList, query, targetDate, targetDate, targetDate, targetDate); err != nil {
+		return nil, fmt.Errorf("GetProjectWorkerCountList err: %v", err)
+	}
+
+	return &sqlList, nil
+}
+
+// func: 프로젝트별 출근 안전관리자 수
+// @param
+// - targetDate: 현재시간
+func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCountSqls, error) {
+	sqlList := entity.ProjectSafeCountSqls{}
+
+	query := `
+				WITH htenc_cnt AS (
+				  SELECT DISTINCT 
+						 SNO,
+						 JNO,
+						 USER_NM
+				  FROM IRIS_RECD_SET
+				  WHERE SNO > 100
+					AND TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
+					AND INSTR(NVL(DEPARTMENT, ' '), '하이테크') > 0
+				),
+				safe_cnt AS (
+				  SELECT t1.JNO, USER_NAME
+				  FROM JOB_MANAGER t1
+				  JOIN S_SYS_USER_SET t2 ON t2.UNO = t1.UNO
+				  WHERE t1.AUTH = 'SAFETY_MANAGER'
+				  UNION
+				  SELECT t1.JNO, USER_NAME
+				  FROM TIMESHEET.JOB_MEMBER_LIST t1
+				  JOIN S_SYS_USER_SET t2 ON t2.UNO = t1.UNO
+				  WHERE t1.COMP_TYPE = 'H'
+					AND t1.FUNC_CODE = 510
+					AND t1.CHARGE = '21'
+					AND t1.IS_USE = 'Y'
+				)
+				SELECT 
+				  ht.SNO,
+				  ht.JNO,
+				  COUNT(*) AS SAFE_COUNT
+				FROM htenc_cnt ht
+				WHERE EXISTS (
+				  SELECT 1
+				  FROM safe_cnt s
+				  WHERE s.JNO = ht.JNO
+					AND INSTR(ht.USER_NM, s.USER_NAME) > 0
+				)
+				GROUP BY ht.SNO, ht.JNO`
+
+	if err := db.SelectContext(ctx, &sqlList, query, targetDate); err != nil {
+		return nil, fmt.Errorf("GetProjectSafeWorkerCountList err: %v", err)
+	}
+
+	return &sqlList, nil
 }
 
 // func: 프로젝트 조회(이름)

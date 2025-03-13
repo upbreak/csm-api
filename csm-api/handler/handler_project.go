@@ -5,6 +5,7 @@ import (
 	"csm-api/service"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 /**
@@ -15,12 +16,76 @@ import (
  * @modified description
  * -
  */
+
+// struct, func: 프로젝트별 근로자 수 조회
+type HandlerProjectWorkerCount struct {
+	Service service.ProjectService
+}
+
+// func:
+// @param
+//   - get parameter
+//     targetDate: 현재시간
+func (h *HandlerProjectWorkerCount) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	targetDateString := r.URL.Query().Get("targetDate")
+	if targetDateString == "" {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+	targetDate, err := time.Parse("2006-01-02", targetDateString)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+
+	list, err := h.Service.GetProjectWorkerCountList(ctx, targetDate)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List entity.ProjectInfos `json:"list"`
+		}{List: *list},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 프로젝트 이름 조회
 type HandlerProjectNm struct {
 	Service service.ProjectService
 }
 
-// func: 프로젝트 이름 조회
-// @param
 func (h *HandlerProjectNm) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

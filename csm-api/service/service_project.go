@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type ServiceProject struct {
@@ -18,14 +19,24 @@ type ServiceProject struct {
 
 // 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
 //
-// @param sno: 현장 고유번호
-func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity.ProjectInfos, error) {
-	projectInfoSqls, err := p.Store.GetProjectList(ctx, p.DB, sno)
+// @param sno: 현장 고유번호, , targetDate time.Time: 현재시간
+func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error) {
+	projectInfoSqls, err := p.Store.GetProjectList(ctx, p.DB, sno, targetDate)
 	if err != nil {
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectList error: %w", err)
 	}
 	projectInfos := &entity.ProjectInfos{}
 	projectInfos.ToProjectInfos(projectInfoSqls)
+
+	// 안전관리자 수 조회
+	safeSqls, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
+	if err != nil {
+		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
+	}
+	safeInfos := &entity.ProjectSafeCounts{}
+	if err = entity.ConvertSliceToRegular(*safeSqls, safeInfos); err != nil {
+		return nil, fmt.Errorf("service_project/ConvertSliceToRegular error: %w", err)
+	}
 
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
 	for _, projectInfo := range *projectInfos {
@@ -57,6 +68,51 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64) (*entity
 			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
 		}
 		projectInfo.ProjectPeList = userPmPeList
+
+		// 안전, 공사 근로자 수
+		for _, safe := range *safeInfos {
+			if projectInfo.Sno == safe.Sno && projectInfo.Jno == safe.Jno {
+				projectInfo.WorkerCountSafe = safe.SafeCount
+				projectInfo.WorkerCountWork = projectInfo.WorkerCountHtenc - safe.SafeCount
+				break
+			}
+		}
+	}
+
+	return projectInfos, nil
+}
+
+// func: 프로젝트 근로자 수 조회
+// @param
+// - sno int64 현장 번호, targetDate time.Time: 현재시간
+func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error) {
+	// 근로자 수 조회
+	projectInfoSqls, err := p.Store.GetProjectWorkerCountList(ctx, p.DB, targetDate)
+	if err != nil {
+		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectWorkerCountList error: %w", err)
+	}
+	projectInfos := &entity.ProjectInfos{}
+	projectInfos.ToProjectInfos(projectInfoSqls)
+
+	// 안전관리자 수 조회
+	safeSqls, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
+	if err != nil {
+		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
+	}
+	safeInfos := &entity.ProjectSafeCounts{}
+	if err = entity.ConvertSliceToRegular(*safeSqls, safeInfos); err != nil {
+		return nil, fmt.Errorf("service_project/ConvertSliceToRegular error: %w", err)
+	}
+
+	// 안전, 공사 근로자 수
+	for _, project := range *projectInfos {
+		for _, safe := range *safeInfos {
+			if project.Sno == safe.Sno && project.Jno == safe.Jno {
+				project.WorkerCountSafe = safe.SafeCount
+				project.WorkerCountWork = project.WorkerCountHtenc - safe.SafeCount
+				break
+			}
+		}
 	}
 
 	return projectInfos, nil
