@@ -41,6 +41,12 @@ func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity
 }
 
 // 현장 위치 주소 수정
+//
+// @params
+//   - sno : 현장 고유번호
+//   - sitePos: 현장 정보 (ADDRESS_NAME_DEPTH1, ADDRESS_NAME_DEPTH2, ADDRESS_NAME_DEPTH3, ADDRESS_NAME_DEPTH4, ADDRESS_NAME_DEPTH5,
+//     ROAD_ADDRESS_NAME_DEPTH1, ROAD_ADDRESS_NAME_DEPTH2, ROAD_ADDRESS_NAME_DEPTH3, ROAD_ADDRESS_NAME_DEPTH4, ROAD_ADDRESS_NAME_DEPTH5,
+//     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
 func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) error {
 
 	sitePosSql := &entity.SitePosSql{}

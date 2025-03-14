@@ -122,22 +122,32 @@ func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time
 
 func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 
-	sitePos := *site.SitePos
-	point, err := s.AddressSearchAPIService.GetAPILatitudeLongtitude(site.SitePos.RoadAddress)
-	if err != nil {
-		return fmt.Errorf("service_site/GetApiLatitudeLongtitude err: %w", err)
-	}
-	sitePos.Latitude = point.Latitude
-	sitePos.Longitude = point.Longitude
-
-	if err := s.SitePosService.ModifySitePos(ctx, site.Sno, sitePos); err != nil {
-		return fmt.Errorf("service_site/ModifySitePos err: %v\n", err)
+	if site.Sno == 0 {
+		return fmt.Errorf("sno parameter is missing")
 	}
 
-	//siteDate := *site.SiteDate
-	//if err := s.SiteDateService.ModifySiteDate(ctx, site.Sno, siteDate); err != nil {
-	//	return fmt.Errorf("service_site/ModifySiteDate err: %v\n", err)
-	//}
+	// 날짜 수정 정보가 있는 경우만 실행
+	if site.SiteDate != nil {
+		siteDate := *site.SiteDate
+		if err := s.SiteDateService.ModifySiteDate(ctx, site.Sno, siteDate); err != nil {
+			return fmt.Errorf("service_site/ModifySiteDate err: %v\n", err)
+		}
+	}
+
+	// 장소 수정 할 정보가 있는 경우만 실행
+	if site.SitePos != nil {
+		sitePos := *site.SitePos
+		point, err := s.AddressSearchAPIService.GetAPILatitudeLongtitude(site.SitePos.RoadAddress)
+		if err != nil {
+			return fmt.Errorf("service_site/GetApiLatitudeLongtitude err: %w", err)
+		}
+		sitePos.Latitude = point.Latitude
+		sitePos.Longitude = point.Longitude
+
+		if err := s.SitePosService.ModifySitePos(ctx, site.Sno, sitePos); err != nil {
+			return fmt.Errorf("service_site/ModifySitePos err: %v\n", err)
+		}
+	}
 
 	return nil
 

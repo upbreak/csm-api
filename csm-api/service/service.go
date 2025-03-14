@@ -24,7 +24,7 @@ type SitePosService interface {
 
 type SiteDateService interface {
 	GetSiteDateData(ctx context.Context, sno int64) (*entity.SiteDate, error)
-	//ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) error
+	ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) error
 }
 
 type ProjectService interface {

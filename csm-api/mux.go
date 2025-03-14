@@ -129,21 +129,6 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		Service: &service.ServiceSite{
 			DB:    safeDb,
 			Store: &r,
-			/*
-				ProjectService: &service.ServiceProject{
-					DB:    safeDb,
-					Store: &r,
-					UserService: &service.ServiceUser{
-						DB:    safeDb,
-						Store: &r,
-					},
-				},
-				ProjectDailyService: &service.ServiceProjectDaily{
-					DB:    safeDb,
-					Store: &r,
-				},
-			*/
-
 			SitePosService: &service.ServiceSitePos{
 				TDB:   safeDb,
 				Store: &r,

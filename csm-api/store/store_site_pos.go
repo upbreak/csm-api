@@ -41,8 +41,19 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 	return &sitePosSql, nil
 }
 
+// 현장 위치 주소 수정
+//
+// @params
+//   - sno : 현장 고유번호
+//   - sitePos: 현장 정보 (ADDRESS_NAME_DEPTH1, ADDRESS_NAME_DEPTH2, ADDRESS_NAME_DEPTH3, ADDRESS_NAME_DEPTH4, ADDRESS_NAME_DEPTH5,
+//     LATITUDE, LONGTITUDE,
+//     ROAD_ADDRESS_NAME_DEPTH1, ROAD_ADDRESS_NAME_DEPTH2, ROAD_ADDRESS_NAME_DEPTH3, ROAD_ADDRESS_NAME_DEPTH4, ROAD_ADDRESS_NAME_DEPTH5,
+//     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
 func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePosSql) error {
 	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("store/site_pos. Failed to begin transaction: %v", err)
+	}
 
 	query := fmt.Sprintf(`
 			UPDATE IRIS_SITE_POS 
@@ -91,7 +102,7 @@ func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("store/site_pos. failed to commit transaction: %v", err)
+		return fmt.Errorf("store/site_pos. Failed to commit transaction: %v", err)
 	}
 
 	return nil
