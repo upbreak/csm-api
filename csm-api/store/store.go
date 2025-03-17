@@ -15,6 +15,7 @@ type SiteStore interface {
 	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
 	GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error)
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
+	ModifySite(ctx context.Context, db Beginner, site entity.Site) error
 }
 
 type SitePosStore interface {

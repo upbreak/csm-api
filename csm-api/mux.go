@@ -127,7 +127,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// 현장 관리 수정
 	siteModifyHandler := &handler.SiteModifyHandler{
 		Service: &service.ServiceSite{
-			DB:    safeDb,
+			TDB:   safeDb,
 			Store: &r,
 			SitePosService: &service.ServiceSitePos{
 				TDB:   safeDb,

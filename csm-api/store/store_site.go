@@ -134,3 +134,31 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 	}
 	return &siteSqls, nil
 }
+
+func (r *Repository) ModifySite(ctx context.Context, db Beginner, site entity.Site) error {
+	tx, err := db.BeginTx(ctx, nil)
+
+	if err != nil {
+		return fmt.Errorf("store/site. Failed to begin transaction: %w", err)
+	}
+
+	query := `
+			UPDATE IRIS_SITE_SET 
+			SET
+			    ETC = :1
+			WHERE
+			    SNO = :2
+			`
+	if _, err := tx.ExecContext(ctx, query, site.Etc, site.Sno); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return fmt.Errorf("store/site. ModifySite fail: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("store/site. Failed to commit transaction: %w", err)
+	}
+
+	return nil
+}

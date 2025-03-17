@@ -20,6 +20,7 @@ import (
 
 // struct: 현장 데이터 서비스 구조체
 type ServiceSite struct {
+	TDB                     store.Beginner
 	DB                      store.Queryer
 	Store                   store.SiteStore
 	ProjectService          ProjectService
@@ -124,6 +125,10 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 
 	if site.Sno == 0 {
 		return fmt.Errorf("sno parameter is missing")
+	}
+	// 비고 정보 수정
+	if err := s.Store.ModifySite(ctx, s.TDB, site); err != nil {
+		return fmt.Errorf("service_site/ModifySite err: %w", err)
 	}
 
 	// 날짜 수정 정보가 있는 경우만 실행
