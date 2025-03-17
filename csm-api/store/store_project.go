@@ -643,7 +643,7 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 					)
 					,HITECH AS (
 							SELECT 
-								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, U.USER_NAME, U.DUTY_NAME, U.DEPT_NAME, U.CELL, U.TEL, U.EMAIL, U.IS_USE, M.CO_ID, SC.CD_NM, M.UNO 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, U.USER_NAME, U.DUTY_NAME, U.DEPT_NAME, U.CELL, U.TEL, U.EMAIL, U.IS_USE, M.CO_ID, SC.CD_NM, M.UNO, SC.VAL5 AS CHARGE_SORT
 							FROM 
 								MEMBER_LIST M 
 							INNER JOIN 
@@ -664,7 +664,7 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 								COMP_TYPE = 'H'
 						UNION
 							SELECT 
-								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, M.MEMBER_NAME AS USER_NAME, M.GRADE_NAME AS DUTY_NAME, M.DEPT_NAME, M.CELL, M.TEL, M.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, M.MEMBER_NAME AS USER_NAME, M.GRADE_NAME AS DUTY_NAME, M.DEPT_NAME, M.CELL, M.TEL, M.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO, SC.VAL5 AS CHARGE_SORT 
 							FROM 
 								MEMBER_LIST M 
 							INNER JOIN 
@@ -694,7 +694,7 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 					WHERE
 						H.FUNC_CODE = :2
 					ORDER BY  
-						CD_NM DESC
+						H.CHARGE_SORT ASC
 					`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno, funcNo); err != nil {
@@ -708,17 +708,16 @@ func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.F
 	sqlData := entity.FuncNameSqls{}
 
 	query := fmt.Sprintf(`
-		SELECT 
-			FUNC_NO, FUNC_TITLE
-		FROM
-			COMMON.V_COMM_FUNC_CODE
-		ORDER BY 
-			CASE WHEN 
-				FUNC_TITLE = 'PM' 
-				THEN 0 
-				ELSE 1 
-				END, 
-			FUNC_NO
+			SELECT FUNC_NO, FUNC_TITLE
+			FROM
+				COMMON.V_COMM_FUNC_CODE
+			WHERE FUNC_TITLE = 'PM'
+		UNION ALL
+			SELECT 
+				FUNC_NO, FUNC_TITLE
+			FROM
+				(SELECT * FROM COMMON.V_COMM_FUNC_CODE ORDER BY SORT_NO_PATH)
+			WHERE IS_ORG = 'Y'
 	`)
 
 	if err := db.SelectContext(ctx, &sqlData, query); err != nil {
