@@ -123,6 +123,26 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 		Jwt: jwt,
 	}
+
+	// 현장 관리 수정
+	siteModifyHandler := &handler.SiteModifyHandler{
+		Service: &service.ServiceSite{
+			TDB:   safeDb,
+			Store: &r,
+			SitePosService: &service.ServiceSitePos{
+				TDB:   safeDb,
+				Store: &r,
+			},
+			SiteDateService: &service.ServiceSiteDate{
+				TDB:   safeDb,
+				Store: &r,
+			},
+			AddressSearchAPIService: &service.ServiceAddressSearching{
+				ApiKey: apiCfg,
+			},
+		},
+	}
+
 	// 현장 이름 리스트 조회
 	siteNmListHandler := &handler.SiteNmListHandler{
 		Service: &service.ServiceSite{
@@ -130,6 +150,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+
 	// 현장 상태 리스트 조회
 	siteStatsHandler := &handler.SiteStatsHandler{
 		Service: &service.ServiceSite{
@@ -140,6 +161,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	mux.Route("/site", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", siteListHandler.ServeHTTP)
+		r.Put("/", siteModifyHandler.ServeHTTP)
 		r.Get("/nm", siteNmListHandler.ServeHTTP)
 		r.Get("/stats", siteStatsHandler.ServeHTTP)
 	})

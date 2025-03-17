@@ -15,14 +15,17 @@ type SiteStore interface {
 	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
 	GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error)
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
+	ModifySite(ctx context.Context, db Beginner, site entity.Site) error
 }
 
 type SitePosStore interface {
 	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePosSql, error)
+	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePosSql) error
 }
 
 type SiteDateStore interface {
 	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDateSql, error)
+	ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDateSql) error
 }
 
 type ProjectStore interface {

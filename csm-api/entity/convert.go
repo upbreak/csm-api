@@ -135,6 +135,12 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 			} else {
 				return fmt.Errorf("unsupported struct field type for field %q", fieldName)
 			}
+		case reflect.Float64:
+			sqlNullsField.Set(reflect.ValueOf(sql.NullFloat64{
+				Float64: regularField.Float(),
+				Valid:   regularField.Float() != 0.0,
+			}))
+
 		default:
 			return fmt.Errorf("unsupported field type %s for field %q", regularField.Type(), fieldName)
 		}

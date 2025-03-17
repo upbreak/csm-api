@@ -14,14 +14,17 @@ type SiteService interface {
 	GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
 	GetSiteNmList(ctx context.Context) (*entity.Sites, error)
 	GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
+	ModifySite(ctx context.Context, site entity.Site) error
 }
 
 type SitePosService interface {
 	GetSitePosData(ctx context.Context, sno int64) (*entity.SitePos, error)
+	ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) error
 }
 
 type SiteDateService interface {
 	GetSiteDateData(ctx context.Context, sno int64) (*entity.SiteDate, error)
+	ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) error
 }
 
 type ProjectService interface {
@@ -85,4 +88,7 @@ type CompanyService interface {
 
 type WhetherApiService interface {
 	GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error)
+}
+type AddressSearchAPIService interface {
+	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)
 }
