@@ -43,6 +43,11 @@ type SitePosSql struct {
 	BuildingName          sql.NullString  `db:"UDF_VAL_03"`
 }
 
+type MapPoint struct {
+	X string `json:"x"`
+	Y string `json:"y"`
+}
+
 func (s *SitePos) ToSitePos(sql *SitePosSql) *SitePos {
 	s.AddressNameDepth1 = sql.AddressNameDepth1.String
 	s.AddressNameDepth2 = sql.AddressNameDepth2.String

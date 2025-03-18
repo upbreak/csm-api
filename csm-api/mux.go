@@ -8,10 +8,9 @@ import (
 	"csm-api/handler"
 	"csm-api/service"
 	"csm-api/store"
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
+	"net/http"
 )
 
 /**
@@ -158,12 +157,20 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+
+	// 지도 x, y좌표 조회
+	siteRoadAddressHandler := &handler.SiteRoadAddressHandler{
+		Service: &service.ServiceAddressSearching{
+			ApiKey: apiCfg,
+		},
+	}
 	mux.Route("/site", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", siteListHandler.ServeHTTP)
 		r.Put("/", siteModifyHandler.ServeHTTP)
 		r.Get("/nm", siteNmListHandler.ServeHTTP)
 		r.Get("/stats", siteStatsHandler.ServeHTTP)
+		r.Get("/point", siteRoadAddressHandler.ServeHTTP)
 	})
 	// End::현장관리
 
