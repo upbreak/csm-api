@@ -14,7 +14,7 @@ func init() {
 		log.Fatalf("Failed to set ENV: %v", err)
 	}
 
-	err = os.Setenv("PORT", "8081")
+	err = os.Setenv("PORT", "8082")
 	if err != nil {
 		log.Fatalf("Failed to set PORT: %v", err)
 	}

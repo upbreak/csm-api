@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"encoding/json"
 	"net/http"
 	"strconv"
 )
@@ -33,14 +34,16 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	pageNum := r.URL.Query().Get("page_num")
 	rowSize := r.URL.Query().Get("row_size")
 	order := r.URL.Query().Get("order")
-	siteNm := r.URL.Query().Get("site_nm")
 	jobName := r.URL.Query().Get("job_name")
+	userId := r.URL.Query().Get("user_id")
 	userNm := r.URL.Query().Get("user_nm")
 	department := r.URL.Query().Get("department")
-	searchStartTime := r.URL.Query().Get("search_start_time")
-	searchEndTime := r.URL.Query().Get("search_end_time")
+	phone := r.URL.Query().Get("phone")
+	workerType := r.URL.Query().Get("worker_type")
 
-	if pageNum == "" || rowSize == "" || searchStartTime == "" || searchEndTime == "" {
+	retrySearch := r.URL.Query().Get("retry_search")
+
+	if pageNum == "" || rowSize == "" {
 		RespondJSON(
 			ctx,
 			w,
@@ -57,15 +60,15 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.SiteNm = siteNm
 	search.JobName = jobName
+	search.UserId = userId
 	search.UserNm = userNm
 	search.Department = department
-	search.SearchStartTime = searchStartTime
-	search.SearchEndTime = searchEndTime
+	search.Phone = phone
+	search.WorkerType = workerType
 
 	// 조회
-	list, err := h.Service.GetWorkerTotalList(ctx, page, search)
+	list, err := h.Service.GetWorkerTotalList(ctx, page, search, retrySearch)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -80,7 +83,7 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	}
 
 	// 개수 조회
-	count, err := h.Service.GetWorkerTotalCount(ctx, search)
+	count, err := h.Service.GetWorkerTotalCount(ctx, search, retrySearch)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -109,6 +112,102 @@ type HandlerWorkerSiteBaseList struct {
 	Service service.WorkerService
 }
 
+// struct, func: 근로자 추가
+type HandlerWorkerAdd struct {
+	Service service.WorkerService
+}
+
+// @param
+// - http method: post
+// - param: entity.Worker - json(raw)
+func (h *HandlerWorkerAdd) ServeHttp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//데이터 파싱
+	worker := entity.Worker{}
+	if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.AddWorker(ctx, worker)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataAddFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 근로자 수정
+type HandlerWorkerMod struct {
+	Service service.WorkerService
+}
+
+// @param
+// - http method: put
+// - param: entity.Worker - json(raw)
+func (h *HandlerWorkerMod) ServeHttp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//데이터 파싱
+	worker := entity.Worker{}
+	if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.ModifyWorker(ctx, worker)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
 // func: 현장 근로자 조회
 // @param
 // - response: http get paramter
@@ -123,7 +222,6 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	rowSize := r.URL.Query().Get("row_size")
 	order := r.URL.Query().Get("order")
 	sno := r.URL.Query().Get("sno")
-	siteNm := r.URL.Query().Get("site_nm")
 	jobName := r.URL.Query().Get("job_name")
 	userNm := r.URL.Query().Get("user_nm")
 	department := r.URL.Query().Get("department")
@@ -148,12 +246,9 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 	search.Sno, _ = strconv.ParseInt(sno, 10, 64)
-	search.SiteNm = siteNm
 	search.JobName = jobName
 	search.UserNm = userNm
 	search.Department = department
-	search.SearchStartTime = searchStartTime
-	search.SearchEndTime = searchEndTime
 
 	// 조회
 	list, err := h.Service.GetWorkerSiteBaseList(ctx, page, search)

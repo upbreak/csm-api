@@ -71,8 +71,10 @@ type DeviceService interface {
 }
 
 type WorkerService interface {
-	GetWorkerTotalList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error)
-	GetWorkerTotalCount(ctx context.Context, search entity.Worker) (int, error)
+	GetWorkerTotalList(ctx context.Context, page entity.Page, search entity.Worker, retry string) (*entity.Workers, error)
+	GetWorkerTotalCount(ctx context.Context, search entity.Worker, retry string) (int, error)
+	AddWorker(ctx context.Context, worker entity.Worker) error
+	ModifyWorker(ctx context.Context, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.Worker) (*entity.Workers, error)
 	GetWorkerSiteBaseCount(ctx context.Context, search entity.Worker) (int, error)
 }

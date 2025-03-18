@@ -224,7 +224,7 @@ func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.D
 		return fmt.Errorf("AddDevice fail: %v", err)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil

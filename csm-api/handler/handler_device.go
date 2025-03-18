@@ -134,7 +134,6 @@ func (d *DeviceAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 근태인식기 추가
 	err := d.Service.AddDevice(ctx, device)
 	if err != nil {
-		fmt.Println("handler add_task.go ServeHTTP Validator error")
 		RespondJSON(
 			ctx,
 			w,

@@ -128,10 +128,22 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 			}))
 		case reflect.Struct:
 			if regularField.Type() == reflect.TypeOf(time.Time{}) {
-				sqlNullsField.Set(reflect.ValueOf(sql.NullTime{
-					Time:  regularField.Interface().(time.Time),
-					Valid: !regularField.Interface().(time.Time).IsZero(),
-				}))
+				t := regularField.Interface().(time.Time)
+				// t가 제로 값("0001-01-01T00:00:00Z")인지 검사
+				if t.IsZero() || t.Format(time.RFC3339) == "0001-01-01T00:00:00Z" {
+					sqlNullsField.Set(reflect.ValueOf(sql.NullTime{
+						Valid: false,
+					}))
+				} else {
+					sqlNullsField.Set(reflect.ValueOf(sql.NullTime{
+						Time:  t,
+						Valid: true,
+					}))
+				}
+				//sqlNullsField.Set(reflect.ValueOf(sql.NullTime{
+				//	Time:  regularField.Interface().(time.Time),
+				//	Valid: !regularField.Interface().(time.Time).IsZero(),
+				//}))
 			} else {
 				return fmt.Errorf("unsupported struct field type for field %q", fieldName)
 			}
