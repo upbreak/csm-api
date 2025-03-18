@@ -48,6 +48,18 @@ func TimeBetweenWhereConvert(condition string, sqlValue1 sql.NullString, sqlValu
 	return condition
 }
 
+func OrTimeBetweenWhereConvert(condition string, sqlValue1 sql.NullString, sqlValue2 sql.NullString, target string) string {
+	if sqlValue1.Valid && sqlValue2.Valid {
+		value1 := strings.TrimSpace(sqlValue1.String)
+		value2 := strings.TrimSpace(sqlValue2.String)
+
+		if value1 != "" && value2 != "" {
+			condition += fmt.Sprintf(` OR TO_CHAR(%s, 'YYYY-MM-DD') BETWEEN '%s' AND '%s'`, target, value1, value2)
+		}
+	}
+	return condition
+}
+
 func RetrySearchTextConvert(retry string, columns []string) string {
 	where := ""
 	if retry == "" {

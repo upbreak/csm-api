@@ -87,6 +87,18 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Get("/jwt-validation", jwtVaildHandler.ServeHTTP)
 
+	// 코드조회
+	codeHandler := &handler.HandlerCode{
+		Service: service.ServiceCode{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	mux.Route("/code", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/", codeHandler.ServeHTTP)
+	})
+
 	// Begin::현장관리
 	// 현장관리 조회
 	siteListHandler := &handler.SiteListHandler{
@@ -280,6 +292,20 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+	// 근로자 추가
+	workerAddHandler := &handler.HandlerWorkerAdd{
+		Service: &service.ServiceWorker{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	// 근로자 수정
+	workerModHandler := &handler.HandlerWorkerMod{
+		Service: &service.ServiceWorker{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
 	// 현장 근로자 조회
 	workerSiteBaseListHandler := handler.HandlerWorkerSiteBaseList{
 		Service: &service.ServiceWorker{
@@ -290,6 +316,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	mux.Route("/worker", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/total", workerTotalListHandler.ServeHttp)
+		r.Post("/total", workerAddHandler.ServeHttp)
+		r.Put("/total", workerModHandler.ServeHttp)
 		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
 	})
 	// End::근로자
