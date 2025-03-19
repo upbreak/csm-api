@@ -93,4 +93,5 @@ type WhetherApiService interface {
 }
 type AddressSearchAPIService interface {
 	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)
+	GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error)
 }

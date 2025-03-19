@@ -34,17 +34,17 @@ func (s *ServiceAddressSearching) GetAPILatitudeLongtitude(roadAddress string) (
 	}
 	// apiUrl주소
 	apiUrl := fmt.Sprintf(`https://api.vworld.kr/req/search?key=%s&version=%s&service=%s&request=%s&type=%s&crs=%s&category=%s&query=%s&domain=%s&format=%s&errorFormat=%s`,
-		url.QueryEscape(s.ApiKey.VworldApiKey),
-		"2.0",
-		"search",
-		"search",
-		"address",
-		"EPSG:4326",
-		"ROAD",
-		url.QueryEscape(roadAddress),
-		"csm.htenc.co.kr",
-		"json",
-		"json",
+		url.QueryEscape(s.ApiKey.VworldApiKey), // key
+		"2.0",                                  // version
+		"search",                               // service
+		"search",                               //request
+		"address",                              // type
+		"EPSG:4326",                            // crs
+		"ROAD",                                 // category
+		url.QueryEscape(roadAddress),           // query
+		"csm.htenc.co.kr",                      // domain
+		"json",                                 // format
+		"json",                                 // errFormat
 	)
 
 	// api 호출
@@ -101,4 +101,61 @@ func (s *ServiceAddressSearching) GetAPILatitudeLongtitude(roadAddress string) (
 	}
 
 	return point, nil
+}
+
+// 지도 x, y좌표 조회
+// @params
+//   - roadAddress : 도로명 주소
+func (s *ServiceAddressSearching) GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error) {
+	if roadAddress == "" {
+		return nil, fmt.Errorf("roadAddress parameter is missing")
+	}
+
+	fmt.Printf("roadAddress is %s\n", roadAddress)
+
+	// apiUrl주소
+	apiUrl := fmt.Sprintf(`https://api.vworld.kr/req/address?key=%s&version=%s&service=%s&request=%s&type=%s&crs=%s&address=%s&domain=%s&format=%s&errorFormat=%s&simple=%s`,
+		url.QueryEscape(s.ApiKey.VworldApiKey), // key
+		"2.0",                                  // version
+		"address",                              // service
+		"getcoord",                             // request
+		"road",                                 // type
+		"EPSG:900913",                          // crs
+		url.QueryEscape(roadAddress),           // address
+		"csm.htenc.co.kr",                      // domain
+		"json",                                 // format
+		"json",                                 // errformat
+		"true",                                 // simple
+	)
+	type SiteMapPoint struct {
+		Response struct {
+			Status string `json:"status"`
+			Result struct {
+				Crs   string          `json:"crs"`
+				Point entity.MapPoint `json:"point"`
+			} `json:"result"`
+			Error struct {
+				Level string `json:"level"`
+				Code  int    `json:"code"`
+				Text  string `json:"text"`
+			}
+		} `json:"response"`
+	}
+	// api 호출
+	body, err := api.CallGetAPI(apiUrl)
+	if err != nil {
+		return nil, fmt.Errorf("call GetWhetherSrtNcst API error: %v", err)
+	}
+
+	// 응답 json으로 변환
+	var res SiteMapPoint
+	if err := json.Unmarshal([]byte(body), &res); err != nil {
+		return nil, fmt.Errorf("SiteMapPoint api JSON parse err: %v", err)
+	}
+
+	if res.Response.Status == "ERROR" {
+		return nil, fmt.Errorf("SiteMapPoint api response err: %s", res.Response.Error.Text)
+	}
+
+	return &res.Response.Result.Point, nil
 }
