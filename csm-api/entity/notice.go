@@ -30,9 +30,9 @@ type NoticeID int64
 type Notice struct {
 	RowNum       int64     `json:"row_num"`
 	Idx          NoticeID  `json:"idx"`
-	Sno          int64     `json:"sno"`
-	SiteNm       string    `json:"site_nm"`
-	LocName      string    `json:"loc_name"`
+	Jno          int64     `json:"jno"`
+	JobName      string    `json:"job_name"`
+	JobLocName   string    `json:"job_loc_name"`
 	Title        string    `json:"title"`
 	Content      string    `json:"content"`
 	ShowYN       string    `json:"show_yn"`
@@ -54,9 +54,9 @@ type Notices []*Notice
 type NoticeSql struct {
 	RowNum       sql.NullInt64  `db:"RNUM"`
 	Idx          NoticeID       `db:"IDX"`
-	Sno          sql.NullInt64  `db:"SNO"`
-	SiteNm       sql.NullString `db:"SITE_NM"`
-	LocName      sql.NullString `db:"LOC_NAME"`
+	Jno          sql.NullInt64  `db:"JNO"`
+	JobName      sql.NullString `db:"JOB_NAME"`
+	JobLocName   sql.NullString `db:"JOB_LOC_NAME"`
 	Title        sql.NullString `db:"TITLE" validate:"required"`
 	Content      sql.NullString `db:"CONTENT" validate:"required"`
 	ShowYN       sql.NullString `db:"SHOW_YN"`
@@ -78,9 +78,9 @@ type NoticeSqls []*NoticeSql
 func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.RowNum = noticeSql.RowNum.Int64
 	n.Idx = noticeSql.Idx
-	n.Sno = noticeSql.Sno.Int64
-	n.SiteNm = noticeSql.SiteNm.String
-	n.LocName = noticeSql.LocName.String
+	n.Jno = noticeSql.Jno.Int64
+	n.JobName = noticeSql.JobName.String
+	n.JobLocName = noticeSql.JobLocName.String
 	n.Title = noticeSql.Title.String
 	n.Content = noticeSql.Content.String
 	n.ShowYN = noticeSql.ShowYN.String
@@ -111,22 +111,22 @@ func (n *Notices) ToNotices(noticeSqls *NoticeSqls) *Notices {
 func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 	n.Idx = notice.Idx
 
-	if notice.Sno != 0 {
-		n.Sno = sql.NullInt64{Valid: true, Int64: notice.Sno}
+	if notice.Jno != 0 {
+		n.Jno = sql.NullInt64{Valid: true, Int64: notice.Jno}
 	} else {
-		n.Sno = sql.NullInt64{Valid: true, Int64: 0}
+		n.Jno = sql.NullInt64{Valid: true, Int64: 0}
 	}
 
-	if notice.SiteNm != "" {
-		n.SiteNm = sql.NullString{Valid: true, String: notice.SiteNm}
+	if notice.JobName != "" {
+		n.JobName = sql.NullString{Valid: true, String: notice.JobName}
 	} else {
-		n.SiteNm = sql.NullString{Valid: false}
+		n.JobName = sql.NullString{Valid: false}
 	}
 
-	if notice.LocName != "" {
-		n.LocName = sql.NullString{Valid: true, String: notice.LocName}
+	if notice.JobLocName != "" {
+		n.JobLocName = sql.NullString{Valid: true, String: notice.JobLocName}
 	} else {
-		n.LocName = sql.NullString{Valid: false}
+		n.JobLocName = sql.NullString{Valid: false}
 	}
 
 	if notice.Title != "" {

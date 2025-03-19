@@ -22,22 +22,22 @@ import (
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error) {
+func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, page entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error) {
 	sqls := entity.NoticeSqls{}
 
 	// 조건
 	condition := "1=1"
-	if search.LocName.Valid {
-		trimLocName := strings.TrimSpace(search.LocName.String)
+	if search.JobLocName.Valid {
+		trimJobLocName := strings.TrimSpace(search.JobLocName.String)
 
-		if trimLocName != "" {
-			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimLocName)
+		if trimJobLocName != "" {
+			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimJobLocName)
 		}
 	}
-	if search.SiteNm.Valid {
-		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
-		if trimSiteNm != "" {
-			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+	if search.JobName.Valid {
+		trimJobName := strings.TrimSpace(search.JobName.String)
+		if trimJobName != "" {
+			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimJobName)
 		}
 	}
 	if search.Title.Valid {
@@ -64,9 +64,9 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 				WITH Notice AS (
 					SELECT 
 						N.IDX,
-						N.SNO, 
-						S.SITE_NM,
-						S.LOC_NAME,
+						N.JNO, 
+						DECODE(J.JOB_NAME, 'NONE', '전체', J.JOB_NAME) AS JOB_NAME,
+						J.JOB_LOC_NAME,
 						N.TITLE, 
 						N.CONTENT, 
 						N.SHOW_YN,
@@ -85,12 +85,13 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 					INNER JOIN
 						S_SYS_USER_SET U ON N.REG_UNO = U.UNO
 					LEFT OUTER JOIN 
-						IRIS_SITE_SET S ON	N.SNO = S.SNO
+						S_JOB_INFO J ON J.JNO = N.JNO 
 					INNER JOIN
 						IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 					WHERE
 						N.IS_USE = 'Y'
 						AND N.POSTING_DATE > SYSDATE
+						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) OR N.JNO = 0 )
 				)
 				SELECT * 
 			  	FROM (
@@ -103,12 +104,12 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 						ORDER BY
 							%s
 						) sorted_data
-					WHERE ROWNUM <= :1
+					WHERE ROWNUM <= :2
 			  	)
-			  	WHERE RNUM > :2`,
+			  	WHERE RNUM > :3`,
 		condition, order)
 
-	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &sqls, query, uno, page.EndNum, page.StartNum); err != nil {
 		fmt.Println("store/notice. NoticeList error")
 		return nil, err
 	}
@@ -119,21 +120,21 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, page entity.
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search entity.NoticeSql) (int, error) {
+func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, search entity.NoticeSql) (int, error) {
 	var count int
 
 	condition := "1=1"
-	if search.LocName.Valid {
-		trimLocName := strings.TrimSpace(search.LocName.String)
+	if search.JobLocName.Valid {
+		trimJobLocName := strings.TrimSpace(search.JobLocName.String)
 
-		if trimLocName != "" {
-			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimLocName)
+		if trimJobLocName != "" {
+			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimJobLocName)
 		}
 	}
-	if search.SiteNm.Valid {
-		trimSiteNm := strings.TrimSpace(search.SiteNm.String)
-		if trimSiteNm != "" {
-			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimSiteNm)
+	if search.JobName.Valid {
+		trimJobName := strings.TrimSpace(search.JobName.String)
+		if trimJobName != "" {
+			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimJobName)
 		}
 	}
 	if search.Title.Valid {
@@ -153,9 +154,9 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 			WITH Notice AS (
 				SELECT 
 					N.IDX,
-					N.SNO, 
-					S.SITE_NM,
-					S.LOC_NAME,
+					N.JNO, 
+					J.JOB_NAME,
+					J.JOB_LOC_NAME,
 					N.TITLE, 
 					N.CONTENT, 
 					N.SHOW_YN,
@@ -171,19 +172,20 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, search 
 				INNER JOIN
 					S_SYS_USER_SET U ON N.REG_UNO = U.UNO
 				LEFT OUTER JOIN 
-					IRIS_SITE_SET S ON	N.SNO = S.SNO
+					S_JOB_INFO J ON J.JNO = N.JNO
 				INNER JOIN
 					IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 				WHERE
 					N.IS_USE = 'Y'
 					AND N.POSTING_DATE > SYSDATE
+					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) OR N.JNO = 0 )
 			)
 			SELECT COUNT(*) 
 			FROM  Notice
 			WHERE
 				%s`, condition)
 
-	if err := db.GetContext(ctx, &count, query); err != nil {
+	if err := db.GetContext(ctx, &count, query, uno); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
@@ -232,7 +234,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :7 
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PeriodCode)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PeriodCode)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -282,7 +284,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 					IDX = :9
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Sno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx, noticeSql.PeriodCode, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx, noticeSql.PeriodCode, noticeSql.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
