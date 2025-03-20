@@ -278,7 +278,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 	return &projectInfoSqls, nil
 }
 
-// func: 프로젝트 전체 조회
+// func: 관리 중인 프로젝트 전체 조회
 // @param
 // -
 func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {

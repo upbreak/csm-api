@@ -427,11 +427,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		}
 
 		router.Post("/", noticeAddHandler.ServeHTTP)
-		router.Get("/", noticeListHandler.ServeHTTP)
+		router.Get("/{uno}", noticeListHandler.ServeHTTP)
 		router.Put("/", noticeModifyHandler.ServeHTTP)
 		router.Delete("/{idx}", noticeDeleteHandler.ServeHTTP)
 		router.Get("/period", noticePeriodHandler.ServeHTTP)
-
 	})
 	// End::공지사항
 

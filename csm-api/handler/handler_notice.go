@@ -27,6 +27,22 @@ type NoticeListHandler struct {
 // - response: hhtp get parameter
 func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	uno := r.PathValue("uno")
+	int64UNO, err := strconv.ParseInt(uno, 10, 64)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        ParsingError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
 
 	page := entity.Page{}
 	search := entity.Notice{}
@@ -53,18 +69,18 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 
-	search.LocName = r.URL.Query().Get("loc_name")
-	search.SiteNm = r.URL.Query().Get("site_nm")
+	search.JobLocName = r.URL.Query().Get("loc_name")
+	search.JobName = r.URL.Query().Get("site_nm")
 	search.Title = r.URL.Query().Get("title")
 	search.UserInfo = r.URL.Query().Get("user_info")
 
-	notices, err := n.Service.GetNoticeList(ctx, page, search)
+	notices, err := n.Service.GetNoticeList(ctx, int64UNO, page, search)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	count, err := n.Service.GetNoticeListCount(ctx, search)
+	count, err := n.Service.GetNoticeListCount(ctx, int64UNO, search)
 	if err != nil {
 		RespondJSON(
 			ctx,
