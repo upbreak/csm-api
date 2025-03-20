@@ -70,7 +70,7 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno int64, searc
 
 // func: 공지사항 추가
 // @param
-// - notice entity.Notice: SNO, TITLE, CONTENT, SHOW_YN, PERIOD_CODE, REG_UNO, REG_USER
+// - notice entity.Notice: JNO, TITLE, CONTENT, SHOW_YN, PERIOD_CODE, REG_UNO, REG_USER
 func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) error {
 	noticeSql := &entity.NoticeSql{}
 	noticeSql = noticeSql.OfNoticeSql(notice)
@@ -84,7 +84,7 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) err
 
 // func: 공지사항 수정
 // @param
-// -notice entity.Notice: IDX, SNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
+// -notice entity.Notice: IDX, JNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
 func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) error {
 	noticeSql := &entity.NoticeSql{}
 	noticeSql = noticeSql.OfNoticeSql(notice)

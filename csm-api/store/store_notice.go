@@ -207,7 +207,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 	query := `
 				INSERT INTO IRIS_NOTICE_BOARD(
 					IDX,
-					SNO,
+					JNO,
 					TITLE,
 					CONTENT,
 					SHOW_YN,
@@ -216,7 +216,8 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					REG_USER,
 					REG_DATE,
 					POSTING_PERIOD,
-					POSTING_DATE
+					POSTING_DATE,
+				    REG_USER_DUTY_NAME
 				)
 				SELECT
 					SEQ_IRIS_NOTICE_BOARD.NEXTVAL,
@@ -229,12 +230,13 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					:6,
 					SYSDATE,
 					C.CODE,
-					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04
+					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04,
+					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :7)
 				FROM IRIS_CODE_SET C
-				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :7 
+				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :8 
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PeriodCode)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.RegUno, noticeSql.PeriodCode)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -262,7 +264,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 	query := `
 				UPDATE IRIS_NOTICE_BOARD
 				SET
-					SNO = :1,
+					JNO = :1,
 					TITLE = :2,
 					CONTENT = :3,
 					SHOW_YN = :4,
