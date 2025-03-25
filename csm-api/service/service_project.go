@@ -392,3 +392,23 @@ func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (
 
 	return &organizations, nil
 }
+
+// 프로젝트 관리
+func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64) (*entity.ProjectInfos, error) {
+
+	var unoSql sql.NullInt64
+	if uno != 0 {
+		unoSql = sql.NullInt64{Valid: true, Int64: uno}
+	} else {
+		unoSql = sql.NullInt64{Valid: false}
+	}
+	sqlList, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql)
+
+	if err != nil {
+		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
+	}
+	projectInfos := &entity.ProjectInfos{}
+	projectInfos.ToProjectInfos(sqlList)
+
+	return projectInfos, nil
+}

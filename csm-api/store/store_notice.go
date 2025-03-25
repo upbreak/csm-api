@@ -79,14 +79,15 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 						N.MOD_DATE,
 						N.POSTING_PERIOD AS PERIOD_CODE,
 						N.POSTING_DATE,
-						C.CODE_NM AS NOTICE_NM
+						C.CODE_NM AS NOTICE_NM,
+						N.IS_IMPORTANT
 					FROM 
 						IRIS_NOTICE_BOARD N 
 					INNER JOIN
 						S_SYS_USER_SET U ON N.REG_UNO = U.UNO
 					LEFT OUTER JOIN 
-						S_JOB_INFO J ON J.JNO = N.JNO 
-					INNER JOIN
+						S_JOB_INFO J ON J.JNO = N.JNO
+					LEFT OUTER JOIN
 						IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 					WHERE
 						N.IS_USE = 'Y'
@@ -102,6 +103,17 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 						WHERE
 							%s
 						ORDER BY
+							CASE WHEN 
+									IS_IMPORTANT= 'Y' 
+								THEN 0 
+								ELSE 1
+							END,
+							CASE WHEN
+									JNO = 0 
+								THEN 0
+								ELSE 1 
+							END,
+							JNO DESC,
 							%s
 						) sorted_data
 					WHERE ROWNUM <= :2
@@ -110,7 +122,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 		condition, order)
 
 	if err := db.SelectContext(ctx, &sqls, query, uno, page.EndNum, page.StartNum); err != nil {
-		fmt.Println("store/notice. NoticeList error")
+		fmt.Printf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
 	return &sqls, nil
@@ -173,7 +185,7 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql
 					S_SYS_USER_SET U ON N.REG_UNO = U.UNO
 				LEFT OUTER JOIN 
 					S_JOB_INFO J ON J.JNO = N.JNO
-				INNER JOIN
+				LEFT OUTER JOIN
 					IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 				WHERE
 					N.IS_USE = 'Y'
@@ -207,6 +219,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 	query := `
 				INSERT INTO IRIS_NOTICE_BOARD(
 					IDX,
+					SNO,
 					JNO,
 					TITLE,
 					CONTENT,
@@ -215,28 +228,29 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					REG_UNO,
 					REG_USER,
 					REG_DATE,
-					POSTING_PERIOD,
 					POSTING_DATE,
 				    REG_USER_DUTY_NAME
-				)
-				SELECT
+				) VALUES (
 					SEQ_IRIS_NOTICE_BOARD.NEXTVAL,
-					:1,
+					(SELECT S.SNO FROM IRIS_SITE_JOB S RIGHT JOIN S_JOB_INFO J ON S.JNO = J.JNO WHERE J.JNO = :1),
 					:2,
 					:3,
 					:4,
-					'Y',
 					:5,
+					'Y',
 					:6,
+					:7,
 					SYSDATE,
-					C.CODE,
-					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04,
-					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :7)
-				FROM IRIS_CODE_SET C
-				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :8 
+--					C.CODE,
+					:8,
+--					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04,
+					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :9)
+				)
+--				FROM IRIS_CODE_SET C
+--				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.RegUno, noticeSql.PeriodCode)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingDate, noticeSql.RegUno)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -264,13 +278,14 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 	query := `
 				UPDATE IRIS_NOTICE_BOARD
 				SET
-					JNO = :1,
-					TITLE = :2,
-					CONTENT = :3,
-					SHOW_YN = :4,
+				    SNO = (SELECT S.SNO FROM IRIS_SITE_JOB S RIGHT JOIN S_JOB_INFO J ON S.JNO = J.JNO WHERE J.JNO = :1),
+					JNO = :2,
+					TITLE = :3,
+					CONTENT = :4,
+					SHOW_YN = :5,
 					IS_USE = 'Y',
-					MOD_UNO = :5,	
-					MOD_USER = :6,
+					MOD_UNO = :6,	
+					MOD_USER = :7,
 					MOD_DATE = SYSDATE,
 					(POSTING_PERIOD,
 					POSTING_DATE) = (
@@ -279,14 +294,14 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 						FROM 
 							IRIS_CODE_SET C
 						INNER JOIN
-							IRIS_NOTICE_BOARD N ON N.IDX = :7
-						WHERE C.CODE = :8 AND C.P_CODE = 'NOTICE_PERIOD'
+							IRIS_NOTICE_BOARD N ON N.IDX = :8
+						WHERE C.CODE = :9 AND C.P_CODE = 'NOTICE_PERIOD'
 					)
 				WHERE 
-					IDX = :9
+					IDX = :10
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx, noticeSql.PeriodCode, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx, noticeSql.PeriodCode, noticeSql.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {

@@ -42,6 +42,7 @@ type ProjectStore interface {
 	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
 	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
+	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64) (*entity.ProjectInfoSqls, error)
 }
 
 type ProjectDailyStore interface {

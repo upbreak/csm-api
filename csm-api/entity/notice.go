@@ -30,6 +30,7 @@ type NoticeID int64
 type Notice struct {
 	RowNum       int64     `json:"row_num"`
 	Idx          NoticeID  `json:"idx"`
+	Sno          int64     `json:"sno"`
 	Jno          int64     `json:"jno"`
 	JobName      string    `json:"job_name"`
 	JobLocName   string    `json:"job_loc_name"`
@@ -47,6 +48,7 @@ type Notice struct {
 	PeriodCode   string    `json:"period_code"`
 	NoticeNm     string    `json:"notice_nm"`
 	PostingDate  time.Time `json:"posting_date"`
+	IsImportant  string    `json:"is_important"`
 }
 
 type Notices []*Notice
@@ -54,6 +56,7 @@ type Notices []*Notice
 type NoticeSql struct {
 	RowNum       sql.NullInt64  `db:"RNUM"`
 	Idx          NoticeID       `db:"IDX"`
+	Sno          sql.NullInt64  `db:"SNO"`
 	Jno          sql.NullInt64  `db:"JNO"`
 	JobName      sql.NullString `db:"JOB_NAME"`
 	JobLocName   sql.NullString `db:"JOB_LOC_NAME"`
@@ -71,6 +74,7 @@ type NoticeSql struct {
 	PeriodCode   sql.NullString `db:"PERIOD_CODE"`
 	NoticeNm     sql.NullString `db:"NOTICE_NM"`
 	PostingDate  sql.NullTime   `db:"POSTING_DATE"`
+	IsImportant  sql.NullString `db:"IS_IMPORTANT"`
 }
 
 type NoticeSqls []*NoticeSql
@@ -78,6 +82,7 @@ type NoticeSqls []*NoticeSql
 func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.RowNum = noticeSql.RowNum.Int64
 	n.Idx = noticeSql.Idx
+	n.Sno = noticeSql.Sno.Int64
 	n.Jno = noticeSql.Jno.Int64
 	n.JobName = noticeSql.JobName.String
 	n.JobLocName = noticeSql.JobLocName.String
@@ -95,6 +100,7 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.PeriodCode = noticeSql.PeriodCode.String
 	n.NoticeNm = noticeSql.NoticeNm.String
 	n.PostingDate = noticeSql.PostingDate.Time
+	n.IsImportant = noticeSql.IsImportant.String
 
 	return n
 }
@@ -115,6 +121,12 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.Jno = sql.NullInt64{Valid: true, Int64: notice.Jno}
 	} else {
 		n.Jno = sql.NullInt64{Valid: true, Int64: 0}
+	}
+
+	if notice.Sno != 0 {
+		n.Sno = sql.NullInt64{Valid: true, Int64: notice.Sno}
+	} else {
+		n.Sno = sql.NullInt64{Valid: false}
 	}
 
 	if notice.JobName != "" {
@@ -212,5 +224,10 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.PostingDate = sql.NullTime{Valid: false}
 	}
 
+	if notice.IsImportant != "" {
+		n.IsImportant = sql.NullString{Valid: true, String: notice.IsImportant}
+	} else {
+		n.IsImportant = sql.NullString{Valid: false}
+	}
 	return n
 }
