@@ -111,8 +111,6 @@ func (s *ServiceAddressSearching) GetAPISiteMapPoint(roadAddress string) (*entit
 		return nil, fmt.Errorf("roadAddress parameter is missing")
 	}
 
-	fmt.Printf("roadAddress is %s\n", roadAddress)
-
 	// apiUrl주소
 	apiUrl := fmt.Sprintf(`https://api.vworld.kr/req/address?key=%s&version=%s&service=%s&request=%s&type=%s&crs=%s&address=%s&domain=%s&format=%s&errorFormat=%s&simple=%s`,
 		url.QueryEscape(s.ApiKey.VworldApiKey), // key

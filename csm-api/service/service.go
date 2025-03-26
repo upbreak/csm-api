@@ -39,6 +39,7 @@ type ProjectService interface {
 	GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error)
 	GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error)
 	GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
+	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
 }
 
 type ProjectDailyService interface {
@@ -54,8 +55,8 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context, uno int64, page entity.Page, search entity.Notice) (*entity.Notices, error)
-	GetNoticeListCount(ctx context.Context, uno int64, search entity.Notice) (int, error)
+	GetNoticeList(ctx context.Context, uno int64, role string, page entity.Page, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, uno int64, role string, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx int64) error

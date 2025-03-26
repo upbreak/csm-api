@@ -409,7 +409,7 @@ func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			w,
 			&ErrResponse{
 				Result:         Failure,
-				Message:        "get parameter is missing dd",
+				Message:        "get parameter is missing jno",
 				Details:        NotFoundParam,
 				HttpStatusCode: http.StatusBadRequest,
 			},
@@ -454,4 +454,53 @@ func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 
+}
+
+type HandlerProjectNmUno struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerProjectNmUno) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	uno := r.PathValue("uno")
+	role := r.URL.Query().Get("role")
+
+	int64UNO, err := strconv.ParseInt(uno, 10, 64)
+
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing uno",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+	}
+
+	projectNm, err := h.Service.GetProjectNmUnoList(ctx, int64UNO, role)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			ProjectNm entity.ProjectInfos `json:"project_nm"`
+		}{ProjectNm: *projectNm},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
