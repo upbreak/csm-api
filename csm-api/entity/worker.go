@@ -24,6 +24,7 @@ type Worker struct {
 	ModUser    string    `json:"mod_user"`
 	ModDate    time.Time `json:"mod_date"`
 	ModUno     int64     `json:"mod_uno"`
+	RecordDate string    `json:"record_date"`
 }
 type Workers []*Worker
 
@@ -46,18 +47,21 @@ type WorkerSql struct {
 	ModUser    sql.NullString `db:"MOD_USER"`
 	ModDate    sql.NullTime   `db:"MOD_DATE"`
 	ModUno     sql.NullInt64  `db:"MOD_UNO"`
+	RecordDate sql.NullString `db:"RECORD_DATE"`
 }
 type WorkerSqls []*WorkerSql
 
 type WorkerDaily struct {
 	RowNum          int64     `json:"rnum"`
-	Sno             int64     `json:"sno"` //현장 고유번호
-	Jno             int64     `json:"jno"` //프로젝트 고유번호
-	JobName         string    `json:"job_name"`
+	Sno             int64     `json:"sno"`     //현장 고유번호
+	Jno             int64     `json:"jno"`     //프로젝트 고유번호
 	UserId          string    `json:"user_id"` //근로자 아이디
+	UserNm          string    `json:"user_nm"`
+	Department      string    `json:"department"`
 	RecordDate      time.Time `json:"record_date"`
 	InRecogTime     time.Time `json:"in_recog_time"`  //출근시간
 	OutRecogTime    time.Time `json:"out_recog_time"` //퇴근시간
+	Commute         string    `json:"commute"`
 	IsDeadline      string    `json:"is_deadline"`
 	SearchStartTime string    `json:"search_start_time"`
 	SearchEndTime   string    `json:"search_end_time"`
@@ -74,11 +78,13 @@ type WorkerDailySql struct {
 	RowNum          sql.NullInt64  `db:"RNUM"`
 	Sno             sql.NullInt64  `db:"SNO"`
 	Jno             sql.NullInt64  `db:"JNO"`
-	JobName         sql.NullString `db:"JOB_NAME"`
 	UserId          sql.NullString `db:"USER_ID"`
+	UserNm          sql.NullString `db:"USER_NM"`
+	Department      sql.NullString `db:"DEPARTMENT"`
 	RecordDate      sql.NullTime   `db:"RECORD_DATE"`
 	InRecogTime     sql.NullTime   `db:"IN_RECOG_TIME"`
 	OutRecogTime    sql.NullTime   `db:"OUT_RECOG_TIME"`
+	Commute         sql.NullString `db:"COMMUTE"`
 	IsDeadline      sql.NullString `db:"IS_DEADLINE"`
 	SearchStartTime sql.NullString `db:"SEARCH_START_TIME"`
 	SearchEndTime   sql.NullString `db:"SEARCH_END_TIME"`

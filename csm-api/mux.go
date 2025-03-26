@@ -315,6 +315,13 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+	// 근로자 검색 (현장 근로자 추가 전용)
+	workerByUserIdHandler := &handler.HandlerWorkerByUserId{
+		Service: &service.ServiceWorker{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
 	// 근로자 수정
 	workerModHandler := &handler.HandlerWorkerMod{
 		Service: &service.ServiceWorker{
@@ -323,9 +330,16 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 	}
 	// 현장 근로자 조회
-	workerSiteBaseListHandler := handler.HandlerWorkerSiteBaseList{
+	workerSiteBaseListHandler := &handler.HandlerWorkerSiteBaseList{
 		Service: &service.ServiceWorker{
 			DB:    safeDb,
+			Store: &r,
+		},
+	}
+	// 현장 근로자 추가/수정
+	workerSiteBaseMergeHandler := &handler.HandlerSiteBaseMerge{
+		Service: &service.ServiceWorker{
+			TDB:   safeDb,
 			Store: &r,
 		},
 	}
@@ -333,8 +347,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/total", workerTotalListHandler.ServeHttp)
 		r.Post("/total", workerAddHandler.ServeHttp)
+		r.Get("/total/simple", workerByUserIdHandler.ServeHttp)
 		r.Put("/total", workerModHandler.ServeHttp)
 		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
+		r.Post("/site-base", workerSiteBaseMergeHandler.ServeHttp)
 	})
 	// End::근로자
 

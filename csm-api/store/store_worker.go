@@ -138,6 +138,78 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 	return count, nil
 }
 
+// func: 근로자 검색(현장근로자 추가시 사용)
+// @param
+// - userId string
+func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerSqls, error) {
+	sqls := entity.WorkerSqls{}
+
+	var columns []string
+	columns = append(columns, "USER_ID")
+	columns = append(columns, "USER_NM")
+	columns = append(columns, "DEPARTMENT")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	query := fmt.Sprintf(`
+				SELECT *
+				FROM (
+					SELECT ROWNUM AS RNUM, sorted_data.*
+					FROM (
+						SELECT USER_ID, USER_NM, DEPARTMENT, :1 as RECORD_DATE
+						FROM IRIS_WORKER_SET
+						WHERE JNO = :2
+						AND USER_ID NOT IN (
+							SELECT USER_ID
+							FROM IRIS_WORKER_DAILY_SET
+							WHERE JNO = :3
+							AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :4
+						)
+						%s
+					) sorted_data
+					WHERE ROWNUM <= :5
+				)
+				WHERE RNUM > :6`, retryCondition)
+
+	if err := db.SelectContext(ctx, &sqls, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
+		return nil, fmt.Errorf("GetWorkerListByUserId fail: %v", err)
+	}
+
+	return &sqls, nil
+}
+
+// func: 근로자 개수 검색(현장근로자 추가시 사용)
+// @param
+// - userId string
+func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error) {
+	var count int
+
+	var columns []string
+	columns = append(columns, "USER_ID")
+	columns = append(columns, "USER_NM")
+	columns = append(columns, "DEPARTMENT")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	query := fmt.Sprintf(`
+				SELECT COUNT(*)
+				FROM IRIS_WORKER_SET
+				WHERE JNO = :1
+				AND USER_ID NOT IN (
+					SELECT USER_ID
+					FROM IRIS_WORKER_DAILY_SET
+					WHERE JNO = :2
+					AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :3
+				)
+				%s`, retryCondition)
+
+	if err := db.GetContext(ctx, &count, query, search.Jno, search.Jno, search.SearchStartTime); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("GetWorkerCountByUserId fail: %w", err)
+	}
+	return count, nil
+}
+
 // func: 근로자 추가
 // @param
 // -
@@ -222,20 +294,27 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 // @param
 // - page entity.PageSql: 정렬, 리스트 수
 // - search entity.WorkerSql: 검색 단어
-func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error) {
-	sqls := entity.WorkerSqls{}
+func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerDailySqls, error) {
+	sqls := entity.WorkerDailySqls{}
 
 	condition := ""
 
-	condition = utils.StringWhereConvert(condition, search.JobName, "t4.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
-	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
+	condition = utils.StringWhereConvert(condition, search.UserId, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserNm, "t2.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department, "t2.DEPARTMENT")
+
+	var columns []string
+	columns = append(columns, "t1.USER_ID")
+	columns = append(columns, "t2.USER_NM")
+	columns = append(columns, "t2.DEPARTMENT")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var order string
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = "DEPARTMENT ASC, USER_ID DESC"
+		//order = "RECORD_DATE DESC, OUT_RECOG_TIME DESC NULLS LAST"
+		order = "REG_DATE DESC, GREATEST(MOD_DATE, REG_DATE) DESC NULLS LAST"
 	}
 
 	query := fmt.Sprintf(`
@@ -243,35 +322,35 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 				FROM (
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
-						   SELECT
-								MAX(t1.DNO) DNO
-								,MAX(t1.SNO) SNO
-								,MAX(t2.SITE_NM) SITE_NM
-								,MAX(t1.JNO) JNO
-								,MAX(t4.JOB_NAME) JOB_NAME
-								,t1.USER_ID USER_ID
-								,MAX(t1.USER_NM) USER_NM
-								,MAX(t1.DEPARTMENT) DEPARTMENT
-								,MIN(CASE WHEN t1.TRANS_TYPE = 'Clock in' THEN t1.RECOG_TIME END) AS IN_RECOG_TIME
-								,MAX(CASE WHEN t1.TRANS_TYPE = 'Clock out' THEN t1.RECOG_TIME END) AS OUT_RECOG_TIME
-							FROM
-								IRIS_RECD_SET t1
-								INNER JOIN IRIS_SITE_SET t2 ON t1.SNO = t2.SNO
-								INNER JOIN IRIS_SITE_JOB t3 ON t1.JNO = t3.JNO
-								INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
-							WHERE
-								t1.sno > 100
-							AND t1.SNO = :1
-								%s
-							GROUP BY
-								t1.USER_ID, t1.USER_GUID
+						   	SELECT 
+								t1.SNO AS SNO,
+								t1.JNO AS JNO,
+								t1.USER_ID AS USER_ID,
+								t2.USER_NM AS USER_NM,
+								t2.DEPARTMENT AS DEPARTMENT,
+								t1.RECORD_DATE AS RECORD_DATE,
+								t1.IN_RECOG_TIME AS IN_RECOG_TIME,
+								t1.OUT_RECOG_TIME AS OUT_RECOG_TIME,
+								t1.IS_DEADLINE AS IS_DEADLINE,
+								t1.REG_USER AS REG_USER,
+								t1.REG_DATE AS REG_DATE,
+								t1.MOD_USER AS MOD_USER,
+								t1.MOD_DATE AS MOD_DATE,
+								CASE WHEN t1.OUT_RECOG_TIME IS NULL THEN '출근' ELSE '퇴근' END AS COMMUTE
+							FROM IRIS_WORKER_DAILY_SET t1
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO  = t2.JNO AND t1.USER_ID = t2.USER_ID 
+							WHERE t1.SNO > 100
+							AND t1.JNO = :1
+							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
+							%s %s
 							ORDER BY %s
 					) sorted_data
-					WHERE ROWNUM <= :2
+					WHERE ROWNUM <= :4
+					ORDER BY RNUM %s
 				)
-				WHERE RNUM > :3`, condition, order)
+				WHERE RNUM > :5`, condition, retryCondition, order, page.RnumOrder)
 
-	if err := db.SelectContext(ctx, &sqls, query, search.Sno, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &sqls, query, search.Jno, search.SearchStartTime, search.SearchEndTime, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetWorkerSiteBaseList err: %v", err)
 	}
 
@@ -281,33 +360,122 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 // func: 현장 근로자 개수 조회
 // @param
 // - searchTime string: 조회 날짜
-func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error) {
+func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error) {
 	var count int
 
 	condition := ""
 
-	condition = utils.StringWhereConvert(condition, search.JobName, "t4.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
-	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
+	condition = utils.StringWhereConvert(condition, search.UserId, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserNm, "t2.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department, "t2.DEPARTMENT")
+
+	var columns []string
+	columns = append(columns, "t1.USER_ID")
+	columns = append(columns, "t2.USER_NM")
+	columns = append(columns, "t2.DEPARTMENT")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	query := fmt.Sprintf(`
-				SELECT 
-				    count (DISTINCT t1.USER_ID || '-' || t1.USER_GUID)
-				FROM
-					IRIS_RECD_SET t1
-					INNER JOIN IRIS_SITE_SET t2 ON t1.SNO = t2.SNO
-					INNER JOIN IRIS_SITE_JOB t3 ON t1.JNO = t3.JNO
-					INNER JOIN S_JOB_INFO t4 ON t3.JNO = t4.JNO
-				WHERE
-					t1.sno > 100
-				AND t1.SNO = :1
-					%s`, condition)
+							SELECT 
+								count(*)
+							FROM IRIS_WORKER_DAILY_SET t1
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO  = t2.JNO AND t1.USER_ID = t2.USER_ID 
+							WHERE t1.SNO > 100
+							AND t1.JNO = :1
+							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
+							%s %s`, condition, retryCondition)
 
-	if err := db.GetContext(ctx, &count, query, search.Sno); err != nil {
+	if err := db.GetContext(ctx, &count, query, search.Jno, search.SearchStartTime, search.SearchEndTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
 		return 0, fmt.Errorf("GetWorkerSiteBaseCount fail: %w", err)
 	}
 	return count, nil
+}
+
+// func: 현장 근로자 추가/수정
+// @param
+// -
+func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		fmt.Println("Failed to begin transaction: %v", err)
+		return fmt.Errorf("BeginTx fail: %w", err)
+	}
+
+	agent := utils.GetAgent()
+
+	query := `
+				MERGE INTO IRIS_WORKER_DAILY_SET t1
+				USING (
+					SELECT 
+						:1 AS SNO,
+						:2 AS JNO,
+						:3 AS USER_ID,
+						:4 AS RECORD_DATE,
+						:5 AS IN_RECOG_TIME,
+						:6 AS OUT_RECOG_TIME,
+						:7 AS REG_AGENT,
+						:8 AS REG_USER,
+						:9 AS REG_UNO
+					FROM DUAL
+				) t2
+				ON (
+					t1.SNO = t2.SNO 
+					AND t1.JNO = t2.JNO 
+					AND t1.USER_ID = t2.USER_ID
+				    AND t1.RECORD_DATE   = t2.RECORD_DATE
+				) WHEN MATCHED THEN
+					UPDATE SET
+						t1.IN_RECOG_TIME = t2.IN_RECOG_TIME,
+						t1.OUT_RECOG_TIME = t2.OUT_RECOG_TIME,
+						t1.MOD_DATE      = SYSDATE,
+						t1.MOD_AGENT     = t2.REG_AGENT,
+						t1.MOD_USER      = t2.REG_USER,
+						t1.MOD_UNO       = t2.REG_UNO
+					WHERE t1.SNO = t2.SNO
+					AND t1.JNO = t2.JNO
+					AND t1.USER_ID = t2.USER_ID
+				    AND t1.RECORD_DATE   = t2.RECORD_DATE
+				WHEN NOT MATCHED THEN
+					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, REG_DATE, REG_AGENT, REG_USER, REG_UNO)
+					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO)`
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		err = tx.Rollback()
+		if err != nil {
+			return fmt.Errorf("PrepareContext Rollback fail: %w", err)
+		}
+		return fmt.Errorf("PrepareContext fail: %w", err)
+	}
+	defer stmt.Close()
+
+	for _, worker := range workers {
+		_, err = stmt.ExecContext(ctx,
+			worker.Sno,
+			worker.Jno,
+			worker.UserId,
+			worker.RecordDate,
+			worker.InRecogTime,
+			worker.OutRecogTime,
+			agent,
+			worker.ModUser,
+			worker.ModUno,
+		)
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return fmt.Errorf("ExecContext Rollback fail: %w", err)
+			}
+			return fmt.Errorf("MergeSiteBaseWorker fail: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("MergeSiteBaseWorker Commit fail: %w", err)
+	}
+
+	return nil
 }
