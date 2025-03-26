@@ -112,6 +112,79 @@ type HandlerWorkerSiteBaseList struct {
 	Service service.WorkerService
 }
 
+// struct, func: 근로자 검색(현장근로자 추가시 사용)
+type HandlerWorkerByUserId struct {
+	Service service.WorkerService
+}
+
+func (h *HandlerWorkerByUserId) ServeHttp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	page := entity.Page{}
+	search := entity.WorkerDaily{}
+	pageNum := r.URL.Query().Get("page_num")
+	rowSize := r.URL.Query().Get("row_size")
+	retrySearch := r.URL.Query().Get("retry_search")
+	searchStartTime := r.URL.Query().Get("search_start_time")
+	jno := r.URL.Query().Get("jno")
+
+	if pageNum == "" || rowSize == "" || jno == "" {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+	page.PageNum, _ = strconv.Atoi(pageNum)
+	page.RowSize, _ = strconv.Atoi(rowSize)
+	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
+	search.SearchStartTime = searchStartTime
+
+	list, err := h.Service.GetWorkerListByUserId(ctx, page, search, retrySearch)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	count, err := h.Service.GetWorkerCountByUserId(ctx, search, retrySearch)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List  entity.Workers `json:"list"`
+			Count int            `json:"count"`
+		}{List: *list, Count: count},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
 // struct, func: 근로자 추가
 type HandlerWorkerAdd struct {
 	Service service.WorkerService
@@ -216,19 +289,21 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 
 	// http get paramter를 저장할 구조체 생성 및 파싱
 	page := entity.Page{}
-	search := entity.Worker{}
+	search := entity.WorkerDaily{}
 
 	pageNum := r.URL.Query().Get("page_num")
 	rowSize := r.URL.Query().Get("row_size")
 	order := r.URL.Query().Get("order")
-	sno := r.URL.Query().Get("sno")
-	jobName := r.URL.Query().Get("job_name")
+	rnumOrder := r.URL.Query().Get("rnum_order")
+	retrySearch := r.URL.Query().Get("retry_search")
+	jno := r.URL.Query().Get("jno")
+	userId := r.URL.Query().Get("user_id")
 	userNm := r.URL.Query().Get("user_nm")
 	department := r.URL.Query().Get("department")
 	searchStartTime := r.URL.Query().Get("search_start_time")
 	searchEndTime := r.URL.Query().Get("search_end_time")
 
-	if pageNum == "" || rowSize == "" || searchStartTime == "" || searchEndTime == "" || sno == "" {
+	if pageNum == "" || rowSize == "" || searchStartTime == "" || searchEndTime == "" || jno == "" {
 		RespondJSON(
 			ctx,
 			w,
@@ -245,13 +320,16 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.Sno, _ = strconv.ParseInt(sno, 10, 64)
-	search.JobName = jobName
+	page.RnumOrder = rnumOrder
+	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
+	search.UserId = userId
 	search.UserNm = userNm
 	search.Department = department
+	search.SearchStartTime = searchStartTime
+	search.SearchEndTime = searchEndTime
 
 	// 조회
-	list, err := h.Service.GetWorkerSiteBaseList(ctx, page, search)
+	list, err := h.Service.GetWorkerSiteBaseList(ctx, page, search, retrySearch)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -266,7 +344,7 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	}
 
 	// 개수 조회
-	count, err := h.Service.GetWorkerSiteBaseCount(ctx, search)
+	count, err := h.Service.GetWorkerSiteBaseCount(ctx, search, retrySearch)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -283,10 +361,58 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			List  entity.Workers `json:"list"`
-			Count int            `json:"count"`
+			List  entity.WorkerDailys `json:"list"`
+			Count int                 `json:"count"`
 		}{List: *list, Count: count},
 	}
 
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 현장근로자 추가/수정
+type HandlerSiteBaseMerge struct {
+	Service service.WorkerService
+}
+
+// @param
+// - http method: post
+// - param: entity.WorkerDailys - json(raw)
+func (h *HandlerSiteBaseMerge) ServeHttp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//데이터 파싱
+	workers := entity.WorkerDailys{}
+	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.MergeSiteBaseWorker(ctx, workers)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataAddFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }

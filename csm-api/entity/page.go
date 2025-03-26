@@ -12,15 +12,17 @@ const (
 )
 
 type Page struct {
-	PageNum int    `json:"page_num"`
-	RowSize int    `json:"row_size"`
-	Order   string `json:"order"`
+	PageNum   int    `json:"page_num"`
+	RowSize   int    `json:"row_size"`
+	Order     string `json:"order"`
+	RnumOrder string `json:"rnum_order"`
 }
 
 type PageSql struct {
-	StartNum sql.NullInt64  `db:"page_num"`
-	EndNum   sql.NullInt64  `db:"row_size"`
-	Order    sql.NullString `db:"order"`
+	StartNum  sql.NullInt64  `db:"page_num"`
+	EndNum    sql.NullInt64  `db:"row_size"`
+	Order     sql.NullString `db:"order"`
+	RnumOrder string         `db:"rnum_order"`
 }
 
 type PageReq struct {
@@ -42,6 +44,8 @@ func (s PageSql) OfPageSql(p Page) (PageSql, error) {
 	} else {
 		s.Order = sql.NullString{Valid: false}
 	}
+
+	s.RnumOrder = p.RnumOrder
 
 	return s, nil
 }

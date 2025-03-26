@@ -77,10 +77,13 @@ type DeviceStore interface {
 type WorkerStore interface {
 	GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql, retry string) (*entity.WorkerSqls, error)
 	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.WorkerSql, retry string) (int, error)
+	GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerSqls, error)
+	GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error)
 	AddWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error
 	ModifyWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error
-	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql) (*entity.WorkerSqls, error)
-	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerSql) (int, error)
+	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerDailySqls, error)
+	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error)
+	MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
 }
 
 type CompanyStore interface {
