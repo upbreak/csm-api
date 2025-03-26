@@ -464,6 +464,8 @@ func (h *HandlerProjectNmUno) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 
 	uno := r.PathValue("uno")
+	role := r.URL.Query().Get("role")
+
 	int64UNO, err := strconv.ParseInt(uno, 10, 64)
 
 	if err != nil {
@@ -479,7 +481,7 @@ func (h *HandlerProjectNmUno) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			http.StatusOK)
 	}
 
-	projectNm, err := h.Service.GetProjectNmUnoList(ctx, int64UNO)
+	projectNm, err := h.Service.GetProjectNmUnoList(ctx, int64UNO, role)
 	if err != nil {
 		RespondJSON(
 			ctx,

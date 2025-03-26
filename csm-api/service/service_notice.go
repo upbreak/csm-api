@@ -17,7 +17,7 @@ type ServiceNotice struct {
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재 페이지번호, 리스트 목록 개수
-func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno int64, page entity.Page, search entity.Notice) (*entity.Notices, error) {
+func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno int64, role string, page entity.Page, search entity.Notice) (*entity.Notices, error) {
 	var unoSql sql.NullInt64
 	if uno != 0 {
 		unoSql = sql.NullInt64{Int64: uno, Valid: true}
@@ -34,7 +34,13 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno int64, page entit
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
-	noticeSqls, err := s.Store.GetNoticeList(ctx, s.DB, unoSql, pageSql, *searchSql)
+	var roleInt int
+	if role == "ADMIN" {
+		roleInt = 1
+	} else {
+		roleInt = 0
+	}
+	noticeSqls, err := s.Store.GetNoticeList(ctx, s.DB, unoSql, roleInt, pageSql, *searchSql)
 	if err != nil {
 		return &entity.Notices{}, fmt.Errorf("fail to list notice: %w", err)
 	}
@@ -48,7 +54,7 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno int64, page entit
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno int64, search entity.Notice) (int, error) {
+func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno int64, role string, search entity.Notice) (int, error) {
 	searchSql := &entity.NoticeSql{}
 	searchSql = searchSql.OfNoticeSql(search)
 
@@ -59,7 +65,14 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno int64, searc
 		return 0, fmt.Errorf("uno parameter is missing")
 	}
 
-	count, err := s.Store.GetNoticeListCount(ctx, s.DB, unoSql, *searchSql)
+	var roleInt int
+	if role == "ADMIN" {
+		roleInt = 1
+	} else {
+		roleInt = 0
+	}
+
+	count, err := s.Store.GetNoticeListCount(ctx, s.DB, unoSql, roleInt, *searchSql)
 	if err != nil {
 		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
 	}

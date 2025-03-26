@@ -28,6 +28,8 @@ type NoticeListHandler struct {
 func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	uno := r.PathValue("uno")
+	role := r.URL.Query().Get("role")
+
 	int64UNO, err := strconv.ParseInt(uno, 10, 64)
 
 	if err != nil {
@@ -69,18 +71,19 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 
+	search.Jno, _ = strconv.ParseInt(r.URL.Query().Get("jno"), 10, 64)
 	search.JobLocName = r.URL.Query().Get("loc_name")
 	search.JobName = r.URL.Query().Get("site_nm")
 	search.Title = r.URL.Query().Get("title")
 	search.UserInfo = r.URL.Query().Get("user_info")
 
-	notices, err := n.Service.GetNoticeList(ctx, int64UNO, page, search)
+	notices, err := n.Service.GetNoticeList(ctx, int64UNO, role, page, search)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	count, err := n.Service.GetNoticeListCount(ctx, int64UNO, search)
+	count, err := n.Service.GetNoticeListCount(ctx, int64UNO, role, search)
 	if err != nil {
 		RespondJSON(
 			ctx,

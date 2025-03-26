@@ -394,7 +394,7 @@ func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (
 }
 
 // 프로젝트 관리
-func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64) (*entity.ProjectInfos, error) {
+func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error) {
 
 	var unoSql sql.NullInt64
 	if uno != 0 {
@@ -402,7 +402,14 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64) (*e
 	} else {
 		unoSql = sql.NullInt64{Valid: false}
 	}
-	sqlList, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql)
+
+	var roleInt int
+	if role == "ADMIN" {
+		roleInt = 1
+	} else {
+		roleInt = 0
+	}
+	sqlList, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql, roleInt)
 
 	if err != nil {
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)

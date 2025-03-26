@@ -42,7 +42,7 @@ type ProjectStore interface {
 	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
 	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
-	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64) (*entity.ProjectInfoSqls, error)
+	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfoSqls, error)
 }
 
 type ProjectDailyStore interface {
@@ -58,8 +58,8 @@ type CodeStore interface {
 }
 
 type NoticeStore interface {
-	GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, pageSql entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error)
-	GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, search entity.NoticeSql) (int, error)
+	GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, role int, pageSql entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error)
+	GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, role int, search entity.NoticeSql) (int, error)
 	AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
 	RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error

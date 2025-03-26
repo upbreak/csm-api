@@ -3,9 +3,11 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/godror/godror"
 	"strings"
 )
 
@@ -22,36 +24,16 @@ import (
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, page entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error) {
+func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, role int, page entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error) {
 	sqls := entity.NoticeSqls{}
 
 	// 조건
 	condition := "1=1"
-	if search.JobLocName.Valid {
-		trimJobLocName := strings.TrimSpace(search.JobLocName.String)
-
-		if trimJobLocName != "" {
-			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimJobLocName)
-		}
-	}
-	if search.JobName.Valid {
-		trimJobName := strings.TrimSpace(search.JobName.String)
-		if trimJobName != "" {
-			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimJobName)
-		}
-	}
-	if search.Title.Valid {
-		trimTitle := strings.TrimSpace(search.Title.String)
-		if trimTitle != "" {
-			condition += fmt.Sprintf(" AND UPPER(TITLE) LIKE UPPER('%%%s%%')", trimTitle)
-		}
-	}
-	if search.UserInfo.Valid {
-		trimUserInfo := strings.TrimSpace(search.UserInfo.String)
-		if trimUserInfo != "" {
-			condition += fmt.Sprintf(" AND UPPER(USER_INFO) LIKE UPPER('%%%s%%')", trimUserInfo)
-		}
-	}
+	condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
+	condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
+	condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
 
 	var order string
 	if page.Order.Valid {
@@ -92,7 +74,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 					WHERE
 						N.IS_USE = 'Y'
 						AND N.POSTING_DATE > SYSDATE
-						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) OR N.JNO = 0 )
+						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0 )
 				)
 				SELECT * 
 			  	FROM (
@@ -116,51 +98,30 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 							JNO DESC,
 							%s
 						) sorted_data
-					WHERE ROWNUM <= :2
+					WHERE ROWNUM <= :3
 			  	)
-			  	WHERE RNUM > :3`,
+			  	WHERE RNUM > :4`,
 		condition, order)
 
-	if err := db.SelectContext(ctx, &sqls, query, uno, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &sqls, query, role, uno, page.EndNum, page.StartNum); err != nil {
 		fmt.Printf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
 	return &sqls, nil
-
 }
 
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, search entity.NoticeSql) (int, error) {
+func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, role int, search entity.NoticeSql) (int, error) {
 	var count int
 
 	condition := "1=1"
-	if search.JobLocName.Valid {
-		trimJobLocName := strings.TrimSpace(search.JobLocName.String)
-
-		if trimJobLocName != "" {
-			condition += fmt.Sprintf(" AND UPPER(LOC_NAME) LIKE UPPER('%%%s%%')", trimJobLocName)
-		}
-	}
-	if search.JobName.Valid {
-		trimJobName := strings.TrimSpace(search.JobName.String)
-		if trimJobName != "" {
-			condition += fmt.Sprintf(" AND UPPER(SITE_NM) LIKE UPPER('%%%s%%')", trimJobName)
-		}
-	}
-	if search.Title.Valid {
-		trimTitle := strings.TrimSpace(search.Title.String)
-		if trimTitle != "" {
-			condition += fmt.Sprintf(" AND UPPER(TITLE) LIKE UPPER('%%%s%%')", trimTitle)
-		}
-	}
-	if search.UserInfo.Valid {
-		trimUserInfo := strings.TrimSpace(search.UserInfo.String)
-		if trimUserInfo != "" {
-			condition += fmt.Sprintf(" AND UPPER(USER_INFO) LIKE UPPER('%%%s%%')", trimUserInfo)
-		}
-	}
+	condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
+	condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
+	condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
 
 	query := fmt.Sprintf(`
 			WITH Notice AS (
@@ -190,14 +151,14 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql
 				WHERE
 					N.IS_USE = 'Y'
 					AND N.POSTING_DATE > SYSDATE
-					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) OR N.JNO = 0 )
+					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0 )
 			)
 			SELECT COUNT(*) 
 			FROM  Notice
 			WHERE
 				%s`, condition)
 
-	if err := db.GetContext(ctx, &count, query, uno); err != nil {
+	if err := db.GetContext(ctx, &count, query, role, uno); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
@@ -214,6 +175,11 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		fmt.Println("store/notice. Failed to begin transaction: %w", err)
+	}
+
+	contentCLOB := godror.Lob{
+		IsClob: true,
+		Reader: strings.NewReader(noticeSql.Content.String),
 	}
 
 	query := `
@@ -250,7 +216,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 --				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingDate, noticeSql.RegUno)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, contentCLOB, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingDate, noticeSql.RegUno)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -287,21 +253,12 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 					MOD_UNO = :6,	
 					MOD_USER = :7,
 					MOD_DATE = SYSDATE,
-					(POSTING_PERIOD,
-					POSTING_DATE) = (
-						SELECT
-							C.CODE, ADD_MONTHS(N.REG_DATE, C.UDF_VAL_03) + C.UDF_VAL_04
-						FROM 
-							IRIS_CODE_SET C
-						INNER JOIN
-							IRIS_NOTICE_BOARD N ON N.IDX = :8
-						WHERE C.CODE = :9 AND C.P_CODE = 'NOTICE_PERIOD'
-					)
+					POSTING_DATE = :8
 				WHERE 
-					IDX = :10
+					IDX = :9
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.Idx, noticeSql.PeriodCode, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.PostingDate, noticeSql.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {

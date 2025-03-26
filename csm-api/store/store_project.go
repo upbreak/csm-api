@@ -730,7 +730,7 @@ func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.F
 // func: 본인이 속한 프로젝트 이름 조회
 // @param
 // - uno
-func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64) (*entity.ProjectInfoSqls, error) {
+func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfoSqls, error) {
 	projectInfoSqls := entity.ProjectInfoSqls{}
 
 	query := `SELECT 
@@ -738,11 +738,16 @@ func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sq
     			JOB_NAME as PROJECT_NM 
 			  FROM 
 			    S_JOB_INFO 
-			  WHERE 
-			      jno IN (SELECT DISTINCT(JNO) 
+			  WHERE
+			      JOB_STATE = 'Y' AND
+			      1=:1 OR 
+			      JNO IN (SELECT DISTINCT(JNO) 
 						  FROM TIMESHEET.JOB_MEMBER_LIST 
-						  WHERE UNO = :1)`
-	if err := db.SelectContext(ctx, &projectInfoSqls, query, uno); err != nil {
+						  WHERE UNO = :2)
+			  ORDER BY 
+			      JNO DESC`
+
+	if err := db.SelectContext(ctx, &projectInfoSqls, query, role, uno); err != nil {
 		return &projectInfoSqls, fmt.Errorf("GetProjectNmList fail: %v", err)
 	}
 
