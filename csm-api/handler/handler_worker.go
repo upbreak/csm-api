@@ -34,6 +34,7 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	pageNum := r.URL.Query().Get("page_num")
 	rowSize := r.URL.Query().Get("row_size")
 	order := r.URL.Query().Get("order")
+	rnumOrder := r.URL.Query().Get("rnum_order")
 	jobName := r.URL.Query().Get("job_name")
 	userId := r.URL.Query().Get("user_id")
 	userNm := r.URL.Query().Get("user_nm")
@@ -60,6 +61,7 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
+	page.RnumOrder = rnumOrder
 	search.JobName = jobName
 	search.UserId = userId
 	search.UserNm = userNm
