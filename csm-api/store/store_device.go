@@ -188,7 +188,7 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %v", err)
+		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
 	agent := utils.GetAgent()
@@ -236,7 +236,7 @@ func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.D
 func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %v", err)
+		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
 	agent := utils.GetAgent()
@@ -275,7 +275,7 @@ func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entit
 func (r *Repository) RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %v", err)
+		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
 	query := `DELETE FROM IRIS_DEVICE_SET WHERE DNO = :1`
