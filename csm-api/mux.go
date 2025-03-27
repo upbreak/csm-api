@@ -343,6 +343,20 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+	// 현장 근로자 일괄마감
+	workerDeadlineHandler := &handler.HandlerWorkerDeadline{
+		Service: &service.ServiceWorker{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	// 현장 근로자 프로젝트 변경
+	workerProjectHandler := &handler.HandlerWorkerProject{
+		Service: &service.ServiceWorker{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
 	mux.Route("/worker", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/total", workerTotalListHandler.ServeHttp)
@@ -351,6 +365,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Put("/total", workerModHandler.ServeHttp)
 		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
 		r.Post("/site-base", workerSiteBaseMergeHandler.ServeHttp)
+		r.Post("/site-base/deadline", workerDeadlineHandler.ServeHttp)
+		r.Post("/site-base/project", workerProjectHandler.ServeHttp)
 	})
 	// End::근로자
 

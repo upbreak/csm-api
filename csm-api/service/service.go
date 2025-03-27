@@ -81,6 +81,8 @@ type WorkerService interface {
 	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
 	GetWorkerSiteBaseCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error)
 	MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) error
+	ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) error
+	ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error
 }
 
 type CompanyService interface {

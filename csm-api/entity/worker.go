@@ -71,6 +71,7 @@ type WorkerDaily struct {
 	ModUser         string    `json:"mod_user"`
 	ModDate         time.Time `json:"mod_date"`
 	ModUno          int64     `json:"mod_uno"`
+	AfterJno        int64     `json:"after_jno"`
 }
 type WorkerDailys []*WorkerDaily
 
@@ -94,5 +95,6 @@ type WorkerDailySql struct {
 	ModUser         sql.NullString `db:"MOD_USER"`
 	ModDate         sql.NullTime   `db:"MOD_DATE"`
 	ModUno          sql.NullInt64  `db:"MOD_UNO"`
+	AfterJno        sql.NullInt64  `db:"AFTER_JNO"`
 }
 type WorkerDailySqls []*WorkerDailySql

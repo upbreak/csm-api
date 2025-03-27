@@ -404,7 +404,101 @@ func (h *HandlerSiteBaseMerge) ServeHttp(w http.ResponseWriter, r *http.Request)
 			&ErrResponse{
 				Result:         Failure,
 				Message:        err.Error(),
-				Details:        DataAddFailed,
+				Details:        DataMergeFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 근로자 일괄마감
+type HandlerWorkerDeadline struct {
+	Service service.WorkerService
+}
+
+// @param
+// - http method: post
+// - param: entity.WorkerDailys - json(raw)
+func (h *HandlerWorkerDeadline) ServeHttp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	//데이터 파싱
+	workers := entity.WorkerDailys{}
+	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.ModifyWorkerDeadline(ctx, workers)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 현장 근로자 프로젝트 변경
+type HandlerWorkerProject struct {
+	Service service.WorkerService
+}
+
+// @param
+// - http method: post
+// - param: entity.WorkerDailys - json(raw)
+func (h *HandlerWorkerProject) ServeHttp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	//데이터 파싱
+	workers := entity.WorkerDailys{}
+	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.ModifyWorkerProject(ctx, workers)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
 				HttpStatusCode: http.StatusInternalServerError,
 			},
 			http.StatusOK)

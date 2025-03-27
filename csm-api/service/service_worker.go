@@ -200,12 +200,42 @@ func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entit
 func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) error {
 	workerSqls := &entity.WorkerDailySqls{}
 	if err := entity.ConvertSliceToSQLNulls(workers, workerSqls); err != nil {
-		return fmt.Errorf("service_worker;site_base/ConvertSliceToSQLNulls err: %v", err)
+		return fmt.Errorf("service_worker;MergeSiteBase/ConvertSliceToSQLNulls err: %v", err)
 	}
 
 	if err := s.Store.MergeSiteBaseWorker(ctx, s.TDB, *workerSqls); err != nil {
 		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
 	}
 
+	return nil
+}
+
+// func: 현장 근로자 일괄마감
+// @param
+// -
+func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) error {
+	workerSqls := &entity.WorkerDailySqls{}
+	if err := entity.ConvertSliceToSQLNulls(workers, workerSqls); err != nil {
+		return fmt.Errorf("service_worker;Deadline/ConvertSliceToSQLNulls err: %v", err)
+	}
+
+	if err := s.Store.ModifyWorkerDeadline(ctx, s.TDB, *workerSqls); err != nil {
+		return fmt.Errorf("service_worker/ModifyWorkerDeadline err: %v", err)
+	}
+	return nil
+}
+
+// func: 현장 근로자 프로젝트 변경
+// @param
+// -
+func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error {
+	workerSqls := &entity.WorkerDailySqls{}
+	if err := entity.ConvertSliceToSQLNulls(workers, workerSqls); err != nil {
+		return fmt.Errorf("service_worker;Project/ConvertSliceToSQLNulls err: %v", err)
+	}
+
+	if err := s.Store.ModifyWorkerProject(ctx, s.TDB, *workerSqls); err != nil {
+		return fmt.Errorf("service_worker/ModifyWorkerProject err: %v", err)
+	}
 	return nil
 }

@@ -84,6 +84,8 @@ type WorkerStore interface {
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerDailySqls, error)
 	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error)
 	MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
+	ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
+	ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
 }
 
 type CompanyStore interface {

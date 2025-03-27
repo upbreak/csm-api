@@ -338,7 +338,7 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								t1.MOD_DATE AS MOD_DATE,
 								CASE WHEN t1.OUT_RECOG_TIME IS NULL THEN '출근' ELSE '퇴근' END AS COMMUTE
 							FROM IRIS_WORKER_DAILY_SET t1
-							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO  = t2.JNO AND t1.USER_ID = t2.USER_ID 
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID 
 							WHERE t1.SNO > 100
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
@@ -418,7 +418,8 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 						:6 AS OUT_RECOG_TIME,
 						:7 AS REG_AGENT,
 						:8 AS REG_USER,
-						:9 AS REG_UNO
+						:9 AS REG_UNO,
+						:10 AS IS_DEADLINE
 					FROM DUAL
 				) t2
 				ON (
@@ -433,22 +434,23 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 						t1.MOD_DATE      = SYSDATE,
 						t1.MOD_AGENT     = t2.REG_AGENT,
 						t1.MOD_USER      = t2.REG_USER,
-						t1.MOD_UNO       = t2.REG_UNO
+						t1.MOD_UNO       = t2.REG_UNO,
+				    	t1.IS_DEADLINE   = t2.IS_DEADLINE
 					WHERE t1.SNO = t2.SNO
 					AND t1.JNO = t2.JNO
 					AND t1.USER_ID = t2.USER_ID
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				WHEN NOT MATCHED THEN
-					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, REG_DATE, REG_AGENT, REG_USER, REG_UNO)
-					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO)`
+					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE)
+					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE)`
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
 		err = tx.Rollback()
 		if err != nil {
-			return fmt.Errorf("PrepareContext Rollback fail: %w", err)
+			return fmt.Errorf("MergeSiteBaseWorker;PrepareContext Rollback fail: %w", err)
 		}
-		return fmt.Errorf("PrepareContext fail: %w", err)
+		return fmt.Errorf("MergeSiteBaseWorker;PrepareContext fail: %w", err)
 	}
 	defer stmt.Close()
 
@@ -463,11 +465,12 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 			agent,
 			worker.ModUser,
 			worker.ModUno,
+			worker.IsDeadline,
 		)
 		if err != nil {
 			err = tx.Rollback()
 			if err != nil {
-				return fmt.Errorf("ExecContext Rollback fail: %w", err)
+				return fmt.Errorf("MergeSiteBaseWorker;ExecContext Rollback fail: %w", err)
 			}
 			return fmt.Errorf("MergeSiteBaseWorker fail: %w", err)
 		}
@@ -475,6 +478,126 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("MergeSiteBaseWorker Commit fail: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 근로자 일괄마감
+// @param
+// -
+func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("BeginTx fail: %w", err)
+	}
+	agent := utils.GetAgent()
+
+	query := `
+				UPDATE IRIS_WORKER_DAILY_SET 
+				SET 
+					IS_DEADLINE = 'Y',
+					MOD_DATE = SYSDATE,
+					MOD_AGENT = :1,
+					MOD_USER = :2,
+					MOD_UNO = :3
+				WHERE SNO = :4
+				AND JNO = :5
+				AND USER_ID = :6
+				AND RECORD_DATE = :7`
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		err = tx.Rollback()
+		if err != nil {
+			return fmt.Errorf("MergeSiteBaseWorker;PrepareContext Rollback fail: %w", err)
+		}
+		return fmt.Errorf("ModifyWorkerDeadline;PrepareContext fail: %w", err)
+	}
+	defer stmt.Close()
+
+	for _, worker := range workers {
+		_, err = stmt.ExecContext(ctx,
+			agent,
+			worker.ModUser,
+			worker.ModUno,
+			worker.Sno,
+			worker.Jno,
+			worker.UserId,
+			worker.RecordDate,
+		)
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return fmt.Errorf("ModifyWorkerDeadline;ExecContext Rollback fail: %w", err)
+			}
+			return fmt.Errorf("ModifyWorkerDeadline fail: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("ModifyWorkerDeadline Commit fail: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 근로자 프로젝트 변경
+// @param
+// -
+func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("BeginTx fail: %w", err)
+	}
+
+	agent := utils.GetAgent()
+
+	query := `
+				UPDATE IRIS_WORKER_DAILY_SET 
+				SET 
+				    JNO = :1,
+					MOD_DATE = SYSDATE,
+					MOD_AGENT = :2,
+					MOD_USER = :3,
+					MOD_UNO = :4
+				WHERE SNO = :5
+				AND JNO = :6
+				AND USER_ID = :7
+				AND RECORD_DATE = :8`
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		err = tx.Rollback()
+		if err != nil {
+			return fmt.Errorf("ModifyWorkerProject;PrepareContext Rollback fail: %w", err)
+		}
+		return fmt.Errorf("ModifyWorkerProject;PrepareContext fail: %w", err)
+	}
+	defer stmt.Close()
+
+	for _, worker := range workers {
+		_, err = stmt.ExecContext(ctx,
+			worker.AfterJno,
+			agent,
+			worker.ModUser,
+			worker.ModUno,
+			worker.Sno,
+			worker.Jno,
+			worker.UserId,
+			worker.RecordDate,
+		)
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return fmt.Errorf("ModifyWorkerProject;ExecContext Rollback fail: %w", err)
+			}
+			return fmt.Errorf("ModifyWorkerProject fail: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("ModifyWorkerProject Commit fail: %w", err)
 	}
 
 	return nil
