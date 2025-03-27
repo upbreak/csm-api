@@ -44,7 +44,14 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = "WNO DESC"
+		order = `
+				(
+					CASE 
+						WHEN REG_DATE IS NULL THEN MOD_DATE 
+						WHEN MOD_DATE IS NULL THEN REG_DATE 
+						ELSE GREATEST(REG_DATE, MOD_DATE) 
+					END
+				) DESC NULLS LAST`
 	}
 
 	query := fmt.Sprintf(`
@@ -65,7 +72,8 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 						sorted_data.REG_USER,
 						sorted_data.REG_DATE,
 						sorted_data.MOD_USER,
-						sorted_data.MOD_DATE
+						sorted_data.MOD_DATE,
+						sorted_data.REG_NO
 					FROM (
 						SELECT 
 						    t1.WNO,
@@ -82,16 +90,18 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							t1.REG_USER,
 							t1.REG_DATE,
 							t1.MOD_USER,
-							t1.MOD_DATE
+							t1.MOD_DATE,
+							t1.REG_NO
 						FROM IRIS_WORKER_SET t1
 						LEFT JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
 						WHERE t1.SNO > 100
 						%s %s
+						ORDER BY %s
 					) sorted_data
 					WHERE ROWNUM <= :1
-					ORDER BY %s
+					ORDER BY RNUM %s
 				)
-				WHERE RNUM > :2`, condition, retryCondition, order)
+				WHERE RNUM > :2`, condition, retryCondition, order, page.RnumOrder)
 
 	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
 		return nil, fmt.Errorf("GetWorkerTotalList err: %v", err)
@@ -227,17 +237,17 @@ func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.W
 		INSERT INTO IRIS_WORKER_SET(
 			SNO, JNO, USER_ID, USER_NM, DEPARTMENT, 
 			PHONE, WORKER_TYPE, IS_RETIRE, REG_DATE, REG_AGENT, 
-			REG_USER, REG_UNO
+			REG_USER, REG_UNO, REG_NO
 		) VALUES (
 			:1, :2, :3, :4, :5, 
 			:6, :7, :8, SYSDATE, :9, 
-			:10, :12
+			:10, :11, :12
 		)`
 
 	_, err = tx.ExecContext(ctx, insertQuery,
 		worker.Sno, worker.Jno, worker.UserId, worker.UserNm, worker.Department,
 		worker.Phone, worker.WorkerType, worker.IsRetire /*, SYSDATE*/, agent,
-		worker.RegUser, worker.RegUno,
+		worker.RegUser, worker.RegUno, worker.RegNo,
 	)
 
 	if err != nil {
@@ -259,7 +269,7 @@ func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.W
 func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %v", err)
+		return fmt.Errorf("failed to begin transaction: %v", err)
 	}
 
 	agent := utils.GetAgent()
@@ -268,12 +278,14 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 				UPDATE IRIS_WORKER_SET 
 				SET 
 					USER_NM = :1, DEPARTMENT = :2, PHONE = :3, WORKER_TYPE = :4, IS_RETIRE = :5,
-					RETIRE_DATE = :6, MOD_DATE = SYSDATE, MOD_AGENT = :7, MOD_USER = :8, MOD_UNO = :9, TRG_EDITABLE_YN = 'N' 
-				WHERE SNO = :10 AND JNO = :11 AND USER_ID = :12`
+					RETIRE_DATE = :6, MOD_DATE = SYSDATE, MOD_AGENT = :7, MOD_USER = :8, MOD_UNO = :9, TRG_EDITABLE_YN = 'N',
+					REG_NO = :10
+				WHERE SNO = :11 AND JNO = :12 AND USER_ID = :13`
 
-	_, err = tx.ExecContext(ctx, query,
+	result, err := tx.ExecContext(ctx, query,
 		worker.UserNm, worker.Department, worker.Phone, worker.WorkerType, worker.IsRetire,
 		worker.RetireDate /*, SYSDATE*/, agent, worker.ModUser, worker.ModUno,
+		worker.RegNo,
 		worker.Sno, worker.Jno, worker.UserId,
 	)
 
@@ -283,6 +295,9 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 		}
 		return fmt.Errorf("ModifyWorker fail: %v", err)
 	}
+
+	rowsAffected, _ := result.RowsAffected()
+	fmt.Printf("Rows affected: %d\n", rowsAffected)
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
@@ -314,7 +329,14 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 		order = page.Order.String
 	} else {
 		//order = "RECORD_DATE DESC, OUT_RECOG_TIME DESC NULLS LAST"
-		order = "REG_DATE DESC, GREATEST(MOD_DATE, REG_DATE) DESC NULLS LAST"
+		order = `
+				REG_DATE DESC, (
+					CASE 
+						WHEN REG_DATE IS NULL THEN MOD_DATE 
+						WHEN MOD_DATE IS NULL THEN REG_DATE 
+						ELSE GREATEST(REG_DATE, MOD_DATE) 
+					END
+				) DESC NULLS LAST`
 	}
 
 	query := fmt.Sprintf(`

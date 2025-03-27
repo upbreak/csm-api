@@ -6,48 +6,52 @@ import (
 )
 
 type Worker struct {
-	RowNum     int64     `json:"rnum"`
-	Sno        int64     `json:"sno"` //현장 고유번호
-	Jno        int64     `json:"jno"` //프로젝트 고유번호
-	JobName    string    `json:"job_name"`
-	UserId     string    `json:"user_id"`    //근로자 아이디
-	UserNm     string    `json:"user_nm"`    //근로자명
-	Department string    `json:"department"` //부서or조직
-	Phone      string    `json:"phone"`
-	WorkerType string    `json:"worker_type"`
-	IsUse      string    `json:"is_use"`
-	IsRetire   string    `json:"is_retire"`
-	RetireDate time.Time `json:"retire_date"`
-	RegUser    string    `json:"reg_user"`
-	RegDate    time.Time `json:"reg_date"`
-	RegUno     int64     `json:"reg_uno"`
-	ModUser    string    `json:"mod_user"`
-	ModDate    time.Time `json:"mod_date"`
-	ModUno     int64     `json:"mod_uno"`
-	RecordDate string    `json:"record_date"`
+	RowNum      int64     `json:"rnum"`
+	Sno         int64     `json:"sno"` //현장 고유번호
+	Jno         int64     `json:"jno"` //프로젝트 고유번호
+	JobName     string    `json:"job_name"`
+	UserId      string    `json:"user_id"` //근로자 아이디
+	AfterUserId string    `json:"after_user_id"`
+	UserNm      string    `json:"user_nm"`    //근로자명
+	Department  string    `json:"department"` //부서or조직
+	Phone       string    `json:"phone"`
+	WorkerType  string    `json:"worker_type"`
+	IsUse       string    `json:"is_use"`
+	IsRetire    string    `json:"is_retire"`
+	RetireDate  time.Time `json:"retire_date"`
+	RegUser     string    `json:"reg_user"`
+	RegDate     time.Time `json:"reg_date"`
+	RegUno      int64     `json:"reg_uno"`
+	ModUser     string    `json:"mod_user"`
+	ModDate     time.Time `json:"mod_date"`
+	ModUno      int64     `json:"mod_uno"`
+	RecordDate  string    `json:"record_date"`
+	RegNo       string    `json:"reg_no"`
 }
 type Workers []*Worker
 
 type WorkerSql struct {
-	RowNum     sql.NullInt64  `db:"RNUM"`
-	Sno        sql.NullInt64  `db:"SNO"`
-	Jno        sql.NullInt64  `db:"JNO"`
-	JobName    sql.NullString `db:"JOB_NAME"`
-	UserId     sql.NullString `db:"USER_ID"`
-	UserNm     sql.NullString `db:"USER_NM"`
-	Department sql.NullString `db:"DEPARTMENT"`
-	Phone      sql.NullString `db:"PHONE"`
-	WorkerType sql.NullString `db:"WORKER_TYPE"`
-	IsUse      sql.NullString `db:"IS_USE"`
-	IsRetire   sql.NullString `db:"IS_RETIRE"`
-	RetireDate sql.NullTime   `db:"RETIRE_DATE"`
-	RegUser    sql.NullString `db:"REG_USER"`
-	RegDate    sql.NullTime   `db:"REG_DATE"`
-	RegUno     sql.NullInt64  `db:"REG_UNO"`
-	ModUser    sql.NullString `db:"MOD_USER"`
-	ModDate    sql.NullTime   `db:"MOD_DATE"`
-	ModUno     sql.NullInt64  `db:"MOD_UNO"`
-	RecordDate sql.NullString `db:"RECORD_DATE"`
+	RowNum      sql.NullInt64  `db:"RNUM"`
+	Sno         sql.NullInt64  `db:"SNO"`
+	Jno         sql.NullInt64  `db:"JNO"`
+	JobName     sql.NullString `db:"JOB_NAME"`
+	UserId      sql.NullString `db:"USER_ID"`
+	AfterUserId sql.NullString `db:"AFTER_USER_ID"`
+	UserNm      sql.NullString `db:"USER_NM"`
+	Department  sql.NullString `db:"DEPARTMENT"`
+	Phone       sql.NullString `db:"PHONE"`
+	WorkerType  sql.NullString `db:"WORKER_TYPE"`
+	IsUse       sql.NullString `db:"IS_USE"`
+	IsRetire    sql.NullString `db:"IS_RETIRE"`
+	RetireDate  sql.NullTime   `db:"RETIRE_DATE"`
+	RegUser     sql.NullString `db:"REG_USER"`
+	RegDate     sql.NullTime   `db:"REG_DATE"`
+	RegUno      sql.NullInt64  `db:"REG_UNO"`
+	ModUser     sql.NullString `db:"MOD_USER"`
+	ModDate     sql.NullTime   `db:"MOD_DATE"`
+	ModUno      sql.NullInt64  `db:"MOD_UNO"`
+	RecordDate  sql.NullString `db:"RECORD_DATE"`
+	RegNo       sql.NullString `db:"REG_NO"`
 }
 type WorkerSqls []*WorkerSql
 
