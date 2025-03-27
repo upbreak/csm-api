@@ -4,7 +4,6 @@ import (
 	"csm-api/entity"
 	"csm-api/service"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -184,7 +183,6 @@ func (d *DeviceModifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	// 근태인식기 수정
 	err := d.Service.ModifyDevice(ctx, device)
 	if err != nil {
-		fmt.Println("handler add_task.go ServeHTTP Validator error")
 		RespondJSON(
 			ctx,
 			w,

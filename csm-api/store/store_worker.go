@@ -296,8 +296,13 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 		return fmt.Errorf("ModifyWorker fail: %v", err)
 	}
 
-	rowsAffected, _ := result.RowsAffected()
-	fmt.Printf("Rows affected: %d\n", rowsAffected)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("ModifyWorker RowsAffected fail: %v", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected)
+	}
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
@@ -422,8 +427,7 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("Failed to begin transaction: %v", err)
-		return fmt.Errorf("BeginTx fail: %w", err)
+		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
 	agent := utils.GetAgent()
