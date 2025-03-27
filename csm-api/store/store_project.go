@@ -648,7 +648,7 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 								MEMBER_LIST M 
 							INNER JOIN 
 								(SELECT 
-									UNO, USER_NAME, DUTY_NAME, DEPT_NAME, CELL, TEL, EMAIL, IS_USE 
+									UNO, USER_NAME, DUTY_NAME, TEAM_NAME AS DEPT_NAME, CELL, TEL, EMAIL, IS_USE 
 								FROM 
 									S_SYS_USER_SET 
 								ORDER BY 
