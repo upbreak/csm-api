@@ -65,7 +65,7 @@ type WorkerDaily struct {
 	RecordDate      time.Time `json:"record_date"`
 	InRecogTime     time.Time `json:"in_recog_time"`  //출근시간
 	OutRecogTime    time.Time `json:"out_recog_time"` //퇴근시간
-	Commute         string    `json:"commute"`
+	WorkState       string    `json:"work_state"`
 	IsDeadline      string    `json:"is_deadline"`
 	SearchStartTime string    `json:"search_start_time"`
 	SearchEndTime   string    `json:"search_end_time"`
@@ -89,7 +89,7 @@ type WorkerDailySql struct {
 	RecordDate      sql.NullTime   `db:"RECORD_DATE"`
 	InRecogTime     sql.NullTime   `db:"IN_RECOG_TIME"`
 	OutRecogTime    sql.NullTime   `db:"OUT_RECOG_TIME"`
-	Commute         sql.NullString `db:"COMMUTE"`
+	WorkState       sql.NullString `db:"WORK_STATE"`
 	IsDeadline      sql.NullString `db:"IS_DEADLINE"`
 	SearchStartTime sql.NullString `db:"SEARCH_START_TIME"`
 	SearchEndTime   sql.NullString `db:"SEARCH_END_TIME"`
