@@ -363,9 +363,9 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								t1.REG_DATE AS REG_DATE,
 								t1.MOD_USER AS MOD_USER,
 								t1.MOD_DATE AS MOD_DATE,
-								CASE WHEN t1.OUT_RECOG_TIME IS NULL THEN '출근' ELSE '퇴근' END AS COMMUTE
+								t1.WORK_STATE AS WORK_STATE
 							FROM IRIS_WORKER_DAILY_SET t1
-							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID 
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID AND t1.sno = t2.sno AND t1.jno = t2.jno
 							WHERE t1.SNO > 100
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
@@ -445,7 +445,8 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 						:7 AS REG_AGENT,
 						:8 AS REG_USER,
 						:9 AS REG_UNO,
-						:10 AS IS_DEADLINE
+						:10 AS IS_DEADLINE,
+						:11 AS WORK_STATE
 					FROM DUAL
 				) t2
 				ON (
@@ -461,14 +462,15 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 						t1.MOD_AGENT     = t2.REG_AGENT,
 						t1.MOD_USER      = t2.REG_USER,
 						t1.MOD_UNO       = t2.REG_UNO,
-				    	t1.IS_DEADLINE   = t2.IS_DEADLINE
+				    	t1.IS_DEADLINE   = t2.IS_DEADLINE,
+				    	t1.WORK_STATE = t2.WORK_STATE
 					WHERE t1.SNO = t2.SNO
 					AND t1.JNO = t2.JNO
 					AND t1.USER_ID = t2.USER_ID
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				WHEN NOT MATCHED THEN
-					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE)
-					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE)`
+					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE)
+					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE)`
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
@@ -492,6 +494,7 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 			worker.ModUser,
 			worker.ModUno,
 			worker.IsDeadline,
+			worker.WorkState,
 		)
 		if err != nil {
 			err = tx.Rollback()
