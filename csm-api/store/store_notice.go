@@ -1,5 +1,6 @@
 package store
 
+import "C"
 import (
 	"context"
 	"csm-api/entity"
@@ -39,7 +40,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = "REG_DATE DESC"
+		order = "NULL"
 	}
 
 	query := fmt.Sprintf(`
@@ -56,7 +57,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 						N.REG_USER, 
 						N.REG_DATE,
 						U.DUTY_NAME, 
-						N.REG_USER || ' ' || U.DUTY_NAME as USER_INFO, 
+						N.REG_USER || DECODE(N.REG_USER, '관리자', '',  ' ' || U.DUTY_NAME) AS USER_INFO, 
 						N.MOD_USER, 
 						N.MOD_DATE,
 						N.POSTING_PERIOD AS PERIOD_CODE,
@@ -85,6 +86,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 						WHERE
 							%s
 						ORDER BY
+							%s,
 							CASE WHEN 
 									IS_IMPORTANT= 'Y' 
 								THEN 0 
@@ -95,8 +97,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 								THEN 0
 								ELSE 1 
 							END,
-							JNO DESC,
-							%s
+							REG_DATE DESC
 						) sorted_data
 					WHERE ROWNUM <= :3
 			  	)
@@ -191,6 +192,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					CONTENT,
 					SHOW_YN,
 					IS_USE,
+				    IS_IMPORTANT,
 					REG_UNO,
 					REG_USER,
 					REG_DATE,
@@ -206,17 +208,18 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					'Y',
 					:6,
 					:7,
+					:8,
 					SYSDATE,
 --					C.CODE,
-					:8,
+					:9,
 --					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04,
-					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :9)
+					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :10)
 				)
 --				FROM IRIS_CODE_SET C
 --				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, contentCLOB, noticeSql.ShowYN, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingDate, noticeSql.RegUno)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, contentCLOB, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingDate, noticeSql.RegUno)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -250,15 +253,16 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 					CONTENT = :4,
 					SHOW_YN = :5,
 					IS_USE = 'Y',
-					MOD_UNO = :6,	
-					MOD_USER = :7,
+				    IS_IMPORTANT = :6,
+					MOD_UNO = :7,	
+					MOD_USER = :8,
 					MOD_DATE = SYSDATE,
-					POSTING_DATE = :8
+					POSTING_DATE = :9
 				WHERE 
-					IDX = :9
+					IDX = :10
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.ModUno, noticeSql.ModUser, noticeSql.PostingDate, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.ModUno, noticeSql.ModUser, noticeSql.PostingDate, noticeSql.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
