@@ -753,3 +753,116 @@ func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sq
 
 	return &projectInfoSqls, nil
 }
+
+// func: 현장근태에 등록되지 않은 프로젝트
+// @param
+// -
+func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProjectSql, retry string) (*entity.NonUsedProjectSqls, error) {
+	nonProjects := entity.NonUsedProjectSqls{}
+
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Jno, "t1.JNO")
+	condition = utils.StringWhereConvert(condition, search.JobNo, "t1.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t1.JOB_NAME")
+	condition = utils.Int64WhereConvert(condition, search.JobYear, "t1.JOB_YEAR")
+	condition = utils.StringWhereConvert(condition, search.JobSd, "t1.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd, "t1.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.JobPmNm, "t2.USER_NAME")
+
+	var columns []string
+	columns = append(columns, "t1.JNO")
+	columns = append(columns, "t1.JOB_NO")
+	columns = append(columns, "t1.JOB_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	var order string
+	if page.Order.Valid {
+		order = page.Order.String
+	} else {
+		order = `
+				CASE 
+					WHEN t1.REG_DATE IS NULL THEN t1.MOD_DATE 
+					WHEN t1.MOD_DATE IS NULL THEN t1.REG_DATE 
+					ELSE GREATEST(t1.REG_DATE, t1.MOD_DATE) 
+				END DESC NULLS LAST`
+	}
+
+	query := fmt.Sprintf(`
+								SELECT *
+								FROM (
+									SELECT ROWNUM AS RNUM, sorted_data.*
+									FROM (
+									    SELECT 
+											t1.JNO,
+											t1.JOB_NO,
+											t1.JOB_NAME,
+											t1.JOB_YEAR,
+											t1.JOB_SD,
+											t1.JOB_ED,
+											t2.USER_NAME AS JOB_PM_NM,
+											t2.DUTY_NAME
+										FROM s_job_info t1
+										LEFT JOIN COMMON.V_BIZ_USER_INFO t2 ON t1.JOB_PM = t2.UNO
+										WHERE t1.JOB_STATE = 'Y'
+										AND t1.JNO NOT IN(
+											SELECT JNO
+											FROM IRIS_SITE_JOB
+										)
+										%s %s
+										ORDER BY %s 
+									) sorted_data
+									WHERE ROWNUM <= :1
+								)
+								WHERE RNUM > :2`, condition, retryCondition, order)
+
+	if err := db.SelectContext(ctx, &nonProjects, query, page.EndNum, page.StartNum); err != nil {
+		return &nonProjects, fmt.Errorf("GetNonUsedProjectList fail: %v", err)
+	}
+
+	return &nonProjects, nil
+}
+
+// func: 현장근태에 등록되지 않은 프로젝트 수
+// @param
+// -
+func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProjectSql, retry string) (int, error) {
+	var count int
+
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Jno, "t1.JNO")
+	condition = utils.StringWhereConvert(condition, search.JobNo, "t1.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.JobName, "t1.JOB_NAME")
+	condition = utils.Int64WhereConvert(condition, search.JobYear, "t1.JOB_YEAR")
+	condition = utils.StringWhereConvert(condition, search.JobSd, "t1.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd, "t1.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.JobPmNm, "t2.USER_NAME")
+
+	var columns []string
+	columns = append(columns, "t1.JNO")
+	columns = append(columns, "t1.JOB_NO")
+	columns = append(columns, "t1.JOB_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	query := fmt.Sprintf(`
+								SELECT 
+									COUNT(*)
+								FROM s_job_info t1
+								LEFT JOIN COMMON.V_BIZ_USER_INFO t2 ON t1.JOB_PM = t2.UNO
+								WHERE t1.JOB_STATE = 'Y'
+								AND t1.JNO NOT IN(
+									SELECT JNO
+									FROM IRIS_SITE_JOB
+								)
+								%s %s`, condition, retryCondition)
+
+	if err := db.GetContext(ctx, &count, query); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("GetNonUsedProjectCount fail: %v", err)
+	}
+
+	return count, nil
+}

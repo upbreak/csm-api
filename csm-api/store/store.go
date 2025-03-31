@@ -43,6 +43,8 @@ type ProjectStore interface {
 	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfoSqls, error)
+	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProjectSql, retry string) (*entity.NonUsedProjectSqls, error)
+	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProjectSql, retry string) (int, error)
 }
 
 type ProjectDailyStore interface {

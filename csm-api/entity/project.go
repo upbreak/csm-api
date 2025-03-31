@@ -184,3 +184,31 @@ type ProjectSafeCountSql struct {
 	SafeCount sql.NullInt64 `db:"SAFE_COUNT"`
 }
 type ProjectSafeCountSqls []*ProjectSafeCountSql
+
+// nonUsedProject
+type NonUsedProject struct {
+	Rnum     int64  `json:"rnum"`
+	Jno      int64  `json:"jno"`
+	JobNo    string `json:"job_no"`
+	JobName  string `json:"job_name"`
+	JobYear  int64  `json:"job_year"`
+	JobSd    string `json:"job_sd"`
+	JobEd    string `json:"job_ed"`
+	JobPmNm  string `json:"job_pm_nm"`
+	DutyName string `json:"duty_name"`
+}
+
+type NonUsedProjects []*NonUsedProject
+
+type NonUsedProjectSql struct {
+	Rnum     sql.NullInt64  `db:"RNUM"`
+	Jno      sql.NullInt64  `db:"JNO"`
+	JobNo    sql.NullString `db:"JOB_NO"`
+	JobName  sql.NullString `db:"JOB_NAME"`
+	JobYear  sql.NullInt64  `db:"JOB_YEAR"`
+	JobSd    sql.NullString `db:"JOB_SD"`
+	JobEd    sql.NullString `db:"JOB_ED"`
+	JobPmNm  sql.NullString `db:"JOB_PM_NM"`
+	DutyName sql.NullString `db:"DUTY_NAME"`
+}
+type NonUsedProjectSqls []*NonUsedProjectSql

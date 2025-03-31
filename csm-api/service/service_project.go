@@ -419,3 +419,50 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, rol
 
 	return projectInfos, nil
 }
+
+// func: 현장근태 사용되지 않은 프로젝트
+// @param
+// -
+func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error) {
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ofPageSql error: %w", err)
+	}
+
+	searchSql := &entity.NonUsedProjectSql{}
+	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ConvertToSQLNulls error: %w", err)
+	}
+
+	sqlList, err := s.Store.GetNonUsedProjectList(ctx, s.DB, pageSql, *searchSql, retry)
+
+	if err != nil {
+		return nil, fmt.Errorf("service_project/GetNonUsedProjectList error: %w", err)
+	}
+
+	list := &entity.NonUsedProjects{}
+	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
+		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ConvertSliceToRegular error: %w", err)
+	}
+
+	return list, nil
+}
+
+// func: 현장근태 사용되지 않은 프로젝트 수
+// @param
+// -
+func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error) {
+	searchSql := &entity.NonUsedProjectSql{}
+	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		return 0, fmt.Errorf("service_project/GetNonUsedProjectCount ConvertToSQLNulls error: %w", err)
+	}
+
+	count, err := s.Store.GetNonUsedProjectCount(ctx, s.DB, *searchSql, retry)
+
+	if err != nil {
+		return 0, fmt.Errorf("service_project/GetNonUsedProjectCount error: %w", err)
+	}
+
+	return count, nil
+}

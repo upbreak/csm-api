@@ -504,3 +504,94 @@ func (h *HandlerProjectNmUno) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
+
+// struct, func: 현장근태 사용되지 않은 프로젝트
+type HandlerNonUsedProject struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerNonUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	page := entity.Page{}
+	search := entity.NonUsedProject{}
+
+	pageNum := r.URL.Query().Get("page_num")
+	rowSize := r.URL.Query().Get("row_size")
+	order := r.URL.Query().Get("order")
+	rnumOrder := r.URL.Query().Get("rnum_order")
+	retrySearch := r.URL.Query().Get("retry_search")
+	jno := r.URL.Query().Get("jno")
+	jobNo := r.URL.Query().Get("job_no")
+	JobName := r.URL.Query().Get("job_name")
+	JobYear := r.URL.Query().Get("job_year")
+	JobSd := r.URL.Query().Get("job_sd")
+	JobEd := r.URL.Query().Get("job_ed")
+	UserName := r.URL.Query().Get("job_pm_nm")
+
+	if pageNum == "" || rowSize == "" {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        "get parameter is missing",
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+
+	page.PageNum, _ = strconv.Atoi(pageNum)
+	page.RowSize, _ = strconv.Atoi(rowSize)
+	page.Order = order
+	page.RnumOrder = rnumOrder
+
+	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
+	search.JobNo = jobNo
+	search.JobName = JobName
+	search.JobYear, _ = strconv.ParseInt(JobYear, 10, 64)
+	search.JobSd = JobSd
+	search.JobEd = JobEd
+	search.JobPmNm = UserName
+
+	list, err := h.Service.GetNonUsedProjectList(ctx, page, search, retrySearch)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	// 개수 조회
+	count, err := h.Service.GetNonUsedProjectCount(ctx, search, retrySearch)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List  entity.NonUsedProjects `json:"list"`
+			Count int                    `json:"count"`
+		}{List: *list, Count: count},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}

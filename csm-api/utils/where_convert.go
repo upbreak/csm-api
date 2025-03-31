@@ -62,7 +62,8 @@ func OrTimeBetweenWhereConvert(condition string, sqlValue1 sql.NullString, sqlVa
 
 func RetrySearchTextConvert(retry string, columns []string) string {
 	where := ""
-	if retry == "" {
+	trimRetry := strings.TrimSpace(retry)
+	if trimRetry == "" {
 		return ""
 	}
 	keyArr := strings.Split(retry, "~")
