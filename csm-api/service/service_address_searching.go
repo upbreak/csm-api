@@ -110,6 +110,12 @@ func (s *ServiceAddressSearching) GetAPISiteMapPoint(roadAddress string) (*entit
 	if roadAddress == "" {
 		return nil, fmt.Errorf("roadAddress parameter is missing")
 	}
+	if roadAddress == "undefined" {
+		return &entity.MapPoint{
+			X: "14209677.672145272",
+			Y: "4141263.42632809",
+		}, nil
+	}
 
 	// apiUrl주소
 	apiUrl := fmt.Sprintf(`https://api.vworld.kr/req/address?key=%s&version=%s&service=%s&request=%s&type=%s&crs=%s&address=%s&domain=%s&format=%s&errorFormat=%s&simple=%s`,

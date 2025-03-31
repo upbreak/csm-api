@@ -40,6 +40,8 @@ type ProjectService interface {
 	GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error)
 	GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
+	GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
+	GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error)
 }
 
 type ProjectDailyService interface {
