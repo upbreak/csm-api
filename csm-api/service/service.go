@@ -15,6 +15,7 @@ type SiteService interface {
 	GetSiteNmList(ctx context.Context) (*entity.Sites, error)
 	GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, site entity.Site) error
+	AddSite(ctx context.Context, jno int64, user entity.User) error
 }
 
 type SitePosService interface {

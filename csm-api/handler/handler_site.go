@@ -303,3 +303,53 @@ func (s *SiteRoadAddressHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
+
+// struct, func: 현장생성
+type HandlerAddSite struct {
+	Service service.SiteService
+}
+
+func (h *HandlerAddSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	request := struct {
+		Jno      int64  `json:"jno"`
+		Uno      int64  `json:"uno"`
+		UserName string `json:"user_name"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+	user := entity.User{}
+	user = user.SetUser(request.Uno, request.UserName)
+
+	err := h.Service.AddSite(ctx, request.Jno, user)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataAddFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}

@@ -176,6 +176,14 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			ApiKey: apiCfg,
 		},
 	}
+	// 현장 생성
+	siteAddHandler := &handler.HandlerAddSite{
+		Service: &service.ServiceSite{
+			DB:    safeDb,
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
 	mux.Route("/site", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", siteListHandler.ServeHTTP)
@@ -183,6 +191,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Get("/nm", siteNmListHandler.ServeHTTP)
 		r.Get("/stats", siteStatsHandler.ServeHTTP)
 		r.Get("/point", siteRoadAddressHandler.ServeHTTP)
+		r.Post("/", siteAddHandler.ServeHTTP)
 	})
 	// End::현장관리
 

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"fmt"
 	"time"
 )
@@ -142,14 +143,21 @@ func (r *Repository) ModifySite(ctx context.Context, db Beginner, site entity.Si
 		return fmt.Errorf("store/site. Failed to begin transaction: %w", err)
 	}
 
+	agent := utils.GetAgent()
+
 	query := `
 			UPDATE IRIS_SITE_SET 
 			SET
-			    ETC = :1
+			    SITE_NM = :1,
+			    ETC = :2,
+				MOD_UNO = :3,
+				MOD_USER = :4,
+				MOD_AGENT = :5,
+				MOD_DATE = SYSDATE
 			WHERE
-			    SNO = :2
+			    SNO = :6
 			`
-	if _, err := tx.ExecContext(ctx, query, site.Etc, site.Sno); err != nil {
+	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
@@ -158,6 +166,85 @@ func (r *Repository) ModifySite(ctx context.Context, db Beginner, site entity.Si
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("store/site. Failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 생성
+// @param
+// -
+func (r *Repository) AddSite(ctx context.Context, db Queryer, tdb Beginner, jno int64, user entity.User) error {
+	var generatedSNO int64
+
+	// sno 생성
+	query := `SELECT SEQ_IRIS_SITE_SET.NEXTVAL FROM DUAL`
+	if err := db.GetContext(ctx, &generatedSNO, query); err != nil {
+		return fmt.Errorf("store/site. Failed to get generated SITE_SET_SEQ.NEXTVAL: %w", err)
+	}
+
+	tx, err := tdb.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("AddSite. Failed to begin transaction: %w", err)
+	}
+
+	// IRIS_SITE_SET 생성
+	query = `
+			INSERT INTO IRIS_SITE_SET(
+				SNO, SITE_NM, LOC_CODE, LOC_NAME, IS_USE, 
+			    REG_DATE, REG_AGENT, REG_USER, REG_UNO
+			) 
+			SELECT 
+				:1, JOB_NAME, JOB_LOC, JOB_LOC_NAME, 'Y', 
+				SYSDATE, :2, :3, :4
+			FROM s_job_info 
+			WHERE JNO = :5`
+	if _, err = tx.ExecContext(ctx, query, generatedSNO, user.Agent, user.UserName, user.Uno, jno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("IRIS_SITE_SET. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("IRIS_SITE_SET INSERT failed: %w", origErr)
+	}
+
+	// IRIS_SITE_JOB 생성
+	query = `
+			INSERT INTO IRIS_SITE_JOB(
+				SNO, JNO, IS_USE, IS_DEFAULT, REG_DATE,
+				REG_AGENT, REG_USER, REG_UNO
+			) VALUES (
+				:1, :2, 'Y', 'Y', SYSDATE,
+				:3, :4, :5
+			)`
+	if _, err = tx.ExecContext(ctx, query, generatedSNO, jno, user.Agent, user.UserName, user.Uno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("IRIS_SITE_JOB. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("IRIS_SITE_JOB INSERT failed: %w", origErr)
+	}
+
+	// IRIS_SITE_DATE 생성
+	query = `
+			INSERT INTO IRIS_SITE_DATE(
+				SNO, OPENING_DATE, CLOSING_PLAN_DATE, IS_USE, REG_DATE,
+				REG_AGENT, REG_USER, REG_UNO
+			)
+			SELECT
+				:1,	TO_DATE(JOB_SD, 'YYYY-MM-DD'), TO_DATE(JOB_ED, 'YYYY-MM-DD'), 'Y', SYSDATE,
+				:2, :3, :4
+			FROM s_job_info
+			WHERE JNO = :5`
+	if _, err = tx.ExecContext(ctx, query, generatedSNO, user.Agent, user.UserName, user.Uno, jno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("IRIS_SITE_DATE. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("IRIS_SITE_DATE INSERT failed: %w", origErr)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("AddSite. Failed to commit transaction: %w", err)
 	}
 
 	return nil
