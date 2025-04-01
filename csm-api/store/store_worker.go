@@ -335,7 +335,7 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 	} else {
 		//order = "RECORD_DATE DESC, OUT_RECOG_TIME DESC NULLS LAST"
 		order = `
-				REG_DATE DESC, (
+				RECORD_DATE DESC, (
 					CASE 
 						WHEN REG_DATE IS NULL THEN MOD_DATE 
 						WHEN MOD_DATE IS NULL THEN REG_DATE 
