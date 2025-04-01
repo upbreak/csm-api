@@ -140,7 +140,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 	}
 
 	// 장소 수정 할 정보가 있는 경우만 실행
-	if site.SitePos != nil {
+	if site.SitePos != nil && site.SitePos.RoadAddress != "" {
 		sitePos := *site.SitePos
 		point, err := s.AddressSearchAPIService.GetAPILatitudeLongtitude(site.SitePos.RoadAddress)
 		if err != nil {
@@ -156,4 +156,16 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 
 	return nil
 
+}
+
+// func: 현장 생성
+// @param
+// -
+func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) error {
+	err := s.Store.AddSite(ctx, s.DB, s.TDB, jno, user)
+	if err != nil {
+		return fmt.Errorf("service_site/AddSite err: %w", err)
+	}
+
+	return nil
 }
