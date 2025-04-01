@@ -13,6 +13,7 @@ import (
 
 type ServiceProject struct {
 	DB          store.Queryer
+	TDB         store.Beginner
 	Store       store.ProjectStore
 	UserService UserService
 }
@@ -465,4 +466,48 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 	}
 
 	return count, nil
+}
+
+// func: 현장 프로젝트 추가
+// @param
+// -
+func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProject) error {
+	err := s.Store.AddProject(ctx, s.TDB, project)
+	if err != nil {
+		return fmt.Errorf("service_project/AddProject error: %w", err)
+	}
+	return nil
+}
+
+// func: 현장 기본 프로젝트 변경
+// @param
+// -
+func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error {
+	err := s.Store.ModifyDefaultProject(ctx, s.TDB, project)
+	if err != nil {
+		return fmt.Errorf("service_project/ModifyDefaultProject error: %w", err)
+	}
+	return nil
+}
+
+// func: 현장 프로젝트 사용여부 변경
+// @param
+// -
+func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.ReqProject) error {
+	err := s.Store.ModifyUseProject(ctx, s.TDB, project)
+	if err != nil {
+		return fmt.Errorf("service_project/ModifyUseProject error: %w", err)
+	}
+	return nil
+}
+
+// func: 현장 프로젝트 삭제
+// @param
+// -
+func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64) error {
+	err := s.Store.RemoveProject(ctx, s.TDB, sno, jno)
+	if err != nil {
+		return fmt.Errorf("service_project/RemoveProject error: %w", err)
+	}
+	return nil
 }

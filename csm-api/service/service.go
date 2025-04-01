@@ -43,6 +43,10 @@ type ProjectService interface {
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error)
+	AddProject(ctx context.Context, project entity.ReqProject) error
+	ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error
+	ModifyUseProject(ctx context.Context, project entity.ReqProject) error
+	RemoveProject(ctx context.Context, sno int64, jno int64) error
 }
 
 type ProjectDailyService interface {

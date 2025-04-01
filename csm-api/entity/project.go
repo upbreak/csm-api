@@ -212,3 +212,19 @@ type NonUsedProjectSql struct {
 	DutyName sql.NullString `db:"DUTY_NAME"`
 }
 type NonUsedProjectSqls []*NonUsedProjectSql
+
+// 프로젝트(IRIS_SITE_JOB) 추가/수정 구조체
+type ReqProject struct {
+	Sno       int64     `json:"sno"`
+	Jno       int64     `json:"jno"`
+	IsUsed    string    `json:"is_used"`
+	IsDefault string    `json:"is_default"`
+	RegDate   time.Time `json:"reg_date"`
+	RegUser   string    `json:"reg_user"`
+	RegUno    int64     `json:"reg_uno"`
+	RegAgent  string    `json:"reg_agent"`
+	ModDate   time.Time `json:"mod_date"`
+	ModUser   string    `json:"mod_user"`
+	ModUno    int64     `json:"mod_uno"`
+	ModAgent  string    `json:"mod_agent"`
+}

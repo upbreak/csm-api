@@ -136,6 +136,9 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 	return &siteSqls, nil
 }
 
+// func: 현장 수정
+// @param
+// -
 func (r *Repository) ModifySite(ctx context.Context, db Beginner, site entity.Site) error {
 	tx, err := db.BeginTx(ctx, nil)
 

@@ -3,6 +3,8 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"encoding/json"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 	"time"
@@ -593,5 +595,182 @@ func (h *HandlerNonUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request
 		}{List: *list, Count: count},
 	}
 
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 현장 프로젝트 추가
+type HandlerAddProject struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerAddProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	project := entity.ReqProject{}
+
+	if err := json.NewDecoder(r.Body).Decode(&project); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.AddProject(ctx, project)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataAddFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 현장 기본 프로젝트 변경
+type HandlerModifyDefaultProject struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerModifyDefaultProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	project := entity.ReqProject{}
+	if err := json.NewDecoder(r.Body).Decode(&project); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.ModifyDefaultProject(ctx, project)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 현장 프로젝트 사용여부 변경
+type HandlerModifyUseProject struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerModifyUseProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	project := entity.ReqProject{}
+	if err := json.NewDecoder(r.Body).Decode(&project); err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	err := h.Service.ModifyUseProject(ctx, project)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataModifyFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+}
+
+// struct, func: 현장 프로젝트 삭제
+type HandlerRemoveProject struct {
+	Service service.ProjectService
+}
+
+func (h *HandlerRemoveProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	snoString := chi.URLParam(r, "sno")
+	jnoString := chi.URLParam(r, "jno")
+	if snoString == "" || jnoString == "" {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Details:        NotFoundParam,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+	sno, _ := strconv.ParseInt(snoString, 10, 64)
+	jno, _ := strconv.ParseInt(jnoString, 10, 64)
+
+	err := h.Service.RemoveProject(ctx, sno, jno)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        DataRemoveFailed,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+	}
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
