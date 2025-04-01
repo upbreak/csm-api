@@ -151,6 +151,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			AddressSearchAPIService: &service.ServiceAddressSearching{
 				ApiKey: apiCfg,
 			},
+			ProjectService: &service.ServiceProject{
+				TDB:   safeDb,
+				Store: &r,
+			},
 		},
 	}
 
@@ -265,6 +269,34 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+	// 현장 프로젝트 추가
+	addProjectHandler := &handler.HandlerAddProject{
+		Service: &service.ServiceProject{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	// 현장 기본 프로젝트 변경
+	modifyDefaultProjectHandler := &handler.HandlerModifyDefaultProject{
+		Service: &service.ServiceProject{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	// 현장 프로젝트 사용여부 변경
+	modifyUseProjectHandler := &handler.HandlerModifyUseProject{
+		Service: &service.ServiceProject{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+	// 현장 프로젝트 삭제
+	removeProjectHandler := &handler.HandlerRemoveProject{
+		Service: &service.ServiceProject{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
 	mux.Route("/project", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/count", projectWorkerCountHandler.ServeHTTP)
@@ -275,6 +307,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Get("/organization/{jno}", organizationHandler.ServeHTTP)
 		r.Get("/nm/{uno}", projectNmUnoHandler.ServeHTTP)
 		r.Get("/non-used", nonProjectHandler.ServeHTTP)
+		r.Post("/", addProjectHandler.ServeHTTP)
+		r.Put("/default", modifyDefaultProjectHandler.ServeHTTP)
+		r.Put("/use", modifyUseProjectHandler.ServeHTTP)
+		r.Delete("/{sno}/{jno}", removeProjectHandler.ServeHTTP)
 	})
 	// End::프로젝트 조회
 

@@ -124,7 +124,8 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO 
 				 AND t1.JNO = wc.JNO
 			WHERE t1.SNO > 100
-			AND (:7 IS NULL OR t1.SNO = :8)`
+			AND (:7 IS NULL OR t1.SNO = :8)
+			ORDER BY IS_DEFAULT DESC`
 	if err := db.SelectContext(ctx, &projectInfoSqls, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
 		return &projectInfoSqls, fmt.Errorf("getProjectList fail: %v", err)
 	}
@@ -865,4 +866,151 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 	}
 
 	return count, nil
+}
+
+// func: 현장 프로젝트 추가
+// @param
+// -
+func (r *Repository) AddProject(ctx context.Context, db Beginner, project entity.ReqProject) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("AddProject. Failed to begin transaction: %w", err)
+	}
+
+	agent := utils.GetAgent()
+
+	query := `
+			INSERT INTO IRIS_SITE_JOB(
+				SNO, JNO, IS_USE, IS_DEFAULT, REG_DATE,
+				REG_AGENT, REG_USER, REG_UNO
+			) VALUES (
+				:1, :2, 'Y', 'N', SYSDATE,
+				:3, :4, :5
+			)`
+
+	if _, err = tx.ExecContext(ctx, query, project.Sno, project.Jno, agent, project.RegUser, project.RegUno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("AddProject. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("AddProject. Failed to add project: %w", origErr)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("AddProject. Failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 기본 프로젝트 변경
+// @param
+// -
+func (r *Repository) ModifyDefaultProject(ctx context.Context, db Beginner, project entity.ReqProject) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("ModifyDefaultProject. Failed to begin transaction: %w", err)
+	}
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_SITE_JOB
+		SET IS_DEFAULT = 'N',
+		    MOD_AGENT = :1,
+		    MOD_USER = :2,
+		    MOD_UNO = :3,
+		    MOD_DATE = SYSDATE
+		WHERE SNO = :4`
+	if _, err = tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.Sno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'N'. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'N'. Failed to modify default project: %w", origErr)
+	}
+
+	query = `
+		UPDATE IRIS_SITE_JOB
+		SET IS_DEFAULT = 'Y',
+		    MOD_AGENT = :1,
+		    MOD_USER = :2,
+		    MOD_UNO = :3,
+		    MOD_DATE = SYSDATE
+		WHERE SNO = :4
+		AND JNO = :5`
+	if _, err = tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.Sno, project.Jno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'Y'. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("ModifyDefaultProject IS_DEFAULT 'Y'. Failed to modify default project: %w", origErr)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("ModifyDefaultProject: Failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 프로젝트 사용여부 변경
+// @param
+// -
+func (r *Repository) ModifyUseProject(ctx context.Context, db Beginner, project entity.ReqProject) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("ModifyUseProject. Failed to begin transaction: %w", err)
+	}
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_SITE_JOB
+		SET IS_USE = :1,
+		    MOD_AGENT = :2,
+		    MOD_USER = :3,
+		    MOD_UNO = :4,
+		    MOD_DATE = SYSDATE
+		WHERE SNO = :5
+		AND JNO = :6`
+	if _, err = tx.ExecContext(ctx, query, project.IsUsed, agent, project.ModUser, project.ModUno, project.Sno, project.Jno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("ModifyUseProject. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("ModifyUseProject. Failed to modify default project: %w", origErr)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("ModifyUseProject: Failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 프로젝트 삭제
+// @param
+// -
+func (r *Repository) RemoveProject(ctx context.Context, db Beginner, sno int64, jno int64) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("RemoveProject. Failed to begin transaction: %w", err)
+	}
+
+	query := `
+		DELETE FROM IRIS_SITE_JOB		
+		WHERE SNO = :1
+		AND JNO = :2`
+	if _, err = tx.ExecContext(ctx, query, sno, jno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			return fmt.Errorf("RemoveProject. Failed to rollback transaction: %w", err)
+		}
+		return fmt.Errorf("RemoveProject. Failed to modify default project: %w", origErr)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("RemoveProject: Failed to commit transaction: %w", err)
+	}
+
+	return nil
 }

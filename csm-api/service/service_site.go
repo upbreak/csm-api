@@ -121,6 +121,9 @@ func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time
 	return sites, nil
 }
 
+// func: 현장 수정
+// @param
+// -
 func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 
 	if site.Sno == 0 {
@@ -129,6 +132,17 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 	// 비고 정보 수정
 	if err := s.Store.ModifySite(ctx, s.TDB, site); err != nil {
 		return fmt.Errorf("service_site/ModifySite err: %w", err)
+	}
+
+	// 기본 프로젝트 수정
+	project := entity.ReqProject{
+		Jno:     site.DefaultJno,
+		Sno:     site.Sno,
+		ModUno:  site.ModUno,
+		ModUser: site.ModUser,
+	}
+	if err := s.ProjectService.ModifyDefaultProject(ctx, project); err != nil {
+		return fmt.Errorf("service_site/ModifyDefaultProject err: %w", err)
 	}
 
 	// 날짜 수정 정보가 있는 경우만 실행
