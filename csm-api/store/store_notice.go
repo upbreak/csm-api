@@ -61,7 +61,8 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 						N.MOD_USER, 
 						N.MOD_DATE,
 						N.POSTING_PERIOD AS PERIOD_CODE,
-						N.POSTING_DATE,
+						N.POSTING_START_DATE,
+						N.POSTING_END_DATE,
 						C.CODE_NM AS NOTICE_NM,
 						N.IS_IMPORTANT
 					FROM 
@@ -74,7 +75,8 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 						IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 					WHERE
 						N.IS_USE = 'Y'
-						AND N.POSTING_DATE > SYSDATE
+						AND N.POSTING_START_DATE <= SYSDATE
+						AND N.POSTING_END_DATE > SYSDATE
 						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0 )
 				)
 				SELECT * 
@@ -97,7 +99,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 								THEN 0
 								ELSE 1 
 							END,
-							REG_DATE DESC
+							POSTING_START_DATE DESC
 						) sorted_data
 					WHERE ROWNUM <= :3
 			  	)
@@ -151,7 +153,8 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql
 					IRIS_CODE_SET C ON N.POSTING_PERIOD = C.CODE AND C.P_CODE = 'NOTICE_PERIOD'
 				WHERE
 					N.IS_USE = 'Y'
-					AND N.POSTING_DATE > SYSDATE
+					AND N.POSTING_START_DATE <= SYSDATE
+					AND N.POSTING_END_DATE > SYSDATE
 					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0 )
 			)
 			SELECT COUNT(*) 
@@ -196,7 +199,8 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					REG_UNO,
 					REG_USER,
 					REG_DATE,
-					POSTING_DATE,
+					POSTING_START_DATE,
+					POSTING_END_DATE,
 				    REG_USER_DUTY_NAME
 				) VALUES (
 					SEQ_IRIS_NOTICE_BOARD.NEXTVAL,
@@ -212,14 +216,15 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 					SYSDATE,
 --					C.CODE,
 					:9,
+					:10,
 --					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04,
-					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :10)
+					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :11)
 				)
 --				FROM IRIS_CODE_SET C
 --				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, contentCLOB, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingDate, noticeSql.RegUno)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, contentCLOB, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingStartDate, noticeSql.PostingEndDate, noticeSql.RegUno)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -257,12 +262,13 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 					MOD_UNO = :7,	
 					MOD_USER = :8,
 					MOD_DATE = SYSDATE,
-					POSTING_DATE = :9
+					POSTING_START_DATE = :9,
+					POSTING_END_DATE = :10
 				WHERE 
-					IDX = :10
+					IDX = :11
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.ModUno, noticeSql.ModUser, noticeSql.PostingDate, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.ModUno, noticeSql.ModUser, noticeSql.PostingStartDate, noticeSql.PostingEndDate, noticeSql.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {

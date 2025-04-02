@@ -28,53 +28,55 @@ type NoticePeriodSqls []*NoticePeriodSql
 type NoticeID int64
 
 type Notice struct {
-	RowNum       int64     `json:"row_num"`
-	Idx          NoticeID  `json:"idx"`
-	Sno          int64     `json:"sno"`
-	Jno          int64     `json:"jno"`
-	JobName      string    `json:"job_name"`
-	JobLocName   string    `json:"job_loc_name"`
-	Title        string    `json:"title"`
-	Content      string    `json:"content"`
-	ShowYN       string    `json:"show_yn"`
-	RegUno       int64     `json:"reg_uno"`
-	RegUser      string    `json:"reg_user"`
-	RegDate      time.Time `json:"reg_date"`
-	UserDutyName string    `json:"user_duty_name"`
-	UserInfo     string    `json:"user_info"`
-	ModUno       int64     `json:"mod_uno"`
-	ModUser      string    `json:"mod_user"`
-	ModDate      time.Time `json:"mod_date"`
-	PeriodCode   string    `json:"period_code"`
-	NoticeNm     string    `json:"notice_nm"`
-	PostingDate  time.Time `json:"posting_date"`
-	IsImportant  string    `json:"is_important"`
+	RowNum           int64     `json:"row_num"`
+	Idx              NoticeID  `json:"idx"`
+	Sno              int64     `json:"sno"`
+	Jno              int64     `json:"jno"`
+	JobName          string    `json:"job_name"`
+	JobLocName       string    `json:"job_loc_name"`
+	Title            string    `json:"title"`
+	Content          string    `json:"content"`
+	ShowYN           string    `json:"show_yn"`
+	RegUno           int64     `json:"reg_uno"`
+	RegUser          string    `json:"reg_user"`
+	RegDate          time.Time `json:"reg_date"`
+	UserDutyName     string    `json:"user_duty_name"`
+	UserInfo         string    `json:"user_info"`
+	ModUno           int64     `json:"mod_uno"`
+	ModUser          string    `json:"mod_user"`
+	ModDate          time.Time `json:"mod_date"`
+	PeriodCode       string    `json:"period_code"`
+	NoticeNm         string    `json:"notice_nm"`
+	PostingStartDate time.Time `json:"posting_start_date"`
+	PostingEndDate   time.Time `json:"posting_end_date"`
+	IsImportant      string    `json:"is_important"`
 }
 
 type Notices []*Notice
 
 type NoticeSql struct {
-	RowNum       sql.NullInt64  `db:"RNUM"`
-	Idx          NoticeID       `db:"IDX"`
-	Sno          sql.NullInt64  `db:"SNO"`
-	Jno          sql.NullInt64  `db:"JNO"`
-	JobName      sql.NullString `db:"JOB_NAME"`
-	JobLocName   sql.NullString `db:"JOB_LOC_NAME"`
-	Title        sql.NullString `db:"TITLE" validate:"required"`
-	Content      sql.NullString `db:"CONTENT" validate:"required"`
-	ShowYN       sql.NullString `db:"SHOW_YN"`
-	RegUno       sql.NullInt64  `db:"REG_UNO"`
-	RegUser      sql.NullString `db:"REG_USER"`
-	RegDate      sql.NullTime   `db:"REG_DATE"`
-	UserDutyName sql.NullString `db:"DUTY_NAME"`
-	UserInfo     sql.NullString `db:"USER_INFO"`
-	ModUno       sql.NullInt64  `db:"MOD_UNO"`
-	ModUser      sql.NullString `db:"MOD_USER"`
-	ModDate      sql.NullTime   `db:"MOD_DATE"`
-	PeriodCode   sql.NullString `db:"PERIOD_CODE"`
-	NoticeNm     sql.NullString `db:"NOTICE_NM"`
-	PostingDate  sql.NullTime   `db:"POSTING_DATE"`
-	IsImportant  sql.NullString `db:"IS_IMPORTANT"`
+	RowNum           sql.NullInt64  `db:"RNUM"`
+	Idx              NoticeID       `db:"IDX"`
+	Sno              sql.NullInt64  `db:"SNO"`
+	Jno              sql.NullInt64  `db:"JNO"`
+	JobName          sql.NullString `db:"JOB_NAME"`
+	JobLocName       sql.NullString `db:"JOB_LOC_NAME"`
+	Title            sql.NullString `db:"TITLE" validate:"required"`
+	Content          sql.NullString `db:"CONTENT" validate:"required"`
+	ShowYN           sql.NullString `db:"SHOW_YN"`
+	RegUno           sql.NullInt64  `db:"REG_UNO"`
+	RegUser          sql.NullString `db:"REG_USER"`
+	RegDate          sql.NullTime   `db:"REG_DATE"`
+	UserDutyName     sql.NullString `db:"DUTY_NAME"`
+	UserInfo         sql.NullString `db:"USER_INFO"`
+	ModUno           sql.NullInt64  `db:"MOD_UNO"`
+	ModUser          sql.NullString `db:"MOD_USER"`
+	ModDate          sql.NullTime   `db:"MOD_DATE"`
+	PeriodCode       sql.NullString `db:"PERIOD_CODE"`
+	NoticeNm         sql.NullString `db:"NOTICE_NM"`
+	PostingStartDate sql.NullTime   `db:"POSTING_START_DATE"`
+	PostingEndDate   sql.NullTime   `db:"POSTING_END_DATE"`
+	IsImportant      sql.NullString `db:"IS_IMPORTANT"`
 }
 
 type NoticeSqls []*NoticeSql
@@ -99,7 +101,8 @@ func (n *Notice) ToNotice(noticeSql *NoticeSql) *Notice {
 	n.ModDate = noticeSql.ModDate.Time
 	n.PeriodCode = noticeSql.PeriodCode.String
 	n.NoticeNm = noticeSql.NoticeNm.String
-	n.PostingDate = noticeSql.PostingDate.Time
+	n.PostingStartDate = noticeSql.PostingStartDate.Time
+	n.PostingEndDate = noticeSql.PostingEndDate.Time
 	n.IsImportant = noticeSql.IsImportant.String
 
 	return n
@@ -218,10 +221,15 @@ func (n *NoticeSql) OfNoticeSql(notice Notice) *NoticeSql {
 		n.NoticeNm = sql.NullString{Valid: false}
 	}
 
-	if notice.PostingDate.IsZero() != true {
-		n.PostingDate = sql.NullTime{Valid: true, Time: notice.PostingDate}
+	if notice.PostingStartDate.IsZero() != true {
+		n.PostingStartDate = sql.NullTime{Valid: true, Time: notice.PostingStartDate}
 	} else {
-		n.PostingDate = sql.NullTime{Valid: false}
+		n.PostingStartDate = sql.NullTime{Valid: false}
+	}
+	if notice.PostingEndDate.IsZero() != true {
+		n.PostingEndDate = sql.NullTime{Valid: true, Time: notice.PostingEndDate}
+	} else {
+		n.PostingEndDate = sql.NullTime{Valid: false}
 	}
 
 	if notice.IsImportant != "" {
