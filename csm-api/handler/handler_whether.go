@@ -77,3 +77,37 @@ func (h *HandlerWhetherSrtNcst) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
+
+// 기상청 기상특보통보문조회
+type HandlerWhetherWrnMsg struct {
+	Service service.WhetherApiService
+}
+
+func (h *HandlerWhetherWrnMsg) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	res, err := h.Service.GetWhetherWrnMsg()
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        CallApiFailed,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			List entity.WhetherWrnMsgList `json:"list"`
+		}{List: res},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+
+}
