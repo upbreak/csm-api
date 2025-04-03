@@ -206,10 +206,20 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			ApiKey: apiCfg,
 		},
 	}
+
+	// 기상청 기상특보통보문 조회
+	handlerWhetherWrn := &handler.HandlerWhetherWrnMsg{
+		Service: &service.ServiceWhether{
+			ApiKey: apiCfg,
+		},
+	}
+
 	mux.Route("/api", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/whether/srt", handlerWhetherSrt.ServeHTTP)
+		r.Get("/whether/wrn", handlerWhetherWrn.ServeHTTP)
 	})
+
 	// End:: api 호출
 
 	// Begin::프로젝트 조회

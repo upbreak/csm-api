@@ -103,6 +103,7 @@ type CompanyService interface {
 
 type WhetherApiService interface {
 	GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error)
+	GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error)
 }
 type AddressSearchAPIService interface {
 	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)

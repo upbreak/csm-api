@@ -69,3 +69,10 @@ func WhetherVecString(value string) string {
 		return "없음"
 	}
 }
+
+type WhetherWrnMsg struct {
+	Warning string   `json:"warning"`
+	Area    []string `json:"area"`
+}
+
+type WhetherWrnMsgList []WhetherWrnMsg
