@@ -279,7 +279,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 	return &projectInfoSqls, nil
 }
 
-// func: 관리 중인 프로젝트 전체 조회
+// func: 공사관리시스템 등록 프로젝트 전체 조회
 // @param
 // -
 func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
@@ -339,7 +339,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 	return &sqlData, nil
 }
 
-// func: 관리 중인 프로젝트 전체 조회 개수
+// func: 공사관리시스템 등록 프로젝트 전체 조회 개수
 // @param
 // -
 func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
@@ -445,7 +445,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	return &sqlData, nil
 }
 
-// func: 프로젝트 개수 조회
+// func: 프로젝트 개수 조회 개수
 // @param
 // -
 func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
@@ -483,7 +483,7 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 	return count, nil
 }
 
-// func: 조직도 확인
+// func: 본인이 속한 프로젝트 조회
 // @param
 // - UNO
 func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfoSql, uno sql.NullInt64) (*entity.JobInfoSqls, error) {
@@ -552,7 +552,7 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 	return &sqlData, nil
 }
 
-// func: 조직도 확인 개수
+// func: 본인이 속한 프로젝트 개수
 // @param
 // - UNO
 func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfoSql, uno sql.NullInt64) (int, error) {
@@ -610,7 +610,6 @@ func (r *Repository) GetClientOrganization(ctx context.Context, db Queryer, jno 
 					JM.UNO,
 					CASE WHEN LENGTH(JM.CELL) > 6 THEN  JM.CELL ELSE '' END CELL, 
 					CASE WHEN LENGTH(JM.TEL) > 6 THEN  JM.TEL ELSE '' END TEL	
-
 				FROM 
 					JOB_MEMBER_LIST JM 
 				INNER JOIN 
@@ -621,7 +620,8 @@ func (r *Repository) GetClientOrganization(ctx context.Context, db Queryer, jno 
 					SYS_CODE_SET SC 
 				ON 
 					JM.CHARGE = SC.MINOR_CD AND SC.MAJOR_CD = 'MEMBER_CHARGE' 
-				WHERE JM.JNO = :1 AND COMP_TYPE = 'O'`)
+				WHERE JM.JNO = :1 AND COMP_TYPE = 'O'
+				ORDER BY JM.FUNC_NAME ASC, SC.VAL5 ASC, JM.SORT_NO ASC`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
 		return nil, fmt.Errorf("GetClientOrganization err: %w", err)
@@ -644,16 +644,14 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 					)
 					,HITECH AS (
 							SELECT 
-								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, U.USER_NAME, U.DUTY_NAME, U.DEPT_NAME, U.CELL, U.TEL, U.EMAIL, U.IS_USE, M.CO_ID, SC.CD_NM, M.UNO, SC.VAL5 AS CHARGE_SORT
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, U.USER_NAME, U.DUTY_NAME, U.DEPT_NAME, U.CELL, U.TEL, U.EMAIL, U.IS_USE, M.CO_ID, SC.CD_NM, M.UNO, SC.VAL5 AS CHARGE_SORT, U.DUTY_ID
 							FROM 
 								MEMBER_LIST M 
 							INNER JOIN 
 								(SELECT 
-									UNO, USER_NAME, DUTY_NAME, TEAM_NAME AS DEPT_NAME, CELL, TEL, EMAIL, IS_USE 
+									UNO, USER_NAME, DUTY_NAME, TEAM_NAME AS DEPT_NAME, CELL, TEL, EMAIL, IS_USE, DUTY_ID 
 								FROM 
-									S_SYS_USER_SET 
-								ORDER BY 
-									DUTY_ID) U 
+									S_SYS_USER_SET) U 
 							ON 
 								M.UNO = U.UNO 
 							INNER JOIN 
@@ -665,7 +663,7 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 								COMP_TYPE = 'H'
 						UNION
 							SELECT 
-								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, M.MEMBER_NAME AS USER_NAME, M.GRADE_NAME AS DUTY_NAME, M.DEPT_NAME, M.CELL, M.TEL, M.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO, SC.VAL5 AS CHARGE_SORT 
+								M.JNO, M.FUNC_CODE, M.CHARGE_DETAIL, M.MEMBER_NAME AS USER_NAME, M.GRADE_NAME AS DUTY_NAME, M.DEPT_NAME, M.CELL, M.TEL, M.EMAIL, M.IS_USE, M.CO_ID, SC.CD_NM, M.UNO, SC.VAL5 AS CHARGE_SORT, 99999 AS DUTY_ID 
 							FROM 
 								MEMBER_LIST M 
 							INNER JOIN 
@@ -695,7 +693,9 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 					WHERE
 						H.FUNC_CODE = :2
 					ORDER BY  
-						H.CHARGE_SORT ASC
+						H.CHARGE_SORT ASC,
+						H.DUTY_ID ASC,
+						H.USER_NAME ASC
 					`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno, funcNo); err != nil {

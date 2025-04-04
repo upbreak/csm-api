@@ -38,7 +38,7 @@ type ProjectService interface {
 	GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
 	GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error)
-	GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error)
+	GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 	GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
