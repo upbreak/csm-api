@@ -133,7 +133,7 @@ func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectI
 	return projectInfos, nil
 }
 
-// func: 프로젝트 전체 조회
+// func: 공사관리시스템 등록 프로젝트 전체 조회
 // @param
 // -
 func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
@@ -223,7 +223,7 @@ func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.J
 	return count, nil
 }
 
-// func: 조직도 확인
+// func: 본인이 속한 프로젝트 조회
 // @param
 // - UNO
 func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error) {
@@ -261,7 +261,7 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 
 }
 
-// func: 조직도 확인 개수
+// func: 본인이 속한 프로젝트 개수
 // @param
 // - UNO
 func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error) {
@@ -288,29 +288,10 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 
 }
 
-// func: 조직도 공종 조회
-// @param
-// -
-// func (p *ServiceProject) GetFuncName(ctx context.Context) (*entity.FuncNames, error) {
-
-// 	funcNameSqls, err := p.Store.GetFuncNameList(ctx, p.DB)
-// 	if err != nil {
-// 		return &entity.FuncNames{}, fmt.Errorf("service_projcet/GetFuncNameList: %w", err)
-// 	}
-
-// 	funcNames := &entity.FuncNames{}
-// 	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
-// 		return &entity.FuncNames{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
-// 	}
-
-// 	return funcNames, nil
-
-// }
-
 // func: 조직도 조회: 고객사
 // @param
 // - JNO
-func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartition, error) {
+func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error) {
 	var jnoSql sql.NullInt64
 
 	if jno != 0 {
@@ -322,21 +303,39 @@ func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (
 	clientSql := &entity.OrganizationSqls{}
 	clientSql, err := p.Store.GetClientOrganization(ctx, p.DB, jnoSql)
 	if err != nil {
-		return &entity.OrganizationPartition{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
+		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
 	}
 
-	client := &entity.Organizations{}
-	if err := entity.ConvertSliceToRegular(*clientSql, client); err != nil {
-		return &entity.OrganizationPartition{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
+	clients := &entity.Organizations{} //  []organization
+	if err := entity.ConvertSliceToRegular(*clientSql, clients); err != nil {
+		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
 	}
 
-	organization := &entity.OrganizationPartition{}
-	if len(*client) != 0 {
-		organization.FuncName = (*client)[0].FuncName
-	}
-	organization.OrganizationList = client
+	organizations := entity.OrganizationPartitions{}
+	if len(*clients) != 0 {
+		// 공종 별로 구분하여 데이터 반환
+		funcName := (*clients)[0].FuncName
+		funcClients := &entity.Organizations{}
+		for _, client := range *clients {
+			if funcName != client.FuncName {
+				organization := &entity.OrganizationPartition{}
+				organization.FuncName = funcName
+				organization.OrganizationList = funcClients
+				organizations = append(organizations, organization)
+				funcName = client.FuncName
+				funcClients = &entity.Organizations{}
+			}
 
-	return organization, nil
+			*funcClients = append(*funcClients, client)
+		}
+
+		organization := &entity.OrganizationPartition{}
+		organization.FuncName = funcName
+		organization.OrganizationList = funcClients
+		organizations = append(organizations, organization)
+	}
+
+	return &organizations, nil
 }
 
 // func: 조직도 조회: 계약자(외부직원, 내부직원, 협력사)
@@ -394,7 +393,7 @@ func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (
 	return &organizations, nil
 }
 
-// 프로젝트 관리
+// 본인이 속한 프로젝트 이름 목록
 func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error) {
 
 	var unoSql sql.NullInt64

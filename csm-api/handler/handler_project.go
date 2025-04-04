@@ -115,7 +115,7 @@ func (h *HandlerProjectNm) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
 
-// struct, func: 프로젝트 전체 조회
+// struct, func: 공사관리시스템 등록 프로젝트 전체 조회
 type HandlerUsedProject struct {
 	Service service.ProjectService
 }
@@ -204,6 +204,7 @@ func (h *HandlerUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
 
+// struct, func: 프로젝트 전체 조회
 type HandlerAllProject struct {
 	Service service.ProjectService
 }
@@ -294,6 +295,7 @@ func (h *HandlerAllProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// struct, func: 본인이 속한 프로젝트 조회
 type HandlerStaffProject struct {
 	Service service.ProjectService
 }
@@ -395,6 +397,7 @@ func (h *HandlerStaffProject) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 }
 
+// struct, func: 조직도 조회
 type HandlerOrganization struct {
 	Service service.ProjectService
 }
@@ -449,7 +452,7 @@ func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			Client entity.OrganizationPartition  `json:"client"`
+			Client entity.OrganizationPartitions `json:"client"`
 			Hitech entity.OrganizationPartitions `json:"hitech"`
 		}{Client: *client, Hitech: *hitech},
 	}
@@ -458,6 +461,7 @@ func (h *HandlerOrganization) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 }
 
+// 본인이 속한 프로젝트 이름 목록
 type HandlerProjectNmUno struct {
 	Service service.ProjectService
 }

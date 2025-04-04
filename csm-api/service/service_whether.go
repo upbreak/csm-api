@@ -29,12 +29,13 @@ type ServiceWhether struct {
 // - date string: 현재날짜(mmdd), time string: 현재시간(hhmm), nx int: 위도변환값, ny int: 경도변환값
 func (s *ServiceWhether) GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error) {
 	// 초단기실황 url
-	url := fmt.Sprintf("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?dataType=JSON&ServiceKey=%s&base_date=%s&base_time=%s&nx=%d&ny=%d",
+	url := fmt.Sprintf("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst?dataType=JSON&ServiceKey=%s&base_date=%s&base_time=%s&nx=%d&ny=%d&numOfRows=%d",
 		s.ApiKey.WhetherApiKey,
 		date,
 		time,
 		nx,
 		ny,
+		100,
 	)
 
 	// api call
@@ -61,13 +62,22 @@ func (s *ServiceWhether) GetWhetherSrtNcst(date string, time string, nx int, ny 
 	// whether api response -> go api response convert
 	items := res.Response.Body.Items
 	whetherRes := entity.WhetherSrtEntityRes{}
+
+	tempCategory := ""
 	for _, item := range items.Item {
+		// 각 카테고리 별로 가장 먼저 들어온 데이터 저장
+		if tempCategory == item.Category {
+			continue
+		} else {
+			tempCategory = item.Category
+		}
+
 		temp := entity.WhetherSrtEntity{}
 		temp.Key = item.Category
 		if item.Category == "VEC" {
-			temp.Value = entity.WhetherVecString(item.ObsrValue)
+			temp.Value = entity.WhetherVecString(item.FcstValue)
 		} else {
-			temp.Value = item.ObsrValue
+			temp.Value = item.FcstValue
 		}
 		whetherRes = append(whetherRes, temp)
 	}
@@ -90,7 +100,7 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 		"JSON",                 // 응답 자료 형식
 		startDate,              // 발표시각 from
 		endDate,                //endDate,                // 발표시각 to
-		"108")                  // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
+		"108") // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
 
 	// api call
 	body, err := api.CallGetAPI(url)
@@ -136,6 +146,7 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 	list := entity.WhetherWrnMsgList{}
 	warningMsgs := strings.Split(msg, "o")
 	warningList := []string{"강풍주의보", "강풍경보", "호우주의보", "호우경보", "대설주의보", "대설경보", "태풍주의보", "태풍경보", "황사주의보", "황사경보", "폭염주의보", "폭염경보", "한파주의보", "한파경보"} // , "건조주의보"
+
 	for _, warningMsg := range warningMsgs {
 		response := entity.WhetherWrnMsg{}
 		warning, areaStr, resultBool := strings.Cut(warningMsg, ":")
@@ -158,6 +169,7 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 		// 특보 정보 입력
 		response.Warning = warning
 		var areaList []string
+
 		// 특보 지역 구분(시도 단위로)
 		if resultBool {
 			areaStr = strings.ReplaceAll(areaStr, "도, ", "도), ")
