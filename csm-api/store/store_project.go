@@ -25,51 +25,57 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 
 	sql := `
 			WITH base AS (
-			  SELECT 
-				SNO,
-				JNO,
-				USER_ID,
-				USER_NM,
-				NVL(USER_NM, ' ') AS user_nm_norm,
-				TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') AS recog_date,
-				NVL(DEPARTMENT, ' ') AS dept_norm
-			  FROM IRIS_RECD_SET
-			  WHERE SNO > 100
-			  AND (:1 IS NULL OR SNO = :2)
+				SELECT
+					t1.SNO,
+					t1.JNO,
+					t1.USER_ID,
+					NVL(t2.USER_NM, ' ') AS USER_NM,
+					TO_CHAR(t1.RECORD_DATE, 'YYYY-MM-DD') AS RECORD_DATE,
+					NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT
+				FROM IRIS_WORKER_DAILY_SET t1
+				LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
+				WHERE t1.SNO > 100
+				AND (:1 IS NULL OR t1.SNO = :2)
 			),
 			worker_counts AS (
-			  SELECT 
-				SNO,
-				JNO,
-				COUNT(DISTINCT USER_ID || '-' || recog_date) AS WORKER_COUNT_ALL,
-				COUNT(DISTINCT CASE 
-								 WHEN recog_date = TO_CHAR(:3, 'YYYY-MM-DD')
-								 THEN USER_ID || '-' || recog_date
-								 END) AS WORKER_COUNT_DATE,
-				COUNT(DISTINCT CASE 
-								 WHEN recog_date = TO_CHAR(:4, 'YYYY-MM-DD')
-								  AND INSTR(dept_norm, '하이테크') > 0
-								 THEN USER_ID || '-' || recog_date
-								 END) AS WORKER_COUNT_HTENC,
-				COUNT(DISTINCT CASE 
-								 WHEN recog_date = TO_CHAR(:5, 'YYYY-MM-DD')
-								  AND INSTR(dept_norm, '하이테크') = 0
-								  AND (INSTR(dept_norm, '관리') > 0 
-									   OR INSTR(user_nm_norm, '관리') > 0)
-								 THEN USER_ID || '-' || recog_date
-								 END) AS WORKER_COUNT_MANAGER,
-				COUNT(DISTINCT CASE 
-								 WHEN recog_date = TO_CHAR(:6, 'YYYY-MM-DD')
-								  AND INSTR(dept_norm, '하이테크') = 0
-								  AND (INSTR(dept_norm, '관리') = 0 
-									   AND INSTR(user_nm_norm, '관리') = 0)
-								 THEN USER_ID || '-' || recog_date
-								 END) AS WORKER_COUNT_NOT_MANAGER
-			  FROM base
-			  GROUP BY SNO, JNO
+				SELECT
+					SNO,
+					JNO,
+					COUNT(DISTINCT USER_ID || '-' || RECORD_DATE) AS WORKER_COUNT_ALL,
+					COUNT(DISTINCT CASE 
+									 WHEN RECORD_DATE = TO_CHAR(:3, 'YYYY-MM-DD')
+									 THEN USER_ID || '-' || RECORD_DATE
+									 END) AS WORKER_COUNT_DATE,
+					COUNT(DISTINCT CASE 
+									 WHEN RECORD_DATE = TO_CHAR(:4, 'YYYY-MM-DD')
+									  AND (INSTR(DEPARTMENT, '하이테크') > 0 
+									   OR INSTR(DEPARTMENT, 'HTENC') > 0 
+									   OR INSTR(DEPARTMENT, 'HTE') > 0)
+									 THEN USER_ID || '-' || RECORD_DATE
+									 END) AS WORKER_COUNT_HTENC,
+					COUNT(DISTINCT CASE 
+									 WHEN RECORD_DATE = TO_CHAR(:5, 'YYYY-MM-DD')
+									  AND INSTR(DEPARTMENT, '하이테크') = 0
+									  AND INSTR(DEPARTMENT, 'HTENC') = 0
+									  AND INSTR(DEPARTMENT, 'HTE') = 0
+									  AND (INSTR(DEPARTMENT, '관리') > 0 
+										   OR INSTR(USER_NM, '관리') > 0)
+									 THEN USER_ID || '-' || RECORD_DATE
+									 END) AS WORKER_COUNT_MANAGER,
+					COUNT(DISTINCT CASE 
+									 WHEN RECORD_DATE = TO_CHAR(:6, 'YYYY-MM-DD')
+									  AND INSTR(DEPARTMENT, '하이테크') = 0
+									  AND INSTR(DEPARTMENT, 'HTENC') = 0
+									  AND INSTR(DEPARTMENT, 'HTE') = 0
+									  AND (INSTR(DEPARTMENT, '관리') = 0 
+										   AND INSTR(USER_NM, '관리') = 0)
+									 THEN USER_ID || '-' || RECORD_DATE
+									 END) AS WORKER_COUNT_NOT_MANAGER
+				FROM base
+				GROUP BY SNO, JNO
 			)
 			SELECT
-			  t1.SNO,
+				t1.SNO,
 				t1.JNO,
 				t1.IS_USE,
 				t1.IS_DEFAULT,
@@ -141,47 +147,53 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 
 	query := `
 				WITH base AS (
-				  SELECT 
-					SNO,
-					JNO,
-					USER_ID,
-					USER_NM,
-					NVL(USER_NM, ' ') AS user_nm_norm,
-					TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') AS recog_date,
-					NVL(DEPARTMENT, ' ') AS dept_norm
-				  FROM IRIS_RECD_SET
-				  WHERE SNO > 100
+					SELECT
+						t1.SNO,
+						t1.JNO,
+						t1.USER_ID,
+						NVL(t2.USER_NM, ' ') AS USER_NM,
+						TO_CHAR(t1.RECORD_DATE, 'YYYY-MM-DD') AS RECORD_DATE,
+						NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT
+					FROM IRIS_WORKER_DAILY_SET t1
+					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
+					WHERE t1.SNO > 100
 				),
 				worker_counts AS (
-				  SELECT 
-					SNO,
-					JNO,
-					COUNT(DISTINCT USER_ID || '-' || recog_date) AS WORKER_COUNT_ALL,
-					COUNT(DISTINCT CASE 
-									 WHEN recog_date = TO_CHAR(:1, 'YYYY-MM-DD')
-									 THEN USER_ID || '-' || recog_date
-									 END) AS WORKER_COUNT_DATE,
-					COUNT(DISTINCT CASE 
-									 WHEN recog_date = TO_CHAR(:2, 'YYYY-MM-DD')
-									  AND INSTR(dept_norm, '하이테크') > 0
-									 THEN USER_ID || '-' || recog_date
-									 END) AS WORKER_COUNT_HTENC,
-					COUNT(DISTINCT CASE 
-									 WHEN recog_date = TO_CHAR(:3, 'YYYY-MM-DD')
-									  AND INSTR(dept_norm, '하이테크') = 0
-									  AND (INSTR(dept_norm, '관리') > 0 
-										   OR INSTR(user_nm_norm, '관리') > 0)
-									 THEN USER_ID || '-' || recog_date
-									 END) AS WORKER_COUNT_MANAGER,
-					COUNT(DISTINCT CASE 
-									 WHEN recog_date = TO_CHAR(:4, 'YYYY-MM-DD')
-									  AND INSTR(dept_norm, '하이테크') = 0
-									  AND (INSTR(dept_norm, '관리') = 0 
-										   AND INSTR(user_nm_norm, '관리') = 0)
-									 THEN USER_ID || '-' || recog_date
-									 END) AS WORKER_COUNT_NOT_MANAGER
-				  FROM base
-				  GROUP BY SNO, JNO
+					SELECT
+						SNO,
+						JNO,
+						COUNT(DISTINCT USER_ID || '-' || RECORD_DATE) AS WORKER_COUNT_ALL,
+						COUNT(DISTINCT CASE 
+										 WHEN RECORD_DATE = TO_CHAR(:1, 'YYYY-MM-DD')
+										 THEN USER_ID || '-' || RECORD_DATE
+										 END) AS WORKER_COUNT_DATE,
+						COUNT(DISTINCT CASE 
+										 WHEN RECORD_DATE = TO_CHAR(:2, 'YYYY-MM-DD')
+										  AND (INSTR(DEPARTMENT, '하이테크') > 0 
+										   OR INSTR(DEPARTMENT, 'HTENC') > 0 
+										   OR INSTR(DEPARTMENT, 'HTE') > 0)
+										 THEN USER_ID || '-' || RECORD_DATE
+										 END) AS WORKER_COUNT_HTENC,
+						COUNT(DISTINCT CASE 
+										 WHEN RECORD_DATE = TO_CHAR(:3, 'YYYY-MM-DD')
+										  AND INSTR(DEPARTMENT, '하이테크') = 0
+										  AND INSTR(DEPARTMENT, 'HTENC') = 0
+										  AND INSTR(DEPARTMENT, 'HTE') = 0
+										  AND (INSTR(DEPARTMENT, '관리') > 0 
+											   OR INSTR(USER_NM, '관리') > 0)
+										 THEN USER_ID || '-' || RECORD_DATE
+										 END) AS WORKER_COUNT_MANAGER,
+						COUNT(DISTINCT CASE 
+										 WHEN RECORD_DATE = TO_CHAR(:4, 'YYYY-MM-DD')
+										  AND INSTR(DEPARTMENT, '하이테크') = 0
+										  AND INSTR(DEPARTMENT, 'HTENC') = 0
+										  AND INSTR(DEPARTMENT, 'HTE') = 0
+										  AND (INSTR(DEPARTMENT, '관리') = 0 
+											   AND INSTR(USER_NM, '관리') = 0)
+										 THEN USER_ID || '-' || RECORD_DATE
+										 END) AS WORKER_COUNT_NOT_MANAGER
+					FROM base
+					GROUP BY SNO, JNO
 				)
 				SELECT 
 					t1.SNO,
