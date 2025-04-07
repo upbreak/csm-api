@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"csm-api/utils"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -554,13 +555,13 @@ func (h *HandlerNonUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request
 	page.Order = order
 	page.RnumOrder = rnumOrder
 
-	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
-	search.JobNo = jobNo
-	search.JobName = JobName
-	search.JobYear, _ = strconv.ParseInt(JobYear, 10, 64)
-	search.JobSd = JobSd
-	search.JobEd = JobEd
-	search.JobPmNm = UserName
+	search.Jno = utils.ParseNullInt(jno)
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.JobName = utils.ParseNullString(JobName)
+	search.JobYear = utils.ParseNullInt(JobYear)
+	search.JobSd = utils.ParseNullString(JobSd)
+	search.JobEd = utils.ParseNullString(JobEd)
+	search.JobPmNm = utils.ParseNullString(UserName)
 
 	list, err := h.Service.GetNonUsedProjectList(ctx, page, search, retrySearch)
 	if err != nil {

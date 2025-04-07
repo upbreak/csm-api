@@ -20,6 +20,7 @@ type ServiceProjectDaily struct {
 func (s *ServiceProjectDaily) GetProjectDailyContentList(ctx context.Context, jno int64, targetDate time.Time) (*entity.ProjectDailys, error) {
 	projectDailys, err := s.Store.GetProjectDailyContentList(ctx, s.DB, jno, targetDate)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project_daily/GetProjectDailyContentList err: %w", err)
 	}
 	return projectDailys, nil

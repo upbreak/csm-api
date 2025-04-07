@@ -5,6 +5,7 @@ import (
 	"csm-api/entity"
 	"csm-api/utils"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -12,8 +13,8 @@ import (
 // func: 현장 프로젝트 조회
 // @param
 // - sno int64 현장 번호, targetDate time.Time: 현재시간
-func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.ProjectInfoSqls, error) {
-	projectInfoSqls := entity.ProjectInfoSqls{}
+func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.ProjectInfos, error) {
+	projectInfos := entity.ProjectInfos{}
 
 	// sno 변환: 0이면 NULL 처리, 아니면 Valid 값으로 설정
 	var snoParam sql.NullInt64
@@ -132,18 +133,19 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			WHERE t1.SNO > 100
 			AND (:7 IS NULL OR t1.SNO = :8)
 			ORDER BY IS_DEFAULT DESC`
-	if err := db.SelectContext(ctx, &projectInfoSqls, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
-		return &projectInfoSqls, fmt.Errorf("getProjectList fail: %v", err)
+	if err := db.SelectContext(ctx, &projectInfos, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
+		//TODO: 에러 아카이브
+		return &projectInfos, fmt.Errorf("getProjectList fail: %v", err)
 	}
 
-	return &projectInfoSqls, nil
+	return &projectInfos, nil
 }
 
 // func: 프로젝트 근로자 수 조회
 // @param
 // - sno int64 현장 번호, targetDate time.Time: 현재시간
-func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfoSqls, error) {
-	sqlList := entity.ProjectInfoSqls{}
+func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfos, error) {
+	list := entity.ProjectInfos{}
 
 	query := `
 				WITH base AS (
@@ -208,18 +210,19 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 					 AND t1.JNO = wc.JNO
 				WHERE t1.SNO > 100`
 
-	if err := db.SelectContext(ctx, &sqlList, query, targetDate, targetDate, targetDate, targetDate); err != nil {
+	if err := db.SelectContext(ctx, &list, query, targetDate, targetDate, targetDate, targetDate); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetProjectWorkerCountList err: %v", err)
 	}
 
-	return &sqlList, nil
+	return &list, nil
 }
 
 // func: 프로젝트별 출근 안전관리자 수
 // @param
 // - targetDate: 현재시간
-func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCountSqls, error) {
-	sqlList := entity.ProjectSafeCountSqls{}
+func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCounts, error) {
+	list := entity.ProjectSafeCounts{}
 
 	query := `
 				WITH htenc_cnt AS (
@@ -259,18 +262,19 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 				)
 				GROUP BY ht.SNO, ht.JNO`
 
-	if err := db.SelectContext(ctx, &sqlList, query, targetDate); err != nil {
+	if err := db.SelectContext(ctx, &list, query, targetDate); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetProjectSafeWorkerCountList err: %v", err)
 	}
 
-	return &sqlList, nil
+	return &list, nil
 }
 
 // func: 프로젝트 조회(이름)
 // @param
 // -
-func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfoSqls, error) {
-	projectInfoSqls := entity.ProjectInfoSqls{}
+func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error) {
+	projectInfos := entity.ProjectInfos{}
 
 	sql := `SELECT
     			t1.SNO,
@@ -284,11 +288,12 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 			WHERE t1.sno > 100
 			ORDER BY
 				t1.IS_DEFAULT DESC`
-	if err := db.SelectContext(ctx, &projectInfoSqls, sql); err != nil {
-		return &projectInfoSqls, fmt.Errorf("GetProjectNmList fail: %v", err)
+	if err := db.SelectContext(ctx, &projectInfos, sql); err != nil {
+		//TODO: 에러 아카이브
+		return &projectInfos, fmt.Errorf("GetProjectNmList fail: %v", err)
 	}
 
-	return &projectInfoSqls, nil
+	return &projectInfos, nil
 }
 
 // func: 공사관리시스템 등록 프로젝트 전체 조회
@@ -345,6 +350,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 				WHERE RNUM > :2`, condition, order)
 
 	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetUsedProjectList err: %w", err)
 	}
 
@@ -380,9 +386,10 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetUsedProjectCount err: %v", err)
 	}
 
@@ -451,6 +458,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 				WHERE RNUM > :2`, condition, order)
 
 	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetAllProjectList err: %w", err)
 	}
 
@@ -489,6 +497,7 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetAllProjectCount err: %w", err)
 	}
 
@@ -558,6 +567,7 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 			WHERE RNUM > :3`, condition, order)
 
 	if err := db.SelectContext(ctx, &sqlData, query, uno, pageSql.EndNum, pageSql.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetStaffProjectList err: %w", err)
 	}
 
@@ -596,6 +606,7 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, uno); err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetStaffProjectCount err: %w", err)
 	}
 
@@ -636,6 +647,7 @@ func (r *Repository) GetClientOrganization(ctx context.Context, db Queryer, jno 
 				ORDER BY JM.FUNC_NAME ASC, SC.VAL5 ASC, JM.SORT_NO ASC`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetClientOrganization err: %w", err)
 	}
 
@@ -711,6 +723,7 @@ func (r *Repository) GetHitechOrganization(ctx context.Context, db Queryer, jno 
 					`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno, funcNo); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetHitechOrganization err: %w", err)
 	}
 	return &sqlData, nil
@@ -734,6 +747,7 @@ func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.F
 	`)
 
 	if err := db.SelectContext(ctx, &sqlData, query); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetFuncNameList err: %w", err)
 	}
 
@@ -743,8 +757,8 @@ func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.F
 // func: 본인이 속한 프로젝트 이름 조회
 // @param
 // - uno
-func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfoSqls, error) {
-	projectInfoSqls := entity.ProjectInfoSqls{}
+func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error) {
+	projectInfos := entity.ProjectInfos{}
 
 	query := `SELECT 
     			JNO, 
@@ -760,28 +774,29 @@ func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sq
 			  ORDER BY 
 			      JNO DESC`
 
-	if err := db.SelectContext(ctx, &projectInfoSqls, query, role, uno); err != nil {
-		return &projectInfoSqls, fmt.Errorf("GetProjectNmList fail: %v", err)
+	if err := db.SelectContext(ctx, &projectInfos, query, role, uno); err != nil {
+		//TODO: 에러 아카이브
+		return &projectInfos, fmt.Errorf("GetProjectNmList fail: %v", err)
 	}
 
-	return &projectInfoSqls, nil
+	return &projectInfos, nil
 }
 
 // func: 현장근태에 등록되지 않은 프로젝트
 // @param
 // -
-func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProjectSql, retry string) (*entity.NonUsedProjectSqls, error) {
-	nonProjects := entity.NonUsedProjectSqls{}
+func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error) {
+	nonProjects := entity.NonUsedProjects{}
 
 	condition := ""
 
-	condition = utils.Int64WhereConvert(condition, search.Jno, "t1.JNO")
-	condition = utils.StringWhereConvert(condition, search.JobNo, "t1.JOB_NO")
-	condition = utils.StringWhereConvert(condition, search.JobName, "t1.JOB_NAME")
-	condition = utils.Int64WhereConvert(condition, search.JobYear, "t1.JOB_YEAR")
-	condition = utils.StringWhereConvert(condition, search.JobSd, "t1.JOB_SD")
-	condition = utils.StringWhereConvert(condition, search.JobEd, "t1.JOB_ED")
-	condition = utils.StringWhereConvert(condition, search.JobPmNm, "t2.USER_NAME")
+	condition = utils.Int64WhereConvert(condition, search.Jno.NullInt64, "t1.JNO")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "t1.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t1.JOB_NAME")
+	condition = utils.Int64WhereConvert(condition, search.JobYear.NullInt64, "t1.JOB_YEAR")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "t1.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "t1.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.JobPmNm.NullString, "t2.USER_NAME")
 
 	var columns []string
 	columns = append(columns, "t1.JNO")
@@ -830,6 +845,7 @@ func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page
 								WHERE RNUM > :2`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &nonProjects, query, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return &nonProjects, fmt.Errorf("GetNonUsedProjectList fail: %v", err)
 	}
 
@@ -839,18 +855,18 @@ func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page
 // func: 현장근태에 등록되지 않은 프로젝트 수
 // @param
 // -
-func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProjectSql, retry string) (int, error) {
+func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error) {
 	var count int
 
 	condition := ""
 
-	condition = utils.Int64WhereConvert(condition, search.Jno, "t1.JNO")
-	condition = utils.StringWhereConvert(condition, search.JobNo, "t1.JOB_NO")
-	condition = utils.StringWhereConvert(condition, search.JobName, "t1.JOB_NAME")
-	condition = utils.Int64WhereConvert(condition, search.JobYear, "t1.JOB_YEAR")
-	condition = utils.StringWhereConvert(condition, search.JobSd, "t1.JOB_SD")
-	condition = utils.StringWhereConvert(condition, search.JobEd, "t1.JOB_ED")
-	condition = utils.StringWhereConvert(condition, search.JobPmNm, "t2.USER_NAME")
+	condition = utils.Int64WhereConvert(condition, search.Jno.NullInt64, "t1.JNO")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "t1.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t1.JOB_NAME")
+	condition = utils.Int64WhereConvert(condition, search.JobYear.NullInt64, "t1.JOB_YEAR")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "t1.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "t1.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.JobPmNm.NullString, "t2.USER_NAME")
 
 	var columns []string
 	columns = append(columns, "t1.JNO")
@@ -871,9 +887,10 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 								%s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetNonUsedProjectCount fail: %v", err)
 	}
 
@@ -903,12 +920,15 @@ func (r *Repository) AddProject(ctx context.Context, db Beginner, project entity
 	if _, err = tx.ExecContext(ctx, query, project.Sno, project.Jno, agent, project.RegUser, project.RegUno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("AddProject. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("AddProject. Failed to add project: %w", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("AddProject. Failed to commit transaction: %w", err)
 	}
 
@@ -921,6 +941,7 @@ func (r *Repository) AddProject(ctx context.Context, db Beginner, project entity
 func (r *Repository) ModifyDefaultProject(ctx context.Context, db Beginner, project entity.ReqProject) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyDefaultProject. Failed to begin transaction: %w", err)
 	}
 	agent := utils.GetAgent()
@@ -936,8 +957,10 @@ func (r *Repository) ModifyDefaultProject(ctx context.Context, db Beginner, proj
 	if _, err = tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.Sno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'N'. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'N'. Failed to modify default project: %w", origErr)
 	}
 
@@ -953,12 +976,15 @@ func (r *Repository) ModifyDefaultProject(ctx context.Context, db Beginner, proj
 	if _, err = tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.Sno, project.Jno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'Y'. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyDefaultProject IS_DEFAULT 'Y'. Failed to modify default project: %w", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyDefaultProject: Failed to commit transaction: %w", err)
 	}
 
@@ -971,6 +997,7 @@ func (r *Repository) ModifyDefaultProject(ctx context.Context, db Beginner, proj
 func (r *Repository) ModifyUseProject(ctx context.Context, db Beginner, project entity.ReqProject) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyUseProject. Failed to begin transaction: %w", err)
 	}
 	agent := utils.GetAgent()
@@ -987,12 +1014,15 @@ func (r *Repository) ModifyUseProject(ctx context.Context, db Beginner, project 
 	if _, err = tx.ExecContext(ctx, query, project.IsUsed, agent, project.ModUser, project.ModUno, project.Sno, project.Jno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("ModifyUseProject. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyUseProject. Failed to modify default project: %w", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyUseProject: Failed to commit transaction: %w", err)
 	}
 
@@ -1005,6 +1035,7 @@ func (r *Repository) ModifyUseProject(ctx context.Context, db Beginner, project 
 func (r *Repository) RemoveProject(ctx context.Context, db Beginner, sno int64, jno int64) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("RemoveProject. Failed to begin transaction: %w", err)
 	}
 
@@ -1015,12 +1046,15 @@ func (r *Repository) RemoveProject(ctx context.Context, db Beginner, sno int64, 
 	if _, err = tx.ExecContext(ctx, query, sno, jno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("RemoveProject. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("RemoveProject. Failed to modify default project: %w", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("RemoveProject: Failed to commit transaction: %w", err)
 	}
 
