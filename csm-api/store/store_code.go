@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.CodeSqls, error) {
-	sqls := entity.CodeSqls{}
+func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.Codes, error) {
+	list := entity.Codes{}
 
 	query := `
 				SELECT
@@ -20,9 +20,10 @@ func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) 
 			       AND t1.IS_USE = 'Y'
 			  ORDER BY t1."ORDER"`
 
-	if err := db.SelectContext(ctx, &sqls, query, pCode); err != nil {
+	if err := db.SelectContext(ctx, &list, query, pCode); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetCodeList err: %w", err)
 	}
 
-	return &sqls, nil
+	return &list, nil
 }

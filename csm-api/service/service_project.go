@@ -151,6 +151,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 
 	jobInfos := &entity.JobInfos{}
 	if err = entity.ConvertSliceToRegular(*sqlList, jobInfos); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project;used/ConvertSliceToRegular error: %w", err)
 	}
 
@@ -163,11 +164,13 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
 	searchSql := &entity.JobInfoSql{}
 	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
 	}
 
 	count, err := p.Store.GetUsedProjectCount(ctx, p.DB, *searchSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetUsedProjectCount error: %w", err)
 	}
 
@@ -181,21 +184,25 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
 	searchSql := &entity.JobInfoSql{}
 	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
 	}
 
 	jobInfoSqls, err := p.Store.GetAllProjectList(ctx, p.DB, pageSql, *searchSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
 	}
 
 	jobInfos := &entity.JobInfos{}
 	if err = entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project;all/ConvertSliceToReqular error: %w", err)
 	}
 
@@ -209,11 +216,13 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
 	searchSql := &entity.JobInfoSql{}
 	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
 	}
 
 	count, err := p.Store.GetAllProjectCount(ctx, p.DB, *searchSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)
 	}
 
@@ -235,22 +244,26 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
 	searchSql := &entity.JobInfoSql{}
 	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
 
 	}
 
 	jobInfoSqls, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, *searchSql, unoSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetStaffProjectList: %w", err)
 	}
 
 	jobInfos := &entity.JobInfos{}
 	if err := entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project;staff/ConvertSliceToReqular error %w", err)
 	}
 
@@ -272,12 +285,14 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 
 	searchSql := &entity.JobInfoSql{}
 	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
 
 	}
 
 	count, err := p.Store.GetStaffProjectCount(ctx, p.DB, *searchSql, unoSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetStaffProjectCount error: %w", err)
 	}
 
@@ -300,11 +315,13 @@ func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (
 	clientSql := &entity.OrganizationSqls{}
 	clientSql, err := p.Store.GetClientOrganization(ctx, p.DB, jnoSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
 	}
 
 	clients := &entity.Organizations{} //  []organization
 	if err := entity.ConvertSliceToRegular(*clientSql, clients); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
 	}
 
@@ -349,11 +366,13 @@ func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (
 
 	funcNameSqls, err := p.Store.GetFuncNameList(ctx, p.DB)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("service_projcet/GetFuncNameList: %w", err)
 	}
 
 	funcNames := &entity.FuncNames{}
 	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
 	}
 
@@ -370,6 +389,7 @@ func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (
 		hitechSql := &entity.OrganizationSqls{}
 		hitechSql, err := p.Store.GetHitechOrganization(ctx, p.DB, jnoSql, funcNoSql)
 		if err != nil {
+			//TODO: 에러 아카이브
 			return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/GetHitechOrganization: %w", err)
 		}
 		if len(*hitechSql) == 0 {
@@ -378,6 +398,7 @@ func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (
 
 		hitech := &entity.Organizations{}
 		if err := entity.ConvertSliceToRegular(*hitechSql, hitech); err != nil {
+			//TODO: 에러 아카이브
 			return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/ConvertSliceToRegular: %w", err)
 		}
 
@@ -409,6 +430,7 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, rol
 	projectInfos, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql, roleInt)
 
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
 	}
 
@@ -422,12 +444,14 @@ func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ofPageSql error: %w", err)
 	}
 
 	list, err := s.Store.GetNonUsedProjectList(ctx, s.DB, pageSql, search, retry)
 
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project/GetNonUsedProjectList error: %w", err)
 	}
 
@@ -441,6 +465,7 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 	count, err := s.Store.GetNonUsedProjectCount(ctx, s.DB, search, retry)
 
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetNonUsedProjectCount error: %w", err)
 	}
 
@@ -453,6 +478,7 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProject) error {
 	err := s.Store.AddProject(ctx, s.TDB, project)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/AddProject error: %w", err)
 	}
 	return nil
@@ -464,6 +490,7 @@ func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProje
 func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error {
 	err := s.Store.ModifyDefaultProject(ctx, s.TDB, project)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/ModifyDefaultProject error: %w", err)
 	}
 	return nil
@@ -475,6 +502,7 @@ func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entit
 func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.ReqProject) error {
 	err := s.Store.ModifyUseProject(ctx, s.TDB, project)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/ModifyUseProject error: %w", err)
 	}
 	return nil
@@ -486,6 +514,7 @@ func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.Re
 func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64) error {
 	err := s.Store.RemoveProject(ctx, s.TDB, sno, jno)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/RemoveProject error: %w", err)
 	}
 	return nil

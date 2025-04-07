@@ -2,7 +2,7 @@ package entity
 
 import (
 	"csm-api/utils"
-	"database/sql"
+	"github.com/guregu/null"
 )
 
 type User struct {
@@ -22,35 +22,9 @@ func (u User) SetUser(uno int64, userName string) User {
 }
 
 type UserPmPeInfo struct {
-	Uno    int64  `json:"uno"`
-	UserId string `json:"user_id"`
-	Name   string `json:"name"`
+	Uno    null.Int    `json:"uno" db:"UNO"`
+	UserId null.String `json:"user_id" db:"USER_ID"`
+	Name   null.String `json:"name" db:"USER_NAME"`
 }
 
 type UserPmPeInfos []*UserPmPeInfo
-
-type UserPmPeInfoSql struct {
-	Uno    sql.NullInt64  `db:"UNO"`
-	UserId sql.NullString `db:"USER_ID"`
-	Name   sql.NullString `db:"USER_NAME"`
-}
-
-type UserPmPeInfoSqls []*UserPmPeInfoSql
-
-func (u *UserPmPeInfo) ToUserPmPeInfo(sql *UserPmPeInfoSql) *UserPmPeInfo {
-	u.Uno = sql.Uno.Int64
-	u.UserId = sql.UserId.String
-	u.Name = sql.Name.String
-
-	return u
-}
-
-func (u *UserPmPeInfos) ToUserPmPeInfos(sqls *UserPmPeInfoSqls) *UserPmPeInfos {
-	for _, sql := range *sqls {
-		info := UserPmPeInfo{}
-		info.ToUserPmPeInfo(sql)
-		*u = append(*u, &info)
-	}
-
-	return u
-}

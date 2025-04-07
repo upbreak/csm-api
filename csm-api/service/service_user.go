@@ -16,12 +16,11 @@ type ServiceUser struct {
 //
 // @param unoList: ?? 고유번호 리스트
 func (u *ServiceUser) GetUserInfoPmPeList(ctx context.Context, unoList []int) (*entity.UserPmPeInfos, error) {
-	userPmPeInfoSqls, err := u.Store.GetUserInfoPmPeList(ctx, u.DB, unoList)
+	userPmPeInfos, err := u.Store.GetUserInfoPmPeList(ctx, u.DB, unoList)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_user/GetUserInfoPmPeList err: %w", err)
 	}
-	userPmPeInfos := &entity.UserPmPeInfos{}
-	userPmPeInfos.ToUserPmPeInfos(userPmPeInfoSqls)
 
 	return userPmPeInfos, nil
 }
