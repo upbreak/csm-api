@@ -56,7 +56,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 
 		for _, projectInfo := range *site.ProjectList {
 			if &projectInfo.Jno != nil {
-				projectDailyList, err := s.ProjectDailyService.GetProjectDailyContentList(ctx, projectInfo.Jno, targetDate)
+				projectDailyList, err := s.ProjectDailyService.GetProjectDailyContentList(ctx, projectInfo.Jno.Int64, targetDate)
 				if err != nil {
 					//TODO: 에러 아카이브
 					return &entity.Sites{}, fmt.Errorf("service_site/GetProjectDailyContentList err: %w", err)
@@ -140,10 +140,12 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
 
 	// 기본 프로젝트 수정
 	project := entity.ReqProject{
-		Jno:     site.DefaultJno.Int64,
-		Sno:     site.Sno.Int64,
-		ModUno:  site.ModUno.Int64,
-		ModUser: site.ModUser.String,
+		Jno: site.DefaultJno,
+		Sno: site.Sno,
+		Base: entity.Base{
+			ModUno:  site.ModUno,
+			ModUser: site.ModUser,
+		},
 	}
 	if err := s.ProjectService.ModifyDefaultProject(ctx, project); err != nil {
 		//TODO: 에러 아카이브

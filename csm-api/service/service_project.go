@@ -22,41 +22,39 @@ type ServiceProject struct {
 //
 // @param sno: 현장 고유번호, , targetDate time.Time: 현재시간
 func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error) {
-	projectInfoSqls, err := p.Store.GetProjectList(ctx, p.DB, sno, targetDate)
+	projectInfos, err := p.Store.GetProjectList(ctx, p.DB, sno, targetDate)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectList error: %w", err)
 	}
-	projectInfos := &entity.ProjectInfos{}
-	projectInfos.ToProjectInfos(projectInfoSqls)
 
 	// 안전관리자 수 조회
-	safeSqls, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
+	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
-	}
-	safeInfos := &entity.ProjectSafeCounts{}
-	if err = entity.ConvertSliceToRegular(*safeSqls, safeInfos); err != nil {
-		return nil, fmt.Errorf("service_project/ConvertSliceToRegular error: %w", err)
 	}
 
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
 	for _, projectInfo := range *projectInfos {
 		var unoList []int
 		// pm uno 조회
-		if &projectInfo.JobPm != nil && projectInfo.JobPm != "" {
-			uno, err := strconv.Atoi(projectInfo.JobPm)
+		if &projectInfo.JobPm != nil && projectInfo.JobPm.String != "" {
+			uno, err := strconv.Atoi(projectInfo.JobPm.String)
 			if err != nil {
+				//TODO: 에러 아카이브
 				return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(projectInfo.JobPm) parse err")
 			}
 			unoList = append(unoList, uno)
 		}
 
 		// pe uno 조회
-		if &projectInfo.JobPe != nil && projectInfo.JobPe != "" {
-			jobPeList := strings.Split(projectInfo.JobPe, ",")
+		if &projectInfo.JobPe != nil && projectInfo.JobPe.String != "" {
+			jobPeList := strings.Split(projectInfo.JobPe.String, ",")
 			for _, jonPe := range jobPeList {
 				uno, err := strconv.Atoi(jonPe)
 				if err != nil {
+					//TODO: 에러 아카이브
 					return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(jonPe) parse err")
 				}
 				unoList = append(unoList, uno)
@@ -66,6 +64,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 		// pm, pe 정보 일괄 조회
 		userPmPeList, err := p.UserService.GetUserInfoPmPeList(ctx, unoList)
 		if err != nil {
+			//TODO: 에러 아카이브
 			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
 		}
 		projectInfo.ProjectPeList = userPmPeList
@@ -74,7 +73,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 		for _, safe := range *safeInfos {
 			if projectInfo.Sno == safe.Sno && projectInfo.Jno == safe.Jno {
 				projectInfo.WorkerCountSafe = safe.SafeCount
-				projectInfo.WorkerCountWork = projectInfo.WorkerCountHtenc - safe.SafeCount
+				projectInfo.WorkerCountWork.Int64 = projectInfo.WorkerCountHtenc.Int64 - safe.SafeCount.Int64
 				break
 			}
 		}
@@ -88,21 +87,17 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 // - sno int64 현장 번호, targetDate time.Time: 현재시간
 func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error) {
 	// 근로자 수 조회
-	projectInfoSqls, err := p.Store.GetProjectWorkerCountList(ctx, p.DB, targetDate)
+	projectInfos, err := p.Store.GetProjectWorkerCountList(ctx, p.DB, targetDate)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectWorkerCountList error: %w", err)
 	}
-	projectInfos := &entity.ProjectInfos{}
-	projectInfos.ToProjectInfos(projectInfoSqls)
 
 	// 안전관리자 수 조회
-	safeSqls, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
+	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
-	}
-	safeInfos := &entity.ProjectSafeCounts{}
-	if err = entity.ConvertSliceToRegular(*safeSqls, safeInfos); err != nil {
-		return nil, fmt.Errorf("service_project/ConvertSliceToRegular error: %w", err)
 	}
 
 	// 안전, 공사 근로자 수
@@ -110,7 +105,7 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 		for _, safe := range *safeInfos {
 			if project.Sno == safe.Sno && project.Jno == safe.Jno {
 				project.WorkerCountSafe = safe.SafeCount
-				project.WorkerCountWork = project.WorkerCountHtenc - safe.SafeCount
+				project.WorkerCountWork.Int64 = project.WorkerCountHtenc.Int64 - safe.SafeCount.Int64
 				break
 			}
 		}
@@ -123,14 +118,13 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 // @param
 // -
 func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error) {
-	sqlList, err := p.Store.GetProjectNmList(ctx, p.DB)
+	list, err := p.Store.GetProjectNmList(ctx, p.DB)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
 	}
-	projectInfos := &entity.ProjectInfos{}
-	projectInfos.ToProjectInfos(sqlList)
 
-	return projectInfos, nil
+	return list, nil
 }
 
 // func: 공사관리시스템 등록 프로젝트 전체 조회
@@ -140,15 +134,18 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 	searchSql := &entity.JobInfoSql{}
 	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
 	}
 
 	sqlList, err := p.Store.GetUsedProjectList(ctx, p.DB, pageSql, *searchSql)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
 	}
 
@@ -409,13 +406,11 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, rol
 	} else {
 		roleInt = 0
 	}
-	sqlList, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql, roleInt)
+	projectInfos, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql, roleInt)
 
 	if err != nil {
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
 	}
-	projectInfos := &entity.ProjectInfos{}
-	projectInfos.ToProjectInfos(sqlList)
 
 	return projectInfos, nil
 }
@@ -430,20 +425,10 @@ func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.
 		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ofPageSql error: %w", err)
 	}
 
-	searchSql := &entity.NonUsedProjectSql{}
-	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ConvertToSQLNulls error: %w", err)
-	}
-
-	sqlList, err := s.Store.GetNonUsedProjectList(ctx, s.DB, pageSql, *searchSql, retry)
+	list, err := s.Store.GetNonUsedProjectList(ctx, s.DB, pageSql, search, retry)
 
 	if err != nil {
 		return nil, fmt.Errorf("service_project/GetNonUsedProjectList error: %w", err)
-	}
-
-	list := &entity.NonUsedProjects{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ConvertSliceToRegular error: %w", err)
 	}
 
 	return list, nil
@@ -453,12 +438,7 @@ func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.
 // @param
 // -
 func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error) {
-	searchSql := &entity.NonUsedProjectSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return 0, fmt.Errorf("service_project/GetNonUsedProjectCount ConvertToSQLNulls error: %w", err)
-	}
-
-	count, err := s.Store.GetNonUsedProjectCount(ctx, s.DB, *searchSql, retry)
+	count, err := s.Store.GetNonUsedProjectCount(ctx, s.DB, search, retry)
 
 	if err != nil {
 		return 0, fmt.Errorf("service_project/GetNonUsedProjectCount error: %w", err)
