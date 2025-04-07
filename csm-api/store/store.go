@@ -104,3 +104,7 @@ type CompanyStore interface {
 	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfoSqls, error)
 	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfosqls, error)
 }
+
+type EquipStore interface {
+	MergeEquipCnt(ctx context.Context, db Beginner, equips entity.EquipTemps) error
+}
