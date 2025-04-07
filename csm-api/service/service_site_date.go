@@ -17,12 +17,11 @@ type ServiceSiteDate struct {
 //
 // @param sno: 현장 고유번호
 func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*entity.SiteDate, error) {
-	siteDateSql, err := s.Store.GetSiteDateData(ctx, s.DB, sno)
+	siteDate, err := s.Store.GetSiteDateData(ctx, s.DB, sno)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site_date/GetSiteDateData err: %w", err)
 	}
-	siteDate := &entity.SiteDate{}
-	siteDate.ToSiteDate(siteDateSql)
 
 	return siteDate, nil
 }
@@ -34,12 +33,8 @@ func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*enti
 // - siteDate: 현장 시간 (opening_date, closing_plan_date, closing_forecast_date, closing_actual_date)
 func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) error {
 
-	siteDateSql := &entity.SiteDateSql{}
-	if err := entity.ConvertToSQLNulls(siteDate, siteDateSql); err != nil {
-		return fmt.Errorf("service_site_date/ConvertToSQLNulls err: %w", err)
-	}
-
-	if err := s.Store.ModifySiteDate(ctx, s.TDB, sno, *siteDateSql); err != nil {
+	if err := s.Store.ModifySiteDate(ctx, s.TDB, sno, siteDate); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site_date/ModifySiteDate err: %w", err)
 	}
 

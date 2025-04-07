@@ -20,8 +20,8 @@ import (
 // func: 현장 관리 조회
 // @param
 // - targetDate: 현재시간
-func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error) {
-	siteSqls := entity.SiteSqls{}
+func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error) {
+	sites := entity.Sites{}
 
 	sql := `SELECT
 				t1.SNO,
@@ -74,18 +74,19 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 			ORDER BY
 				t1.SNO DESC`
 
-	if err := db.SelectContext(ctx, &siteSqls, sql, targetDate); err != nil {
-		return &siteSqls, fmt.Errorf("getSiteList fail: %w", err)
+	if err := db.SelectContext(ctx, &sites, sql, targetDate); err != nil {
+		//TODO: 에러 아카이브
+		return &sites, fmt.Errorf("getSiteList fail: %w", err)
 	}
 
-	return &siteSqls, nil
+	return &sites, nil
 }
 
 // func: 현장 데이터 리스트
 // @param
 // -
-func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error) {
-	siteSqls := entity.SiteSqls{}
+func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error) {
+	sites := entity.Sites{}
 
 	query := `
 				SELECT 
@@ -100,17 +101,18 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sit
 				WHERE sno > 100`
 	//WHERE t1.IS_USE ='Y'`
 
-	if err := db.SelectContext(ctx, &siteSqls, query); err != nil {
-		return &siteSqls, fmt.Errorf("getSiteNmList fail: %w", err)
+	if err := db.SelectContext(ctx, &sites, query); err != nil {
+		//TODO: 에러 아카이브
+		return &sites, fmt.Errorf("getSiteNmList fail: %w", err)
 	}
-	return &siteSqls, nil
+	return &sites, nil
 }
 
 // func: 현장 상태 조회
 // @param
 // -
-func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error) {
-	siteSqls := entity.SiteSqls{}
+func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error) {
+	sites := entity.Sites{}
 
 	query := `
 				SELECT 
@@ -130,10 +132,11 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 				) t2 ON t1.SNO = t2.SNO
 				WHERE t1.SNO > 100
 				GROUP by t1.SNO, t2.CURRENT_SITE_STATS`
-	if err := db.SelectContext(ctx, &siteSqls, query, targetDate); err != nil {
-		return &siteSqls, fmt.Errorf("getSiteStatsList fail: %w", err)
+	if err := db.SelectContext(ctx, &sites, query, targetDate); err != nil {
+		//TODO: 에러 아카이브
+		return &sites, fmt.Errorf("getSiteStatsList fail: %w", err)
 	}
-	return &siteSqls, nil
+	return &sites, nil
 }
 
 // func: 현장 수정
@@ -143,6 +146,7 @@ func (r *Repository) ModifySite(ctx context.Context, db Beginner, site entity.Si
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site. Failed to begin transaction: %w", err)
 	}
 
@@ -160,14 +164,18 @@ func (r *Repository) ModifySite(ctx context.Context, db Beginner, site entity.Si
 			WHERE
 			    SNO = :6
 			`
-	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
+	if _, err = tx.ExecContext(ctx, query, site.SiteNm, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
+			return fmt.Errorf("store/site. Failed to rollback transaction: %w", err)
 		}
-		return fmt.Errorf("store/site. ModifySite fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("store/site. ModifySite fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site. Failed to commit transaction: %w", err)
 	}
 
@@ -183,11 +191,13 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tdb Beginner, jno 
 	// sno 생성
 	query := `SELECT SEQ_IRIS_SITE_SET.NEXTVAL FROM DUAL`
 	if err := db.GetContext(ctx, &generatedSNO, query); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site. Failed to get generated SITE_SET_SEQ.NEXTVAL: %w", err)
 	}
 
 	tx, err := tdb.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("AddSite. Failed to begin transaction: %w", err)
 	}
 
@@ -205,8 +215,10 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tdb Beginner, jno 
 	if _, err = tx.ExecContext(ctx, query, generatedSNO, user.Agent, user.UserName, user.Uno, jno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("IRIS_SITE_SET. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("IRIS_SITE_SET INSERT failed: %w", origErr)
 	}
 
@@ -222,8 +234,10 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tdb Beginner, jno 
 	if _, err = tx.ExecContext(ctx, query, generatedSNO, jno, user.Agent, user.UserName, user.Uno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("IRIS_SITE_JOB. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("IRIS_SITE_JOB INSERT failed: %w", origErr)
 	}
 
@@ -241,12 +255,15 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tdb Beginner, jno 
 	if _, err = tx.ExecContext(ctx, query, generatedSNO, user.Agent, user.UserName, user.Uno, jno); err != nil {
 		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("IRIS_SITE_DATE. Failed to rollback transaction: %w", err)
 		}
+		//TODO: 에러 아카이브
 		return fmt.Errorf("IRIS_SITE_DATE INSERT failed: %w", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("AddSite. Failed to commit transaction: %w", err)
 	}
 

@@ -12,21 +12,21 @@ type GetUserValidStore interface {
 }
 
 type SiteStore interface {
-	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
-	GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error)
-	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
+	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
+	GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error)
+	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, db Beginner, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tdb Beginner, jno int64, user entity.User) error
 }
 
 type SitePosStore interface {
-	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePosSql, error)
-	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePosSql) error
+	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error)
+	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePos) error
 }
 
 type SiteDateStore interface {
-	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDateSql, error)
-	ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDateSql) error
+	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDate, error)
+	ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDate) error
 }
 
 type ProjectStore interface {

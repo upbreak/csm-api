@@ -8,8 +8,8 @@ import (
 	"fmt"
 )
 
-func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDateSql, error) {
-	siteDateSql := entity.SiteDateSql{}
+func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDate, error) {
+	siteDate := entity.SiteDate{}
 
 	query := `SELECT
 				t1.OPENING_DATE,
@@ -25,13 +25,14 @@ func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64)
 				t1.SNO = :1
 				AND t1.IS_USE = 'Y'`
 
-	if err := db.GetContext(ctx, &siteDateSql, query, sno); err != nil {
+	if err := db.GetContext(ctx, &siteDate, query, sno); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &siteDateSql, nil
+			return &siteDate, nil
 		}
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetSiteDateData fail: %w", err)
 	}
-	return &siteDateSql, nil
+	return &siteDate, nil
 }
 
 // 현장 날짜 테이블 수정
@@ -39,9 +40,10 @@ func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64)
 // @param
 // - sno: 현장고유번호
 // - siteDate: 현장 시간 (opening_date, closing_plan_date, closing_forecast_date, closing_actual_date)
-func (r *Repository) ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDateSql) error {
+func (r *Repository) ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDate) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site_date. Failed to begin transaction: %v", err)
 	}
 
@@ -59,13 +61,16 @@ func (r *Repository) ModifySiteDate(ctx context.Context, db Beginner, sno int64,
 
 	_, err = tx.ExecContext(ctx, query, siteDateSql.OpeningDate, siteDateSql.ClosingPlanDate, siteDateSql.ClosingForecastDate, siteDateSql.ClosingActualDate, sno)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
 			return err
 		}
-		return fmt.Errorf("store/site_date. ModifySiteDate fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("store/site_date. ModifySiteDate fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site_date. failed to commit transaction: %v", err)
 	}
 
