@@ -109,3 +109,7 @@ type AddressSearchAPIService interface {
 	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)
 	GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error)
 }
+
+type EquipService interface {
+	MergeEquipCnt(ctx context.Context, equips entity.EquipTemps) error
+}

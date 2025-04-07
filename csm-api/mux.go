@@ -537,6 +537,21 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	})
 	// End::공지사항
 
+	// Begin::장비
+	equipMergeHandler := &handler.HandlerEquip{
+		Service: &service.ServiceEquip{
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
+
+	mux.Route("/equip", func(r chi.Router) {
+		//r.Use(handler.AuthMiddleware(jwt))
+		r.Post("/temp", equipMergeHandler.ServeHTTP)
+	})
+
+	// End::장비
+
 	// 라우팅:: end
 
 	handlerMux := c.Handler(mux)
