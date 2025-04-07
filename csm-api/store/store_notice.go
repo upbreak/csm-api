@@ -4,11 +4,11 @@ import "C"
 import (
 	"context"
 	"csm-api/entity"
-	"csm-api/utils"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/godror/godror"
+	"github.com/guregu/null"
 	"strings"
 )
 
@@ -25,16 +25,16 @@ import (
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, role int, page entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error) {
-	sqls := entity.NoticeSqls{}
+func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int, role int, page entity.PageSql, search entity.Notice) (*entity.Notices, error) {
+	notices := entity.Notices{}
 
 	// 조건
 	condition := "1=1"
-	condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
-	condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
-	condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
+	//condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
+	//condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
+	//condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
+	//condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
+	//condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
 
 	var order string
 	if page.Order.Valid {
@@ -106,25 +106,25 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno sql.Null
 			  	WHERE RNUM > :4`,
 		condition, order)
 
-	if err := db.SelectContext(ctx, &sqls, query, role, uno, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &notices, query, role, uno, page.EndNum, page.StartNum); err != nil {
 		fmt.Printf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
-	return &sqls, nil
+	return &notices, nil
 }
 
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, role int, search entity.NoticeSql) (int, error) {
+func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno null.Int, role int, search entity.Notice) (int, error) {
 	var count int
 
 	condition := "1=1"
-	condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
-	condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
-	condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
+	//condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
+	//condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
+	//condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
+	//condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
+	//condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
 
 	query := fmt.Sprintf(`
 			WITH Notice AS (
@@ -175,15 +175,16 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno sql
 // func: 공지사항 추가
 // @param
 // - notice entity.NoticeSql: SNO, TITLE, CONTENT, SHOW_YN, REG_UNO, REG_USER
-func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error {
+func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.Notice) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		fmt.Println("store/notice. Failed to begin transaction: %w", err)
 	}
 
+	// 공지사항
 	contentCLOB := godror.Lob{
 		IsClob: true,
-		Reader: strings.NewReader(noticeSql.Content.String),
+		Reader: strings.NewReader(notice.Content.String),
 	}
 
 	query := `
@@ -224,7 +225,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 --				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, contentCLOB, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.RegUno, noticeSql.RegUser, noticeSql.PostingStartDate, noticeSql.PostingEndDate, noticeSql.RegUno)
+	_, err = tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -243,7 +244,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, noticeSql entit
 // func: 공지사항 수정
 // @param
 // - notice entity.NoticeSql: IDX, SNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
-func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error {
+func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, notice entity.Notice) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		fmt.Println("store/notice. Failed to begin transaction: %w", err)
@@ -268,7 +269,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 					IDX = :11
 			`
 
-	_, err = tx.ExecContext(ctx, query, noticeSql.Jno, noticeSql.Jno, noticeSql.Title, noticeSql.Content, noticeSql.ShowYN, noticeSql.IsImportant, noticeSql.ModUno, noticeSql.ModUser, noticeSql.PostingStartDate, noticeSql.PostingEndDate, noticeSql.Idx)
+	_, err = tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
 
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -287,7 +288,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, noticeSql en
 // func: 공지사항 삭제
 // @param
 // - idx: 공지사항 인덱스
-func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error {
+func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx null.Int) error {
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -316,28 +317,4 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx entity.N
 	}
 
 	return nil
-}
-
-// func: 공지기간 조회
-// @param
-// -
-func (r *Repository) GetNoticePeriod(ctx context.Context, db Queryer) (*entity.NoticePeriodSqls, error) {
-	periodSqls := entity.NoticePeriodSqls{}
-
-	query := fmt.Sprintf(`
-		SELECT
-			CODE AS PERIOD_CODE,
-			CODE_NM AS NOTICE_NM
-		FROM
-			IRIS_CODE_SET
-		WHERE
-			P_CODE = 'NOTICE_PERIOD'
-	`)
-
-	if err := db.SelectContext(ctx, &periodSqls, query); err != nil {
-		return &entity.NoticePeriodSqls{}, fmt.Errorf("store/notice. GetNoticePeriod %w", err)
-	}
-
-	return &periodSqls, nil
-
 }

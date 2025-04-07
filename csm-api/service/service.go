@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"csm-api/entity"
+	"github.com/guregu/null"
 	"time"
 )
 
@@ -62,12 +63,11 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context, uno int64, role string, page entity.Page, search entity.Notice) (*entity.Notices, error)
-	GetNoticeListCount(ctx context.Context, uno int64, role string, search entity.Notice) (int, error)
+	GetNoticeList(ctx context.Context, uno null.Int, role null.String, page entity.Page, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, uno null.Int, role null.String, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
-	RemoveNotice(ctx context.Context, idx int64) error
-	GetNoticePeriod(ctx context.Context) (*entity.NoticePeriods, error)
+	RemoveNotice(ctx context.Context, idx null.Int) error
 }
 
 type DeviceService interface {
