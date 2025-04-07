@@ -8,8 +8,8 @@ import (
 	"fmt"
 )
 
-func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePosSql, error) {
-	sitePosSql := entity.SitePosSql{}
+func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error) {
+	sitePos := entity.SitePos{}
 
 	query := `SELECT
 				t1.ADDRESS_NAME_DEPTH1,
@@ -31,14 +31,15 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 				t1.SNO = :1
 				AND t1.IS_USE = 'Y'`
 
-	if err := db.GetContext(ctx, &sitePosSql, query, sno); err != nil {
+	if err := db.GetContext(ctx, &sitePos, query, sno); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &sitePosSql, nil
+			return &sitePos, nil
 		}
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetSitePosData fail: %v", err)
 	}
 
-	return &sitePosSql, nil
+	return &sitePos, nil
 }
 
 // 현장 위치 주소 추가/수정
@@ -49,9 +50,10 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 //     LATITUDE, LONGTITUDE,
 //     ROAD_ADDRESS_NAME_DEPTH1, ROAD_ADDRESS_NAME_DEPTH2, ROAD_ADDRESS_NAME_DEPTH3, ROAD_ADDRESS_NAME_DEPTH4, ROAD_ADDRESS_NAME_DEPTH5,
 //     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
-func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePosSql) error {
+func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePos) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site_pos. Failed to begin transaction: %v", err)
 	}
 
@@ -145,13 +147,17 @@ func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int
 		sitePosSql.BuildingName)
 
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
+			return fmt.Errorf("store/site_pos. ModifySitePosData Rollback fail: %v", err)
 		}
-		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site_pos. Failed to commit transaction: %v", err)
 	}
 
