@@ -82,17 +82,17 @@ type DeviceStore interface {
 }
 
 type WorkerStore interface {
-	GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql, retry string) (*entity.WorkerSqls, error)
-	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.WorkerSql, retry string) (int, error)
-	GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerSqls, error)
-	GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error)
-	AddWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error
-	ModifyWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error
-	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerDailySqls, error)
-	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error)
-	MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
-	ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
-	ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error
+	GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Worker, retry string) (*entity.Workers, error)
+	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.Worker, retry string) (int, error)
+	GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error)
+	GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
+	AddWorker(ctx context.Context, db Beginner, worker entity.Worker) error
+	ModifyWorker(ctx context.Context, db Beginner, worker entity.Worker) error
+	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
+	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
+	MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailys) error
+	ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailys) error
+	ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailys) error
 }
 
 type CompanyStore interface {

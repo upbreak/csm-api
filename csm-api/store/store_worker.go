@@ -23,16 +23,16 @@ import (
 // - page entity.PageSql: 정렬, 리스트 수
 // - search entity.WorkerSql: 검색 단어
 // - retry string: 통합검색 텍스트
-func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerSql, retry string) (*entity.WorkerSqls, error) {
-	sqls := entity.WorkerSqls{}
+func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Worker, retry string) (*entity.Workers, error) {
+	workers := entity.Workers{}
 
 	condition := ""
-	condition = utils.StringWhereConvert(condition, search.JobName, "t2.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.UserId, "t1.USER_ID")
-	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
-	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
-	condition = utils.StringWhereConvert(condition, search.Phone, "t1.PHONE")
-	condition = utils.StringWhereConvert(condition, search.WorkerType, "t1.WORKER_TYPE")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t2.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserNm.NullString, "t1.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t1.DEPARTMENT")
+	condition = utils.StringWhereConvert(condition, search.Phone.NullString, "t1.PHONE")
+	condition = utils.StringWhereConvert(condition, search.WorkerType.NullString, "t1.WORKER_TYPE")
 
 	var columns []string
 	columns = append(columns, "t2.JOB_NAME")
@@ -103,27 +103,28 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 				)
 				WHERE RNUM > :2`, condition, retryCondition, order, page.RnumOrder)
 
-	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &workers, query, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetWorkerTotalList err: %v", err)
 	}
 
-	return &sqls, nil
+	return &workers, nil
 }
 
 // func: 전체 근로자 개수 조회
 // @param
 // - searchTime string: 조회 날짜
 // - retry string: 통합검색 텍스트
-func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.WorkerSql, retry string) (int, error) {
+func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.Worker, retry string) (int, error) {
 	var count int
 
 	condition := ""
-	condition = utils.StringWhereConvert(condition, search.JobName, "t2.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.UserId, "t1.USER_ID")
-	condition = utils.StringWhereConvert(condition, search.UserNm, "t1.USER_NM")
-	condition = utils.StringWhereConvert(condition, search.Department, "t1.DEPARTMENT")
-	condition = utils.StringWhereConvert(condition, search.Phone, "t1.PHONE")
-	condition = utils.StringWhereConvert(condition, search.WorkerType, "t1.WORKER_TYPE")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t2.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserNm.NullString, "t1.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t1.DEPARTMENT")
+	condition = utils.StringWhereConvert(condition, search.Phone.NullString, "t1.PHONE")
+	condition = utils.StringWhereConvert(condition, search.WorkerType.NullString, "t1.WORKER_TYPE")
 
 	var columns []string
 	columns = append(columns, "t2.JOB_NAME")
@@ -141,8 +142,10 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			//TODO: 에러 아카이브
 			return 0, nil
 		}
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetWorkerTotalCount fail: %w", err)
 	}
 	return count, nil
@@ -151,8 +154,8 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 // func: 근로자 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
-func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerSqls, error) {
-	sqls := entity.WorkerSqls{}
+func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
+	workers := entity.Workers{}
 
 	var columns []string
 	columns = append(columns, "USER_ID")
@@ -180,17 +183,18 @@ func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page
 				)
 				WHERE RNUM > :6`, retryCondition)
 
-	if err := db.SelectContext(ctx, &sqls, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &workers, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetWorkerListByUserId fail: %v", err)
 	}
 
-	return &sqls, nil
+	return &workers, nil
 }
 
 // func: 근로자 개수 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
-func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error) {
+func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error) {
 	var count int
 
 	var columns []string
@@ -213,8 +217,10 @@ func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, sea
 
 	if err := db.GetContext(ctx, &count, query, search.Jno, search.Jno, search.SearchStartTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			//TODO: 에러 아카이브
 			return 0, nil
 		}
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetWorkerCountByUserId fail: %w", err)
 	}
 	return count, nil
@@ -223,10 +229,11 @@ func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, sea
 // func: 근로자 추가
 // @param
 // -
-func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error {
+func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.Worker) error {
 	// 트랜잭션 시작
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to begin transaction: %v", err)
 	}
 
@@ -251,13 +258,17 @@ func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.W
 	)
 
 	if err != nil {
+		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return err
 		}
-		return fmt.Errorf("AddWorker; IRIS_WORKER_SET INSERT fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("AddWorker; IRIS_WORKER_SET INSERT fail: %v", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
@@ -266,9 +277,10 @@ func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.W
 // func: 근로자 수정
 // @param
 // -
-func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entity.WorkerSql) error {
+func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entity.Worker) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to begin transaction: %v", err)
 	}
 
@@ -290,21 +302,27 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 	)
 
 	if err != nil {
+		origErr := err
 		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
 			return err
 		}
-		return fmt.Errorf("ModifyWorker fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("ModifyWorker fail: %v", origErr)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorker RowsAffected fail: %v", err)
 	}
 	if rowsAffected == 0 {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
@@ -314,14 +332,14 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 // @param
 // - page entity.PageSql: 정렬, 리스트 수
 // - search entity.WorkerSql: 검색 단어
-func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDailySql, retry string) (*entity.WorkerDailySqls, error) {
-	sqls := entity.WorkerDailySqls{}
+func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error) {
+	list := entity.WorkerDailys{}
 
 	condition := ""
 
-	condition = utils.StringWhereConvert(condition, search.UserId, "t1.USER_ID")
-	condition = utils.StringWhereConvert(condition, search.UserNm, "t2.USER_NM")
-	condition = utils.StringWhereConvert(condition, search.Department, "t2.DEPARTMENT")
+	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserNm.NullString, "t2.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t2.DEPARTMENT")
 
 	var columns []string
 	columns = append(columns, "t1.USER_ID")
@@ -377,24 +395,25 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 				)
 				WHERE RNUM > :5`, condition, retryCondition, order, page.RnumOrder)
 
-	if err := db.SelectContext(ctx, &sqls, query, search.Jno, search.SearchStartTime, search.SearchEndTime, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &list, query, search.Jno, search.SearchStartTime, search.SearchEndTime, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetWorkerSiteBaseList err: %v", err)
 	}
 
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 현장 근로자 개수 조회
 // @param
 // - searchTime string: 조회 날짜
-func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDailySql, retry string) (int, error) {
+func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error) {
 	var count int
 
 	condition := ""
 
-	condition = utils.StringWhereConvert(condition, search.UserId, "t1.USER_ID")
-	condition = utils.StringWhereConvert(condition, search.UserNm, "t2.USER_NM")
-	condition = utils.StringWhereConvert(condition, search.Department, "t2.DEPARTMENT")
+	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserNm.NullString, "t2.USER_NM")
+	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t2.DEPARTMENT")
 
 	var columns []string
 	columns = append(columns, "t1.USER_ID")
@@ -414,8 +433,10 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 
 	if err := db.GetContext(ctx, &count, query, search.Jno, search.SearchStartTime, search.SearchEndTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			//TODO: 에러 아카이브
 			return 0, nil
 		}
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetWorkerSiteBaseCount fail: %w", err)
 	}
 	return count, nil
@@ -424,9 +445,10 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 // func: 현장 근로자 추가/수정
 // @param
 // -
-func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
+func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailys) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
@@ -474,11 +496,14 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
+		origErr := err
 		err = tx.Rollback()
 		if err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("MergeSiteBaseWorker;PrepareContext Rollback fail: %w", err)
 		}
-		return fmt.Errorf("MergeSiteBaseWorker;PrepareContext fail: %w", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("MergeSiteBaseWorker;PrepareContext fail: %w", origErr)
 	}
 	defer stmt.Close()
 
@@ -497,15 +522,19 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 			worker.WorkState,
 		)
 		if err != nil {
+			origErr := err
 			err = tx.Rollback()
 			if err != nil {
+				//TODO: 에러 아카이브
 				return fmt.Errorf("MergeSiteBaseWorker;ExecContext Rollback fail: %w", err)
 			}
-			return fmt.Errorf("MergeSiteBaseWorker fail: %w", err)
+			//TODO: 에러 아카이브
+			return fmt.Errorf("MergeSiteBaseWorker fail: %w", origErr)
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("MergeSiteBaseWorker Commit fail: %w", err)
 	}
 
@@ -515,9 +544,10 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 // func: 현장 근로자 일괄마감
 // @param
 // -
-func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
+func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailys) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("BeginTx fail: %w", err)
 	}
 	agent := utils.GetAgent()
@@ -537,11 +567,14 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, work
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
+		origErr := err
 		err = tx.Rollback()
 		if err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("MergeSiteBaseWorker;PrepareContext Rollback fail: %w", err)
 		}
-		return fmt.Errorf("ModifyWorkerDeadline;PrepareContext fail: %w", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("ModifyWorkerDeadline;PrepareContext fail: %w", origErr)
 	}
 	defer stmt.Close()
 
@@ -556,15 +589,19 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, work
 			worker.RecordDate,
 		)
 		if err != nil {
+			origErr := err
 			err = tx.Rollback()
 			if err != nil {
+				//TODO: 에러 아카이브
 				return fmt.Errorf("ModifyWorkerDeadline;ExecContext Rollback fail: %w", err)
 			}
-			return fmt.Errorf("ModifyWorkerDeadline fail: %w", err)
+			//TODO: 에러 아카이브
+			return fmt.Errorf("ModifyWorkerDeadline fail: %w", origErr)
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorkerDeadline Commit fail: %w", err)
 	}
 
@@ -574,9 +611,10 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, work
 // func: 현장 근로자 프로젝트 변경
 // @param
 // -
-func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailySqls) error {
+func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailys) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("BeginTx fail: %w", err)
 	}
 
@@ -597,11 +635,14 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, worke
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
+		origErr := err
 		err = tx.Rollback()
 		if err != nil {
+			//TODO: 에러 아카이브
 			return fmt.Errorf("ModifyWorkerProject;PrepareContext Rollback fail: %w", err)
 		}
-		return fmt.Errorf("ModifyWorkerProject;PrepareContext fail: %w", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("ModifyWorkerProject;PrepareContext fail: %w", origErr)
 	}
 	defer stmt.Close()
 
@@ -617,15 +658,19 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, worke
 			worker.RecordDate,
 		)
 		if err != nil {
+			origErr := err
 			err = tx.Rollback()
 			if err != nil {
+				//TODO: 에러 아카이브
 				return fmt.Errorf("ModifyWorkerProject;ExecContext Rollback fail: %w", err)
 			}
-			return fmt.Errorf("ModifyWorkerProject fail: %w", err)
+			//TODO: 에러 아카이브
+			return fmt.Errorf("ModifyWorkerProject fail: %w", origErr)
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorkerProject Commit fail: %w", err)
 	}
 

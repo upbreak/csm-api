@@ -32,23 +32,15 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker;total/OfPageSql err: %v", err)
-	}
-	searchSql := &entity.WorkerSql{}
-	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return nil, fmt.Errorf("service_worker;total/ConvertToSQLNulls err: %v", err)
 	}
 
 	// 조회
-	sqlList, err := s.Store.GetWorkerTotalList(ctx, s.DB, pageSql, *searchSql, retry)
+	list, err := s.Store.GetWorkerTotalList(ctx, s.DB, pageSql, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker/GetWorkerTotalList err: %v", err)
-	}
-
-	// sql type -> reqular type 변환
-	list := &entity.Workers{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_worker;total/ConvertSliceToRegular err: %v", err)
 	}
 
 	return list, nil
@@ -59,13 +51,9 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 // - searchTime string: 조회 날짜
 // - retry string: 통합검색 텍스트
 func (s *ServiceWorker) GetWorkerTotalCount(ctx context.Context, search entity.Worker, retry string) (int, error) {
-	searchSql := &entity.WorkerSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return 0, fmt.Errorf("service_worker;total/ConvertToSQLNulls err: %v", err)
-	}
-
-	count, err := s.Store.GetWorkerTotalCount(ctx, s.DB, *searchSql, retry)
+	count, err := s.Store.GetWorkerTotalCount(ctx, s.DB, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_worker/GetWorkerTotalCount err: %v", err)
 	}
 	return count, nil
@@ -79,23 +67,15 @@ func (s *ServiceWorker) GetWorkerListByUserId(ctx context.Context, page entity.P
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker;ByUserId/OfPageSql err: %v", err)
-	}
-	searchSql := &entity.WorkerDailySql{}
-	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return nil, fmt.Errorf("service_worker;ByUserId/ConvertToSQLNulls err: %v", err)
 	}
 
 	// 조회
-	sqlList, err := s.Store.GetWorkerListByUserId(ctx, s.DB, pageSql, *searchSql, retry)
+	list, err := s.Store.GetWorkerListByUserId(ctx, s.DB, pageSql, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker/GetWorkerListByUserId err: %v", err)
-	}
-
-	// sql type -> reqular type 변환
-	list := &entity.Workers{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_worker;ByUserId/ConvertSliceToRegular err: %v", err)
 	}
 
 	return list, nil
@@ -105,13 +85,9 @@ func (s *ServiceWorker) GetWorkerListByUserId(ctx context.Context, page entity.P
 // @param
 // - userId string
 func (s *ServiceWorker) GetWorkerCountByUserId(ctx context.Context, search entity.WorkerDaily, retry string) (int, error) {
-	searchSql := &entity.WorkerDailySql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return 0, fmt.Errorf("service_worker;ByUserId/ConvertToSQLNulls err: %v", err)
-	}
-
-	count, err := s.Store.GetWorkerCountByUserId(ctx, s.DB, *searchSql, retry)
+	count, err := s.Store.GetWorkerCountByUserId(ctx, s.DB, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_worker;ByUserId/StoreGetWorkerCountByUserId err: %v", err)
 	}
 	return count, nil
@@ -121,12 +97,9 @@ func (s *ServiceWorker) GetWorkerCountByUserId(ctx context.Context, search entit
 // @param
 // -
 func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) error {
-	workerSql := &entity.WorkerSql{}
-	if err := entity.ConvertToSQLNulls(worker, workerSql); err != nil {
-		return fmt.Errorf("service_worker;AddWorker/ConvertToSQLNulls err: %v", err)
-	}
-	err := s.Store.AddWorker(ctx, s.TDB, *workerSql)
+	err := s.Store.AddWorker(ctx, s.TDB, worker)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/AddWorker err: %v", err)
 	}
 	return nil
@@ -136,12 +109,9 @@ func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) err
 // @param
 // -
 func (s *ServiceWorker) ModifyWorker(ctx context.Context, worker entity.Worker) error {
-	workerSql := &entity.WorkerSql{}
-	if err := entity.ConvertToSQLNulls(worker, workerSql); err != nil {
-		return fmt.Errorf("service_worker;ModifyWorker/ConvertToSQLNulls err: %v", err)
-	}
-	err := s.Store.ModifyWorker(ctx, s.TDB, *workerSql)
+	err := s.Store.ModifyWorker(ctx, s.TDB, worker)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorker err: %v", err)
 	}
 	return nil
@@ -156,23 +126,15 @@ func (s *ServiceWorker) GetWorkerSiteBaseList(ctx context.Context, page entity.P
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker;site_base/OfPageSql err: %v", err)
-	}
-	searchSql := &entity.WorkerDailySql{}
-	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return nil, fmt.Errorf("service_worker;site_base/ConvertToSQLNulls err: %v", err)
 	}
 
 	// 조회
-	sqlList, err := s.Store.GetWorkerSiteBaseList(ctx, s.DB, pageSql, *searchSql, retry)
+	list, err := s.Store.GetWorkerSiteBaseList(ctx, s.DB, pageSql, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker/GetWorkerSiteBaseList err: %v", err)
-	}
-
-	// sql type -> reqular type 변환
-	list := &entity.WorkerDailys{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_worker;site_base/ConvertSliceToRegular err: %v", err)
 	}
 
 	return list, nil
@@ -182,13 +144,9 @@ func (s *ServiceWorker) GetWorkerSiteBaseList(ctx context.Context, page entity.P
 // @param
 // - searchTime string: 조회 날짜
 func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error) {
-	searchSql := &entity.WorkerDailySql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		return 0, fmt.Errorf("service_worker;site_base/ConvertToSQLNulls err: %v", err)
-	}
-
-	count, err := s.Store.GetWorkerSiteBaseCount(ctx, s.DB, *searchSql, retry)
+	count, err := s.Store.GetWorkerSiteBaseCount(ctx, s.DB, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_worker/GetWorkerSiteBaseCount err: %v", err)
 	}
 	return count, nil
@@ -198,12 +156,8 @@ func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entit
 // @param
 // -
 func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) error {
-	workerSqls := &entity.WorkerDailySqls{}
-	if err := entity.ConvertSliceToSQLNulls(workers, workerSqls); err != nil {
-		return fmt.Errorf("service_worker;MergeSiteBase/ConvertSliceToSQLNulls err: %v", err)
-	}
-
-	if err := s.Store.MergeSiteBaseWorker(ctx, s.TDB, *workerSqls); err != nil {
+	if err := s.Store.MergeSiteBaseWorker(ctx, s.TDB, workers); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
 	}
 
@@ -214,12 +168,8 @@ func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) error {
-	workerSqls := &entity.WorkerDailySqls{}
-	if err := entity.ConvertSliceToSQLNulls(workers, workerSqls); err != nil {
-		return fmt.Errorf("service_worker;Deadline/ConvertSliceToSQLNulls err: %v", err)
-	}
-
-	if err := s.Store.ModifyWorkerDeadline(ctx, s.TDB, *workerSqls); err != nil {
+	if err := s.Store.ModifyWorkerDeadline(ctx, s.TDB, workers); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorkerDeadline err: %v", err)
 	}
 	return nil
@@ -229,12 +179,8 @@ func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error {
-	workerSqls := &entity.WorkerDailySqls{}
-	if err := entity.ConvertSliceToSQLNulls(workers, workerSqls); err != nil {
-		return fmt.Errorf("service_worker;Project/ConvertSliceToSQLNulls err: %v", err)
-	}
-
-	if err := s.Store.ModifyWorkerProject(ctx, s.TDB, *workerSqls); err != nil {
+	if err := s.Store.ModifyWorkerProject(ctx, s.TDB, workers); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorkerProject err: %v", err)
 	}
 	return nil
