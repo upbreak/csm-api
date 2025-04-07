@@ -1,104 +1,44 @@
 package entity
 
 import (
-	"database/sql"
-	"time"
+	"github.com/guregu/null"
 )
 
 type Worker struct {
-	RowNum      int64     `json:"rnum"`
-	Sno         int64     `json:"sno"` //현장 고유번호
-	Jno         int64     `json:"jno"` //프로젝트 고유번호
-	JobName     string    `json:"job_name"`
-	UserId      string    `json:"user_id"` //근로자 아이디
-	AfterUserId string    `json:"after_user_id"`
-	UserNm      string    `json:"user_nm"`    //근로자명
-	Department  string    `json:"department"` //부서or조직
-	Phone       string    `json:"phone"`
-	WorkerType  string    `json:"worker_type"`
-	IsUse       string    `json:"is_use"`
-	IsRetire    string    `json:"is_retire"`
-	RetireDate  time.Time `json:"retire_date"`
-	RegUser     string    `json:"reg_user"`
-	RegDate     time.Time `json:"reg_date"`
-	RegUno      int64     `json:"reg_uno"`
-	ModUser     string    `json:"mod_user"`
-	ModDate     time.Time `json:"mod_date"`
-	ModUno      int64     `json:"mod_uno"`
-	RecordDate  string    `json:"record_date"`
-	RegNo       string    `json:"reg_no"`
+	RowNum      null.Int    `json:"rnum" db:"RNUM"`
+	Sno         null.Int    `json:"sno" db:"SNO"` //현장 고유번호
+	Jno         null.Int    `json:"jno" db:"JNO"` //프로젝트 고유번호
+	JobName     null.String `json:"job_name" db:"JOB_NAME"`
+	UserId      null.String `json:"user_id" db:"USER_ID"` //근로자 아이디
+	AfterUserId null.String `json:"after_user_id" db:"AFTER_USER_ID"`
+	UserNm      null.String `json:"user_nm" db:"USER_NM"`       //근로자명
+	Department  null.String `json:"department" db:"DEPARTMENT"` //부서or조직
+	Phone       null.String `json:"phone" db:"PHONE"`
+	WorkerType  null.String `json:"worker_type" db:"WORKER_TYPE"`
+	IsUse       null.String `json:"is_use" db:"IS_USE"`
+	IsRetire    null.String `json:"is_retire" db:"IS_RETIRE"`
+	RetireDate  null.Time   `json:"retire_date" db:"RETIRE_DATE"`
+	RecordDate  null.String `json:"record_date" db:"RECORD_DATE"`
+	RegNo       null.String `json:"reg_no" db:"REG_NO"`
+	Base
 }
 type Workers []*Worker
 
-type WorkerSql struct {
-	RowNum      sql.NullInt64  `db:"RNUM"`
-	Sno         sql.NullInt64  `db:"SNO"`
-	Jno         sql.NullInt64  `db:"JNO"`
-	JobName     sql.NullString `db:"JOB_NAME"`
-	UserId      sql.NullString `db:"USER_ID"`
-	AfterUserId sql.NullString `db:"AFTER_USER_ID"`
-	UserNm      sql.NullString `db:"USER_NM"`
-	Department  sql.NullString `db:"DEPARTMENT"`
-	Phone       sql.NullString `db:"PHONE"`
-	WorkerType  sql.NullString `db:"WORKER_TYPE"`
-	IsUse       sql.NullString `db:"IS_USE"`
-	IsRetire    sql.NullString `db:"IS_RETIRE"`
-	RetireDate  sql.NullTime   `db:"RETIRE_DATE"`
-	RegUser     sql.NullString `db:"REG_USER"`
-	RegDate     sql.NullTime   `db:"REG_DATE"`
-	RegUno      sql.NullInt64  `db:"REG_UNO"`
-	ModUser     sql.NullString `db:"MOD_USER"`
-	ModDate     sql.NullTime   `db:"MOD_DATE"`
-	ModUno      sql.NullInt64  `db:"MOD_UNO"`
-	RecordDate  sql.NullString `db:"RECORD_DATE"`
-	RegNo       sql.NullString `db:"REG_NO"`
-}
-type WorkerSqls []*WorkerSql
-
 type WorkerDaily struct {
-	RowNum          int64     `json:"rnum"`
-	Sno             int64     `json:"sno"`     //현장 고유번호
-	Jno             int64     `json:"jno"`     //프로젝트 고유번호
-	UserId          string    `json:"user_id"` //근로자 아이디
-	UserNm          string    `json:"user_nm"`
-	Department      string    `json:"department"`
-	RecordDate      time.Time `json:"record_date"`
-	InRecogTime     time.Time `json:"in_recog_time"`  //출근시간
-	OutRecogTime    time.Time `json:"out_recog_time"` //퇴근시간
-	WorkState       string    `json:"work_state"`
-	IsDeadline      string    `json:"is_deadline"`
-	SearchStartTime string    `json:"search_start_time"`
-	SearchEndTime   string    `json:"search_end_time"`
-	RegUser         string    `json:"reg_user"`
-	RegDate         time.Time `json:"reg_date"`
-	RegUno          int64     `json:"reg_uno"`
-	ModUser         string    `json:"mod_user"`
-	ModDate         time.Time `json:"mod_date"`
-	ModUno          int64     `json:"mod_uno"`
-	AfterJno        int64     `json:"after_jno"`
+	RowNum          null.Int    `json:"rnum" db:"RNUM"`
+	Sno             null.Int    `json:"sno" db:"SNO"`         //현장 고유번호
+	Jno             null.Int    `json:"jno" db:"JNO"`         //프로젝트 고유번호
+	UserId          null.String `json:"user_id" db:"USER_ID"` //근로자 아이디
+	UserNm          null.String `json:"user_nm" db:"USER_NM"`
+	Department      null.String `json:"department" db:"DEPARTMENT"`
+	RecordDate      null.Time   `json:"record_date" db:"RECORD_DATE"`
+	InRecogTime     null.Time   `json:"in_recog_time" db:"IN_RECOG_TIME"`   //출근시간
+	OutRecogTime    null.Time   `json:"out_recog_time" db:"OUT_RECOG_TIME"` //퇴근시간
+	WorkState       null.String `json:"work_state" db:"WORK_STATE"`
+	IsDeadline      null.String `json:"is_deadline" db:"IS_DEADLINE"`
+	SearchStartTime null.String `json:"search_start_time" db:"SEARCH_START_TIME"`
+	SearchEndTime   null.String `json:"search_end_time" db:"SEARCH_END_TIME"`
+	AfterJno        null.Int    `json:"after_jno" db:"AFTER_JNO"`
+	Base
 }
 type WorkerDailys []*WorkerDaily
-
-type WorkerDailySql struct {
-	RowNum          sql.NullInt64  `db:"RNUM"`
-	Sno             sql.NullInt64  `db:"SNO"`
-	Jno             sql.NullInt64  `db:"JNO"`
-	UserId          sql.NullString `db:"USER_ID"`
-	UserNm          sql.NullString `db:"USER_NM"`
-	Department      sql.NullString `db:"DEPARTMENT"`
-	RecordDate      sql.NullTime   `db:"RECORD_DATE"`
-	InRecogTime     sql.NullTime   `db:"IN_RECOG_TIME"`
-	OutRecogTime    sql.NullTime   `db:"OUT_RECOG_TIME"`
-	WorkState       sql.NullString `db:"WORK_STATE"`
-	IsDeadline      sql.NullString `db:"IS_DEADLINE"`
-	SearchStartTime sql.NullString `db:"SEARCH_START_TIME"`
-	SearchEndTime   sql.NullString `db:"SEARCH_END_TIME"`
-	RegUser         sql.NullString `db:"REG_USER"`
-	RegDate         sql.NullTime   `db:"REG_DATE"`
-	RegUno          sql.NullInt64  `db:"REG_UNO"`
-	ModUser         sql.NullString `db:"MOD_USER"`
-	ModDate         sql.NullTime   `db:"MOD_DATE"`
-	ModUno          sql.NullInt64  `db:"MOD_UNO"`
-	AfterJno        sql.NullInt64  `db:"AFTER_JNO"`
-}
-type WorkerDailySqls []*WorkerDailySql

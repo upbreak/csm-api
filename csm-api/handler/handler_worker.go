@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"csm-api/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -62,12 +63,12 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 	page.RnumOrder = rnumOrder
-	search.JobName = jobName
-	search.UserId = userId
-	search.UserNm = userNm
-	search.Department = department
-	search.Phone = phone
-	search.WorkerType = workerType
+	search.JobName = utils.ParseNullString(jobName)
+	search.UserId = utils.ParseNullString(userId)
+	search.UserNm = utils.ParseNullString(userNm)
+	search.Department = utils.ParseNullString(department)
+	search.Phone = utils.ParseNullString(phone)
+	search.WorkerType = utils.ParseNullString(workerType)
 
 	// 조회
 	list, err := h.Service.GetWorkerTotalList(ctx, page, search, retrySearch)
@@ -145,8 +146,8 @@ func (h *HandlerWorkerByUserId) ServeHttp(w http.ResponseWriter, r *http.Request
 	}
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
-	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
-	search.SearchStartTime = searchStartTime
+	search.Jno = utils.ParseNullInt(jno)
+	search.SearchStartTime = utils.ParseNullString(searchStartTime)
 
 	list, err := h.Service.GetWorkerListByUserId(ctx, page, search, retrySearch)
 	if err != nil {
@@ -323,12 +324,12 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 	page.RnumOrder = rnumOrder
-	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
-	search.UserId = userId
-	search.UserNm = userNm
-	search.Department = department
-	search.SearchStartTime = searchStartTime
-	search.SearchEndTime = searchEndTime
+	search.Jno = utils.ParseNullInt(jno)
+	search.UserId = utils.ParseNullString(userId)
+	search.UserNm = utils.ParseNullString(userNm)
+	search.Department = utils.ParseNullString(department)
+	search.SearchStartTime = utils.ParseNullString(searchStartTime)
+	search.SearchEndTime = utils.ParseNullString(searchEndTime)
 
 	// 조회
 	list, err := h.Service.GetWorkerSiteBaseList(ctx, page, search, retrySearch)
