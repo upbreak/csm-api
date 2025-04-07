@@ -13,10 +13,10 @@ import "strconv"
 
 // struct: 초단기 예보 api 응답 구조
 type WhetherSrtItem struct {
-	BaseDate  string `json:"baseDate"`
-	BaseTime  string `json:"baseTime"`
+	FcstDate  string `json:"fcstDate"`
+	FcstTime  string `json:"fcstTime"`
 	Category  string `json:"category"`
-	ObsrValue string `json:"obsrValue"`
+	FcstValue string `json:"fcstValue"`
 }
 type WhetherSrtItems struct {
 	Item []WhetherSrtItem `json:"item"`
@@ -36,6 +36,10 @@ type WhetherSrtItems struct {
 //     5	빗방울
 //     6	빗방울 또는 눈날림
 //     7	눈날림
+//   - SKY	하늘 상태	코드 값
+//     1	맑음
+//     3	구름 많음
+//     4	흐림
 //   - VEC	풍향	° (16방위) (WhetherVecString() 참고)
 //   - WSD	풍속	m/s (미터/초)
 type WhetherSrtEntity struct {
