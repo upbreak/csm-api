@@ -4,6 +4,7 @@ import "C"
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -30,11 +31,11 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 
 	// 조건
 	condition := "1=1"
-	//condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
-	//condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
-	//condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
-	//condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
-	//condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
+	condition = utils.Int64WhereConvert2(condition, search.Jno, "JNO")
+	condition = utils.StringWhereConvert2(condition, search.JobLocName, "JOB_LOC_NAME")
+	condition = utils.StringWhereConvert2(condition, search.JobName, "JOB_NAME")
+	condition = utils.StringWhereConvert2(condition, search.Title, "TITLE")
+	condition = utils.StringWhereConvert2(condition, search.UserInfo, "USER_INFO")
 
 	var order string
 	if page.Order.Valid {
@@ -107,6 +108,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 		condition, order)
 
 	if err := db.SelectContext(ctx, &notices, query, role, uno, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브 처리
 		fmt.Printf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
@@ -120,11 +122,11 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 	var count int
 
 	condition := "1=1"
-	//condition = utils.Int64WhereConvert(condition, search.Jno, "JNO")
-	//condition = utils.StringWhereConvert(condition, search.JobLocName, "JOB_LOC_NAME")
-	//condition = utils.StringWhereConvert(condition, search.JobName, "JOB_NAME")
-	//condition = utils.StringWhereConvert(condition, search.Title, "TITLE")
-	//condition = utils.StringWhereConvert(condition, search.UserInfo, "USER_INFO")
+	condition = utils.Int64WhereConvert2(condition, search.Jno, "JNO")
+	condition = utils.StringWhereConvert2(condition, search.JobLocName, "JOB_LOC_NAME")
+	condition = utils.StringWhereConvert2(condition, search.JobName, "JOB_NAME")
+	condition = utils.StringWhereConvert2(condition, search.Title, "TITLE")
+	condition = utils.StringWhereConvert2(condition, search.UserInfo, "USER_INFO")
 
 	query := fmt.Sprintf(`
 			WITH Notice AS (
@@ -163,6 +165,7 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, role, uno); err != nil {
+		//TODO: 에러 아카이브 처리
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
@@ -178,7 +181,8 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.Notice) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("store/notice. Failed to begin transaction: %w", err)
+		//TODO: 에러 아카이브 처리
+		fmt.Println("AddNotice Begin transaction fail: %w", err)
 	}
 
 	// 공지사항
@@ -205,7 +209,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.N
 				    REG_USER_DUTY_NAME
 				) VALUES (
 					SEQ_IRIS_NOTICE_BOARD.NEXTVAL,
-					(SELECT S.SNO FROM IRIS_SITE_JOB S RIGHT JOIN S_JOB_INFO J ON S.JNO = J.JNO WHERE J.JNO = :1),
+					(SELECT S.SNO FROM IRIS_SITE_JOB S RIGHT JOIN S_JOB_INFO J ON S.JNO = J.JNO WHERE J.JNO = :1 AND S.IS_USE = 'Y'),
 					:2,
 					:3,
 					:4,
@@ -225,17 +229,21 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.N
 --				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, err = tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
+	_, origErr := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
 
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
+	if origErr != nil {
+		//TODO: 에러 아카이브 처리
+		if err = tx.Rollback(); err != nil {
+
+			//TODO: 에러 아카이브 처리
+			return fmt.Errorf("AddNotice Rollback transaction fail: %w", err)
 		}
-		return fmt.Errorf("store/notice. AddNotice fail %v", err)
+		return fmt.Errorf("store/notice. AddNotice fail %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("store/notice. failed to commit transaction: %v", err)
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브 처리
+		return fmt.Errorf("AddNotice Commit transaction fail: %v", err)
 	}
 
 	return nil
@@ -247,13 +255,15 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.N
 func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, notice entity.Notice) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		fmt.Println("store/notice. Failed to begin transaction: %w", err)
+		fmt.Println(
+			//TODO: 에러 아카이브 처리
+			"ModifyNotice Begin transaction fail: %w", err)
 	}
 
 	query := `
 				UPDATE IRIS_NOTICE_BOARD
 				SET
-				    SNO = (SELECT S.SNO FROM IRIS_SITE_JOB S RIGHT JOIN S_JOB_INFO J ON S.JNO = J.JNO WHERE J.JNO = :1),
+				    SNO = (SELECT S.SNO FROM IRIS_SITE_JOB S RIGHT JOIN S_JOB_INFO J ON S.JNO = J.JNO WHERE J.JNO = :1 AND S.IS_USE = 'Y'),
 					JNO = :2,
 					TITLE = :3,
 					CONTENT = :4,
@@ -269,17 +279,20 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, notice entit
 					IDX = :11
 			`
 
-	_, err = tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
+	_, origErr := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
 
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
+	if origErr != nil {
+		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브 처리
+			return fmt.Errorf("ModifyNotice Rollback transaction fail: %w", err)
 		}
-		return fmt.Errorf("store/notice. ModifyNotice fail: %v", err)
+		//TODO: 에러 아카이브 처리
+		return fmt.Errorf("store/notice. ModifyNotice fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("store/notice. failed to commit transaction: %v", err)
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브 처리
+		return fmt.Errorf("ModifyNotice Commit transaction fail: %v", err)
 	}
 
 	return nil
@@ -292,6 +305,7 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx null.Int
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		fmt.Println("store/notice. Failed to begint transaction: %w", err)
 	}
 
@@ -303,17 +317,20 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx null.Int
 			IDX = :1
 			`
 
-	_, err = tx.ExecContext(ctx, query, idx)
+	_, origErr := tx.ExecContext(ctx, query, idx)
 
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
+	if origErr != nil {
+		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브 처리
+			return fmt.Errorf("RemoveNotice Rollback transaction fail: %w", err)
 		}
-		return fmt.Errorf("store/notice. RemoveNotice fail: %v", err)
+		//TODO: 에러 아카이브 처리
+		return fmt.Errorf("store/notice. RemoveNotice fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("store/notice. failed to commit transaction: %v", err)
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브 처리
+		return fmt.Errorf("RemoveNotice Commit transaction fail: %v", err)
 	}
 
 	return nil

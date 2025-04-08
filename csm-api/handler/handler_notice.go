@@ -73,8 +73,8 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.Order = order
 
 	search.Jno = utils.ParseNullInt(r.URL.Query().Get("jno"))
-	search.JobLocName = utils.ParseNullString(r.URL.Query().Get("loc_name"))
-	search.JobName = utils.ParseNullString(r.URL.Query().Get("site_nm"))
+	search.JobLocName = utils.ParseNullString(r.URL.Query().Get("job_loc_name"))
+	search.JobName = utils.ParseNullString(r.URL.Query().Get("job_name"))
 	search.Title = utils.ParseNullString(r.URL.Query().Get("title"))
 	search.UserInfo = utils.ParseNullString(r.URL.Query().Get("user_info"))
 

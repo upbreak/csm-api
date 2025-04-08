@@ -23,6 +23,7 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno null.Int, role nu
 	pageSql, err := pageSql.OfPageSql(page)
 
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
@@ -34,6 +35,7 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno null.Int, role nu
 	}
 	notices, err := s.Store.GetNoticeList(ctx, s.DB, uno, roleInt, pageSql, search)
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return &entity.Notices{}, fmt.Errorf("fail to list notice: %w", err)
 	}
 
@@ -54,6 +56,7 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno null.Int, ro
 
 	count, err := s.Store.GetNoticeListCount(ctx, s.DB, uno, roleInt, search)
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
 	}
 
@@ -67,6 +70,7 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno null.Int, ro
 func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) error {
 
 	if err := s.Store.AddNotice(ctx, s.TDB, notice); err != nil {
+		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/AddNotice err : %w", err)
 	}
 
@@ -79,6 +83,7 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) err
 func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) error {
 
 	if err := s.Store.ModifyNotice(ctx, s.TDB, notice); err != nil {
+		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/ModifyNotice err: %w", err)
 	}
 
@@ -91,6 +96,7 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx null.Int) error {
 
 	if err := s.Store.RemoveNotice(ctx, s.TDB, idx); err != nil {
+		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/RemomveNotice err: %w", err)
 	}
 
