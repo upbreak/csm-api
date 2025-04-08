@@ -155,14 +155,14 @@ func (h *HandlerUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.JobNo = jobNo
-	search.CompName = compName
-	search.OrderCompName = orderCompName
-	search.JobName = jobName
-	search.JobPmName = jobPmName
-	search.JobSd = jobSd
-	search.JobEd = jobEd
-	search.CdNm = cdNm
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.CompName = utils.ParseNullString(compName)
+	search.OrderCompName = utils.ParseNullString(orderCompName)
+	search.JobName = utils.ParseNullString(jobName)
+	search.JobPmName = utils.ParseNullString(jobPmName)
+	search.JobSd = utils.ParseNullString(jobSd)
+	search.JobEd = utils.ParseNullString(jobEd)
+	search.CdNm = utils.ParseNullString(cdNm)
 
 	// 프로젝트 조회
 	list, err := h.Service.GetUsedProjectList(ctx, page, search)
@@ -245,14 +245,14 @@ func (h *HandlerAllProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.JobNo = jobNo
-	search.CompName = compName
-	search.OrderCompName = orderCompName
-	search.JobName = jobName
-	search.JobPmName = jobPmName
-	search.JobSd = jobSd
-	search.JobEd = jobEd
-	search.CdNm = cdNm
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.CompName = utils.ParseNullString(compName)
+	search.OrderCompName = utils.ParseNullString(orderCompName)
+	search.JobName = utils.ParseNullString(jobName)
+	search.JobPmName = utils.ParseNullString(jobPmName)
+	search.JobSd = utils.ParseNullString(jobSd)
+	search.JobEd = utils.ParseNullString(jobEd)
+	search.CdNm = utils.ParseNullString(cdNm)
 
 	list, err := h.Service.GetAllProjectList(ctx, page, search)
 
@@ -350,14 +350,14 @@ func (h *HandlerStaffProject) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.JobNo = jobNo
-	search.CompName = compName
-	search.OrderCompName = orderCompName
-	search.JobName = jobName
-	search.JobPmName = jobPmName
-	search.JobSd = jobSd
-	search.JobEd = jobEd
-	search.CdNm = cdNm
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.CompName = utils.ParseNullString(compName)
+	search.OrderCompName = utils.ParseNullString(orderCompName)
+	search.JobName = utils.ParseNullString(jobName)
+	search.JobPmName = utils.ParseNullString(jobPmName)
+	search.JobSd = utils.ParseNullString(jobSd)
+	search.JobEd = utils.ParseNullString(jobEd)
+	search.CdNm = utils.ParseNullString(cdNm)
 
 	list, err := h.Service.GetStaffProjectList(ctx, page, search, int64UNO)
 

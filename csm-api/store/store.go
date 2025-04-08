@@ -34,12 +34,12 @@ type ProjectStore interface {
 	GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCounts, error)
 	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error)
-	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
-	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
-	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
-	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
-	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfoSql, uno sql.NullInt64) (*entity.JobInfoSqls, error)
-	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfoSql, uno sql.NullInt64) (int, error)
+	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
+	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
+	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
+	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
+	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error)
+	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error)
 	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
 	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
@@ -96,13 +96,13 @@ type WorkerStore interface {
 }
 
 type CompanyStore interface {
-	GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfoSql, error)
-	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
-	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
-	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.SupervisorSqls, error)
-	GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfosqls, error)
-	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfoSqls, error)
-	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfosqls, error)
+	GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfo, error)
+	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error)
+	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error)
+	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Supervisors, error)
+	GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfos, error)
+	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfos, error)
+	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfos, error)
 }
 
 type EquipStore interface {

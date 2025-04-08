@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -19,8 +20,8 @@ import (
 // func: job 정보 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
-func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfoSql, error) {
-	sqlData := entity.JobInfoSql{}
+func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfo, error) {
+	data := entity.JobInfo{}
 
 	query := `
 				SELECT 
@@ -32,7 +33,7 @@ func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt
 					t2.comp_name,
 					t2.order_comp_name,
 					t2.job_pm_name,
-					t6.duty_name,
+					t6.duty_name as JOB_PM_DUTY_NAME,
 					t5.cd_nm
 				FROM
 					IRIS_SITE_JOB t1
@@ -43,21 +44,21 @@ func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt
 					INNER JOIN S_SYS_USER_SET t6 ON t2.JOB_PM = t6.UNO
 				WHERE 
 					t1.JNO = :1`
-	if err := db.GetContext(ctx, &sqlData, query, jno); err != nil {
-		if err == sql.ErrNoRows {
-			return &sqlData, nil
+	if err := db.GetContext(ctx, &data, query, jno); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &data, nil
 		}
-		return nil, fmt.Errorf("GetJobInfo: %w", err)
+		return nil, fmt.Errorf("GetJobInfo fail: %w", err)
 	}
 
-	return &sqlData, nil
+	return &data, nil
 }
 
 // func: 현장소장 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
-func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error) {
-	sqls := entity.ManagerSqls{}
+func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error) {
+	list := entity.Managers{}
 
 	query := `
 				SELECT 
@@ -75,17 +76,17 @@ func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql
 				AND M.CHARGE = '21'
 				AND M.JNO = :1
 				AND M.IS_USE = 'Y'`
-	if err := db.SelectContext(ctx, &sqls, query, jno); err != nil {
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
 		return nil, fmt.Errorf("GetSiteManagerList err: %v", err)
 	}
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 안전관리자 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
-func (r *Repository) GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error) {
-	sqls := entity.ManagerSqls{}
+func (r *Repository) GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error) {
+	list := entity.Managers{}
 
 	query := `
 				SELECT 
@@ -104,17 +105,17 @@ func (r *Repository) GetSafeManagerList(ctx context.Context, db Queryer, jno sql
 						 U.JOBDUTY_ID, 
 						 U.JOIN_DATE, 
 						 U.USER_NAME`
-	if err := db.SelectContext(ctx, &sqls, query, jno); err != nil {
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
 		return nil, fmt.Errorf("GetSafeManagerList err: %v", err)
 	}
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 관리감독자 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
-func (r *Repository) GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.SupervisorSqls, error) {
-	sqls := entity.SupervisorSqls{}
+func (r *Repository) GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Supervisors, error) {
+	list := entity.Supervisors{}
 
 	query := `
 				SELECT 
@@ -146,16 +147,16 @@ func (r *Repository) GetSupervisorList(ctx context.Context, db Queryer, jno sql.
 					 U.JOBDUTY_ID, 
 					 U.JOIN_DATE, 
 					 U.USER_NAME`
-	if err := db.SelectContext(ctx, &sqls, query, jno); err != nil {
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
 		return nil, fmt.Errorf("GetSupervisorList err: %v", err)
 	}
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 공종 정보 조회
 // @param
-func (r *Repository) GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfosqls, error) {
-	sqls := entity.WorkInfosqls{}
+func (r *Repository) GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfos, error) {
+	list := entity.WorkInfos{}
 
 	query := `
 				SELECT 
@@ -164,17 +165,17 @@ func (r *Repository) GetWorkInfoList(ctx context.Context, db Queryer) (*entity.W
 					FROM COMMON.COMM_FUNC_QHSE
 				   WHERE IS_USE = 'Y'
 				ORDER BY SORT_NO`
-	if err := db.SelectContext(ctx, &sqls, query); err != nil {
+	if err := db.SelectContext(ctx, &list, query); err != nil {
 		return nil, fmt.Errorf("GetWorkInfoList err: %v", err)
 	}
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 협력업체 정보 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
-func (r *Repository) GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfoSqls, error) {
-	sqls := entity.CompanyInfoSqls{}
+func (r *Repository) GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfos, error) {
+	list := entity.CompanyInfos{}
 
 	query := `
 				SELECT S.JNO, 
@@ -191,17 +192,17 @@ func (r *Repository) GetCompanyInfoList(ctx context.Context, db Queryer, jno sql
 				 AND S.IS_USE = 'Y'
 				 AND S.JNO = :1
 				ORDER BY S.CNO`
-	if err := db.SelectContext(ctx, &sqls, query, jno); err != nil {
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
 		return nil, fmt.Errorf("GetCompanyInfoList err: %v", err)
 	}
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 협력업체별 공종 조회
 // @param
 // - jno sql.NullInt64: 프로젝트 고유번호
-func (r *Repository) GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfosqls, error) {
-	sqls := entity.WorkInfosqls{}
+func (r *Repository) GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfos, error) {
+	list := entity.WorkInfos{}
 
 	query := `
 				SELECT F.JNO, 
@@ -214,8 +215,8 @@ func (r *Repository) GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno
 				WHERE F.FUNC_NO = C.FUNC_NO
 				 AND C.IS_USE = 'Y'
 				 AND F.JNO = :1`
-	if err := db.SelectContext(ctx, &sqls, query, jno); err != nil {
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
 		return nil, fmt.Errorf("GetCompanyWorkInfoList err: %v", err)
 	}
-	return &sqls, nil
+	return &list, nil
 }
