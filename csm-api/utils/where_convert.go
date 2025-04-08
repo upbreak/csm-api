@@ -3,7 +3,6 @@ package utils
 import (
 	"database/sql"
 	"fmt"
-	"github.com/guregu/null"
 	"strings"
 )
 
@@ -17,28 +16,7 @@ func StringWhereConvert(condition string, sqlValue sql.NullString, target string
 	return condition
 }
 
-// 2로 해둔 후 나중에 한번에 변경하기.
-func StringWhereConvert2(condition string, sqlValue null.String, target string) string {
-	if sqlValue.Valid {
-		value := strings.TrimSpace(sqlValue.String)
-		if value != "" {
-			condition += fmt.Sprintf(` AND LOWER(%s) LIKE LOWER('%%%s%%')`, target, value)
-		}
-	}
-	return condition
-}
-
 func Int64WhereConvert(condition string, sqlValue sql.NullInt64, target string) string {
-	if sqlValue.Valid {
-		value := sqlValue.Int64
-		if value != 0 {
-			condition += fmt.Sprintf(` AND %s = %d`, target, value)
-		}
-	}
-	return condition
-}
-
-func Int64WhereConvert2(condition string, sqlValue null.Int, target string) string {
 	if sqlValue.Valid {
 		value := sqlValue.Int64
 		if value != 0 {
