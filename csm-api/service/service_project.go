@@ -137,22 +137,11 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
-	searchSql := &entity.JobInfoSql{}
-	if err = entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
-	}
 
-	sqlList, err := p.Store.GetUsedProjectList(ctx, p.DB, pageSql, *searchSql)
+	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.DB, pageSql, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
-	}
-
-	jobInfos := &entity.JobInfos{}
-	if err = entity.ConvertSliceToRegular(*sqlList, jobInfos); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.JobInfos{}, fmt.Errorf("service_project;used/ConvertSliceToRegular error: %w", err)
 	}
 
 	return jobInfos, nil
@@ -162,13 +151,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 // @param
 // -
 func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
-	searchSql := &entity.JobInfoSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		//TODO: 에러 아카이브
-		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
-	}
-
-	count, err := p.Store.GetUsedProjectCount(ctx, p.DB, *searchSql)
+	count, err := p.Store.GetUsedProjectCount(ctx, p.DB, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetUsedProjectCount error: %w", err)
@@ -188,22 +171,10 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	searchSql := &entity.JobInfoSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
-	}
-
-	jobInfoSqls, err := p.Store.GetAllProjectList(ctx, p.DB, pageSql, *searchSql)
+	jobInfos, err := p.Store.GetAllProjectList(ctx, p.DB, pageSql, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
-	}
-
-	jobInfos := &entity.JobInfos{}
-	if err = entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.JobInfos{}, fmt.Errorf("service_project;all/ConvertSliceToReqular error: %w", err)
 	}
 
 	return jobInfos, nil
@@ -214,13 +185,7 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 // @param
 // -
 func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
-	searchSql := &entity.JobInfoSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		//TODO: 에러 아카이브
-		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
-	}
-
-	count, err := p.Store.GetAllProjectCount(ctx, p.DB, *searchSql)
+	count, err := p.Store.GetAllProjectCount(ctx, p.DB, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)
@@ -248,25 +213,11 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	searchSql := &entity.JobInfoSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.JobInfos{}, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
-
-	}
-
-	jobInfoSqls, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, *searchSql, unoSql)
+	jobInfos, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, search, unoSql)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetStaffProjectList: %w", err)
 	}
-
-	jobInfos := &entity.JobInfos{}
-	if err := entity.ConvertSliceToRegular(*jobInfoSqls, jobInfos); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.JobInfos{}, fmt.Errorf("service_project;staff/ConvertSliceToReqular error %w", err)
-	}
-
 	return jobInfos, nil
 
 }
@@ -283,14 +234,7 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 		unoSql = sql.NullInt64{Valid: false}
 	}
 
-	searchSql := &entity.JobInfoSql{}
-	if err := entity.ConvertToSQLNulls(search, searchSql); err != nil {
-		//TODO: 에러 아카이브
-		return 0, fmt.Errorf("service_project/ConvertToSQLNulls error: %w", err)
-
-	}
-
-	count, err := p.Store.GetStaffProjectCount(ctx, p.DB, *searchSql, unoSql)
+	count, err := p.Store.GetStaffProjectCount(ctx, p.DB, search, unoSql)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetStaffProjectCount error: %w", err)

@@ -299,18 +299,18 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 // func: 공사관리시스템 등록 프로젝트 전체 조회
 // @param
 // -
-func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
-	sqlData := entity.JobInfoSqls{}
+func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error) {
+	list := entity.JobInfos{}
 
 	condition := ""
-	condition = utils.StringWhereConvert(condition, search.JobNo, "t2.JOB_NO")
-	condition = utils.StringWhereConvert(condition, search.CompName, "t2.COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.OrderCompName, "t2.ORDER_COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobName, "t2.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobPmName, "t2.JOB_PM_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobSd, "t2.JOB_SD")
-	condition = utils.StringWhereConvert(condition, search.JobEd, "t2.JOB_ED")
-	condition = utils.StringWhereConvert(condition, search.CdNm, "t5.CD_NM")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "t2.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName.NullString, "t2.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName.NullString, "t2.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t2.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName.NullString, "t2.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "t2.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "t2.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "t5.CD_NM")
 
 	var order string
 	if pageSql.Order.Valid {
@@ -349,29 +349,29 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 				)
 				WHERE RNUM > :2`, condition, order)
 
-	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &list, query, pageSql.EndNum, pageSql.StartNum); err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetUsedProjectList err: %w", err)
 	}
 
-	return &sqlData, nil
+	return &list, nil
 }
 
 // func: 공사관리시스템 등록 프로젝트 전체 조회 개수
 // @param
 // -
-func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
+func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error) {
 	var count int
 
 	condition := ""
-	condition = utils.StringWhereConvert(condition, search.JobNo, "t2.JOB_NO")
-	condition = utils.StringWhereConvert(condition, search.CompName, "t2.COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.OrderCompName, "t2.ORDER_COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobName, "t2.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobPmName, "t2.JOB_PM_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobSd, "t2.JOB_SD")
-	condition = utils.StringWhereConvert(condition, search.JobEd, "t2.JOB_ED")
-	condition = utils.StringWhereConvert(condition, search.CdNm, "t5.CD_NM")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "t2.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName.NullString, "t2.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName.NullString, "t2.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t2.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName.NullString, "t2.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "t2.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "t2.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "t5.CD_NM")
 
 	query := fmt.Sprintf(`
 				SELECT 
@@ -399,18 +399,18 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 // func: 프로젝트 전체 조회
 // @param
 // -
-func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error) {
-	sqlData := entity.JobInfoSqls{}
+func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error) {
+	list := entity.JobInfos{}
 
 	condition := "1 = 1"
-	condition = utils.StringWhereConvert(condition, search.JobNo, "J.JOB_NO")
-	condition = utils.StringWhereConvert(condition, search.CompName, "J.COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.OrderCompName, "J.ORDER_COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobName, "J.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobPmName, "J.JOB_PM_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobSd, "J.JOB_SD")
-	condition = utils.StringWhereConvert(condition, search.JobEd, "J.JOB_ED")
-	condition = utils.StringWhereConvert(condition, search.CdNm, "SC.CD_NM")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName.NullString, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName.NullString, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName.NullString, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "SC.CD_NM")
 
 	var order string
 	if pageSql.Order.Valid {
@@ -457,29 +457,29 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 				)
 				WHERE RNUM > :2`, condition, order)
 
-	if err := db.SelectContext(ctx, &sqlData, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &list, query, pageSql.EndNum, pageSql.StartNum); err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetAllProjectList err: %w", err)
 	}
 
-	return &sqlData, nil
+	return &list, nil
 }
 
 // func: 프로젝트 개수 조회 개수
 // @param
 // -
-func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error) {
+func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error) {
 	var count int
 
 	condition := "1 = 1"
-	condition = utils.StringWhereConvert(condition, search.JobNo, "J.JOB_NO")
-	condition = utils.StringWhereConvert(condition, search.CompName, "J.COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.OrderCompName, "J.ORDER_COMP_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobName, "J.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobPmName, "J.JOB_PM_NAME")
-	condition = utils.StringWhereConvert(condition, search.JobSd, "J.JOB_SD")
-	condition = utils.StringWhereConvert(condition, search.JobEd, "J.JOB_ED")
-	condition = utils.StringWhereConvert(condition, search.CdNm, "SC.CD_NM")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.CompName.NullString, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.OrderCompName.NullString, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobPmName.NullString, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "SC.CD_NM")
 	query := fmt.Sprintf(`
 				SELECT 
 					count(*)
@@ -507,19 +507,19 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 // func: 본인이 속한 프로젝트 조회
 // @param
 // - UNO
-func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfoSql, uno sql.NullInt64) (*entity.JobInfoSqls, error) {
+func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error) {
 
-	sqlData := entity.JobInfoSqls{}
+	list := entity.JobInfos{}
 
 	condition := "1=1"
-	condition = utils.StringWhereConvert(condition, searchSql.JobNo, "J.JOB_NO")
-	condition = utils.StringWhereConvert(condition, searchSql.CompName, "J.COMP_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.OrderCompName, "J.ORDER_COMP_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.JobName, "J.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.JobPmName, "J.JOB_PM_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.JobSd, "J.JOB_SD")
-	condition = utils.StringWhereConvert(condition, searchSql.JobEd, "J.JOB_ED")
-	condition = utils.StringWhereConvert(condition, searchSql.CdNm, "SC.CD_NM")
+	condition = utils.StringWhereConvert(condition, searchSql.JobNo.NullString, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, searchSql.CompName.NullString, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.OrderCompName.NullString, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobName.NullString, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobPmName.NullString, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobSd.NullString, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, searchSql.JobEd.NullString, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, searchSql.CdNm.NullString, "SC.CD_NM")
 
 	var order string
 	if pageSql.Order.Valid {
@@ -566,29 +566,29 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 			) 
 			WHERE RNUM > :3`, condition, order)
 
-	if err := db.SelectContext(ctx, &sqlData, query, uno, pageSql.EndNum, pageSql.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &list, query, uno, pageSql.EndNum, pageSql.StartNum); err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetStaffProjectList err: %w", err)
 	}
 
-	return &sqlData, nil
+	return &list, nil
 }
 
 // func: 본인이 속한 프로젝트 개수
 // @param
 // - UNO
-func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfoSql, uno sql.NullInt64) (int, error) {
+func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error) {
 	var count int
 
 	condition := "1=1"
-	condition = utils.StringWhereConvert(condition, searchSql.JobNo, "J.JOB_NO")
-	condition = utils.StringWhereConvert(condition, searchSql.CompName, "J.COMP_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.OrderCompName, "J.ORDER_COMP_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.JobName, "J.JOB_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.JobPmName, "J.JOB_PM_NAME")
-	condition = utils.StringWhereConvert(condition, searchSql.JobSd, "J.JOB_SD")
-	condition = utils.StringWhereConvert(condition, searchSql.JobEd, "J.JOB_ED")
-	condition = utils.StringWhereConvert(condition, searchSql.CdNm, "SC.CD_NM")
+	condition = utils.StringWhereConvert(condition, searchSql.JobNo.NullString, "J.JOB_NO")
+	condition = utils.StringWhereConvert(condition, searchSql.CompName.NullString, "J.COMP_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.OrderCompName.NullString, "J.ORDER_COMP_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobName.NullString, "J.JOB_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobPmName.NullString, "J.JOB_PM_NAME")
+	condition = utils.StringWhereConvert(condition, searchSql.JobSd.NullString, "J.JOB_SD")
+	condition = utils.StringWhereConvert(condition, searchSql.JobEd.NullString, "J.JOB_ED")
+	condition = utils.StringWhereConvert(condition, searchSql.CdNm.NullString, "SC.CD_NM")
 
 	query := fmt.Sprintf(`
 				SELECT 
