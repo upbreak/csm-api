@@ -166,12 +166,11 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 			continue
 		}
 
-		// 특보 정보 입력
-		response.Warning = warning
 		var areaList []string
 
 		// 특보 지역 구분(시도 단위로)
 		if resultBool {
+
 			areaStr = strings.ReplaceAll(areaStr, "도, ", "도), ")
 			for _, area := range strings.Split(areaStr, "), ") {
 				// 값이 없으면 넘기기
@@ -184,12 +183,17 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 				}
 				areaList = append(areaList, strings.TrimSpace(area)+addStr)
 			}
+
 		} else {
 			continue
 		}
 
-		list = append(list, response)
+		// 특보 정보 입력
+		if len(areaList) > 0 {
+			response.Warning = warning
+			response.Area = areaList
+			list = append(list, response)
+		}
 	}
-
 	return list, nil
 }

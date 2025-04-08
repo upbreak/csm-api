@@ -74,7 +74,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		// 현장 날씨 조회
 		now := time.Now()
 		baseDate := now.Format("20060102")
-		baseTime := now.Format("1504")
+		baseTime := now.Add(time.Minute * -30).Format("1504") // 기상청에서 30분 단위로 발표하기 때문에 30분 전의 데이터 요청
 		nx, ny := utils.LatLonToXY(sitePosData.Latitude, sitePosData.Longitude)
 		siteWhether, err := s.WhetherApiService.GetWhetherSrtNcst(baseDate, baseTime, nx, ny)
 		if err != nil {
