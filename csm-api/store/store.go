@@ -13,40 +13,40 @@ type GetUserValidStore interface {
 }
 
 type SiteStore interface {
-	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
-	GetSiteNmList(ctx context.Context, db Queryer) (*entity.SiteSqls, error)
-	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.SiteSqls, error)
+	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
+	GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error)
+	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, db Beginner, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tdb Beginner, jno int64, user entity.User) error
 }
 
 type SitePosStore interface {
-	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePosSql, error)
-	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePosSql) error
+	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error)
+	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePos) error
 }
 
 type SiteDateStore interface {
-	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDateSql, error)
-	ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDateSql) error
+	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDate, error)
+	ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDate) error
 }
 
 type ProjectStore interface {
-	GetProjectList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.ProjectInfoSqls, error)
-	GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfoSqls, error)
-	GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCountSqls, error)
-	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfoSqls, error)
-	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
-	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
-	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfoSql) (*entity.JobInfoSqls, error)
-	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfoSql) (int, error)
-	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfoSql, uno sql.NullInt64) (*entity.JobInfoSqls, error)
-	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfoSql, uno sql.NullInt64) (int, error)
+	GetProjectList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.ProjectInfos, error)
+	GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfos, error)
+	GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCounts, error)
+	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error)
+	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
+	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
+	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
+	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
+	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error)
+	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error)
 	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
 	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
-	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfoSqls, error)
-	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProjectSql, retry string) (*entity.NonUsedProjectSqls, error)
-	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProjectSql, retry string) (int, error)
+	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
+	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
+	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
 	AddProject(ctx context.Context, db Beginner, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, db Beginner, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, db Beginner, project entity.ReqProject) error
@@ -58,11 +58,11 @@ type ProjectDailyStore interface {
 }
 
 type UserStore interface {
-	GetUserInfoPmPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPmPeInfoSqls, error)
+	GetUserInfoPmPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPmPeInfos, error)
 }
 
 type CodeStore interface {
-	GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.CodeSqls, error)
+	GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.Codes, error)
 }
 
 type NoticeStore interface {
@@ -74,10 +74,10 @@ type NoticeStore interface {
 }
 
 type DeviceStore interface {
-	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql, retry string) (*entity.DeviceSqls, error)
-	GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql, retry string) (int, error)
-	AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
-	ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
+	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Device, retry string) (*entity.Devices, error)
+	GetDeviceListCount(ctx context.Context, db Queryer, search entity.Device, retry string) (int, error)
+	AddDevice(ctx context.Context, db Beginner, device entity.Device) error
+	ModifyDevice(ctx context.Context, db Beginner, device entity.Device) error
 	RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error
 }
 
@@ -96,13 +96,13 @@ type WorkerStore interface {
 }
 
 type CompanyStore interface {
-	GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfoSql, error)
-	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
-	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.ManagerSqls, error)
-	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.SupervisorSqls, error)
-	GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfosqls, error)
-	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfoSqls, error)
-	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfosqls, error)
+	GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.JobInfo, error)
+	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error)
+	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error)
+	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Supervisors, error)
+	GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfos, error)
+	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfos, error)
+	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfos, error)
 }
 
 type EquipStore interface {

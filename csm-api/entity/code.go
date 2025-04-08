@@ -1,39 +1,12 @@
 package entity
 
-import "database/sql"
+import "github.com/guregu/null"
 
 type Code struct {
-	Code      string `json:"code"`
-	PCode     string `json:"p_code"`
-	CodeNm    string `json:"code_nm"`
-	CodeColor string `json:"code_color"`
+	Code      null.String `json:"code" db:"CODE"`
+	PCode     null.String `json:"p_code" db:"P_CODE"`
+	CodeNm    null.String `json:"code_nm" db:"CODE_NM"`
+	CodeColor null.String `json:"code_color" db:"CODE_COLOR"`
 }
 
 type Codes []*Code
-
-type CodeSql struct {
-	Code      sql.NullString `db:"CODE"`
-	PCode     sql.NullString `db:"P_CODE"`
-	CodeNm    sql.NullString `db:"CODE_NM"`
-	CodeColor sql.NullString `db:"CODE_COLOR"`
-}
-
-type CodeSqls []*CodeSql
-
-func (c *Code) ToCode(sql *CodeSql) *Code {
-	c.Code = sql.Code.String
-	c.PCode = sql.PCode.String
-	c.CodeNm = sql.CodeNm.String
-	c.CodeColor = sql.CodeColor.String
-
-	return c
-}
-
-func (c *Codes) ToCodes(sqls *CodeSqls) *Codes {
-	for _, sql := range *sqls {
-		code := Code{}
-		code.ToCode(sql)
-		*c = append(*c, &code)
-	}
-	return c
-}

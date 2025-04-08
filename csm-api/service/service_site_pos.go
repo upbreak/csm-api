@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"fmt"
 	"strings"
 )
@@ -18,23 +19,21 @@ type ServiceSitePos struct {
 //
 // @param sno: 현장 고유번호
 func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity.SitePos, error) {
-	sitePosSql, err := s.Store.GetSitePosData(ctx, s.DB, sno)
+	sitePos, err := s.Store.GetSitePosData(ctx, s.DB, sno)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site_pos/GetSitePosData err: %w", err)
 	}
 
-	sitePos := &entity.SitePos{}
-	sitePos.ToSitePos(sitePosSql)
-
-	if sitePos.RoadAddress == "" {
-		depthArray := []string{sitePos.RoadAddressNameDepth1, sitePos.RoadAddressNameDepth2, sitePos.RoadAddressNameDepth3, sitePos.RoadAddressNameDepth4, sitePos.RoadAddressNameDepth5}
+	if sitePos.RoadAddress.String == "" {
+		depthArray := []string{sitePos.RoadAddressNameDepth1.String, sitePos.RoadAddressNameDepth2.String, sitePos.RoadAddressNameDepth3.String, sitePos.RoadAddressNameDepth4.String, sitePos.RoadAddressNameDepth5.String}
 		roadAddress := ""
 		for _, depth := range depthArray {
 			if depth != "" {
 				roadAddress = roadAddress + " " + depth
 			}
 		}
-		sitePos.RoadAddress = strings.Trim(roadAddress, " ")
+		sitePos.RoadAddress = utils.ParseNullString(strings.Trim(roadAddress, " "))
 	}
 
 	return sitePos, nil
@@ -49,12 +48,8 @@ func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity
 //     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
 func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) error {
 
-	sitePosSql := &entity.SitePosSql{}
-
-	if err := entity.ConvertToSQLNulls(sitePos, sitePosSql); err != nil {
-		return fmt.Errorf("service_site_pos/ConvertSliceToSQLNulls err: %w", err)
-	}
-	if err := s.Store.ModifySitePosData(ctx, s.TDB, sno, *sitePosSql); err != nil {
+	if err := s.Store.ModifySitePosData(ctx, s.TDB, sno, sitePos); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site_pos/ModifySitePosData err: %w", err)
 	}
 

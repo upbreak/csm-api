@@ -23,3 +23,15 @@ func ParseNullInt(s string) null.Int {
 	}
 	return null.NewInt(i, true)
 }
+
+func ParseNullFloat(s string) null.Float {
+	if s == "" {
+		return null.NewFloat(0, false)
+	}
+
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return null.NewFloat(0, false)
+	}
+	return null.NewFloat(f, true)
+}

@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"csm-api/utils"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -154,14 +155,14 @@ func (h *HandlerUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.JobNo = jobNo
-	search.CompName = compName
-	search.OrderCompName = orderCompName
-	search.JobName = jobName
-	search.JobPmName = jobPmName
-	search.JobSd = jobSd
-	search.JobEd = jobEd
-	search.CdNm = cdNm
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.CompName = utils.ParseNullString(compName)
+	search.OrderCompName = utils.ParseNullString(orderCompName)
+	search.JobName = utils.ParseNullString(jobName)
+	search.JobPmName = utils.ParseNullString(jobPmName)
+	search.JobSd = utils.ParseNullString(jobSd)
+	search.JobEd = utils.ParseNullString(jobEd)
+	search.CdNm = utils.ParseNullString(cdNm)
 
 	// 프로젝트 조회
 	list, err := h.Service.GetUsedProjectList(ctx, page, search)
@@ -244,14 +245,14 @@ func (h *HandlerAllProject) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.JobNo = jobNo
-	search.CompName = compName
-	search.OrderCompName = orderCompName
-	search.JobName = jobName
-	search.JobPmName = jobPmName
-	search.JobSd = jobSd
-	search.JobEd = jobEd
-	search.CdNm = cdNm
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.CompName = utils.ParseNullString(compName)
+	search.OrderCompName = utils.ParseNullString(orderCompName)
+	search.JobName = utils.ParseNullString(jobName)
+	search.JobPmName = utils.ParseNullString(jobPmName)
+	search.JobSd = utils.ParseNullString(jobSd)
+	search.JobEd = utils.ParseNullString(jobEd)
+	search.CdNm = utils.ParseNullString(cdNm)
 
 	list, err := h.Service.GetAllProjectList(ctx, page, search)
 
@@ -349,14 +350,14 @@ func (h *HandlerStaffProject) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
-	search.JobNo = jobNo
-	search.CompName = compName
-	search.OrderCompName = orderCompName
-	search.JobName = jobName
-	search.JobPmName = jobPmName
-	search.JobSd = jobSd
-	search.JobEd = jobEd
-	search.CdNm = cdNm
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.CompName = utils.ParseNullString(compName)
+	search.OrderCompName = utils.ParseNullString(orderCompName)
+	search.JobName = utils.ParseNullString(jobName)
+	search.JobPmName = utils.ParseNullString(jobPmName)
+	search.JobSd = utils.ParseNullString(jobSd)
+	search.JobEd = utils.ParseNullString(jobEd)
+	search.CdNm = utils.ParseNullString(cdNm)
 
 	list, err := h.Service.GetStaffProjectList(ctx, page, search, int64UNO)
 
@@ -554,13 +555,13 @@ func (h *HandlerNonUsedProject) ServeHTTP(w http.ResponseWriter, r *http.Request
 	page.Order = order
 	page.RnumOrder = rnumOrder
 
-	search.Jno, _ = strconv.ParseInt(jno, 10, 64)
-	search.JobNo = jobNo
-	search.JobName = JobName
-	search.JobYear, _ = strconv.ParseInt(JobYear, 10, 64)
-	search.JobSd = JobSd
-	search.JobEd = JobEd
-	search.JobPmNm = UserName
+	search.Jno = utils.ParseNullInt(jno)
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.JobName = utils.ParseNullString(JobName)
+	search.JobYear = utils.ParseNullInt(JobYear)
+	search.JobSd = utils.ParseNullString(JobSd)
+	search.JobEd = utils.ParseNullString(JobEd)
+	search.JobPmNm = utils.ParseNullString(UserName)
 
 	list, err := h.Service.GetNonUsedProjectList(ctx, page, search, retrySearch)
 	if err != nil {

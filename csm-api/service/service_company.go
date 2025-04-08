@@ -30,14 +30,9 @@ type ServiceCompany struct {
 // - jno sql.NullInt64: 프로젝트 고유번호
 func (s *ServiceCompany) GetJobInfo(ctx context.Context, jno int64) (*entity.JobInfo, error) {
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
-	sqlData, err := s.Store.GetJobInfo(ctx, s.SafeDB, jnoSql)
+	data, err := s.Store.GetJobInfo(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_conpany/GetJobInfo err: %w", err)
-	}
-
-	data := &entity.JobInfo{}
-	if err = entity.ConvertToRegular(*sqlData, data); err != nil {
-		return nil, fmt.Errorf("service_conpany;jonInfo/ConvertSliceToRegular err: %w", err)
 	}
 	return data, nil
 }
@@ -47,14 +42,9 @@ func (s *ServiceCompany) GetJobInfo(ctx context.Context, jno int64) (*entity.Job
 // - jno int64: 프로젝트 고유번호
 func (s *ServiceCompany) GetSiteManagerList(ctx context.Context, jno int64) (*entity.Managers, error) {
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
-	sqlList, err := s.Store.GetSiteManagerList(ctx, s.TimeSheetDB, jnoSql)
+	list, err := s.Store.GetSiteManagerList(ctx, s.TimeSheetDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetSiteManagerList err: %w", err)
-	}
-
-	list := &entity.Managers{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_company;siteManager/ConvertSliceToRegular err: %w", err)
 	}
 
 	return list, nil
@@ -65,14 +55,9 @@ func (s *ServiceCompany) GetSiteManagerList(ctx context.Context, jno int64) (*en
 // - jno int64: 프로젝트 고유번호
 func (s *ServiceCompany) GetSafeManagerList(ctx context.Context, jno int64) (*entity.Managers, error) {
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
-	sqlList, err := s.Store.GetSafeManagerList(ctx, s.SafeDB, jnoSql)
+	list, err := s.Store.GetSafeManagerList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetSafeManagerList err: %w", err)
-	}
-
-	list := &entity.Managers{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_company;safeManager/ConvertSliceToRegular err: %w", err)
 	}
 
 	return list, nil
@@ -83,14 +68,9 @@ func (s *ServiceCompany) GetSafeManagerList(ctx context.Context, jno int64) (*en
 // - jno int64: 프로젝트 고유번호
 func (s *ServiceCompany) GetSupervisorList(ctx context.Context, jno int64) (*entity.Supervisors, error) {
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
-	sqlList, err := s.Store.GetSupervisorList(ctx, s.SafeDB, jnoSql)
+	list, err := s.Store.GetSupervisorList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetSupervisorList err: %w", err)
-	}
-
-	list := &entity.Supervisors{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_company;supervisor/ConvertSliceToRegular err: %w", err)
 	}
 
 	return list, nil
@@ -99,14 +79,9 @@ func (s *ServiceCompany) GetSupervisorList(ctx context.Context, jno int64) (*ent
 // func: 공종 정보 조회
 // @param
 func (s *ServiceCompany) GetWorkInfoList(ctx context.Context) (*entity.WorkInfos, error) {
-	sqlList, err := s.Store.GetWorkInfoList(ctx, s.SafeDB)
+	list, err := s.Store.GetWorkInfoList(ctx, s.SafeDB)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetWorkInfoList err: %w", err)
-	}
-
-	list := &entity.WorkInfos{}
-	if err = entity.ConvertSliceToRegular(*sqlList, list); err != nil {
-		return nil, fmt.Errorf("service_company;workInfo/ConvertSliceToRegular err: %w", err)
 	}
 
 	return list, nil
@@ -120,21 +95,17 @@ func (s *ServiceCompany) GetCompanyInfoList(ctx context.Context, jno int64) (*en
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
 
 	// 협력업체 정보 조회
-	sqlCompanyList, err := s.Store.GetCompanyInfoList(ctx, s.SafeDB, jnoSql)
+	companyList, err := s.Store.GetCompanyInfoList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetCompanyInfoList err: %w", err)
 	}
-	companyList := &entity.CompanyInfos{}
-	if err = entity.ConvertSliceToRegular(*sqlCompanyList, companyList); err != nil {
-		return nil, fmt.Errorf("service_company;companyInfo/ConvertSliceToRegular err: %w", err)
-	}
 	for _, item := range *companyList {
 		temp := &entity.CompanyInfoRes{}
-		temp.Jno = item.Jno
-		temp.Cno = item.Cno
-		temp.Id = item.Id
-		temp.Cellphone = item.Cellphone
-		temp.Email = item.Email
+		temp.Jno = item.Jno.Int64
+		temp.Cno = item.Cno.Int64
+		temp.Id = item.Id.String
+		temp.Cellphone = item.Cellphone.String
+		temp.Email = item.Email.String
 		*list = append(*list, temp)
 	}
 
@@ -153,13 +124,9 @@ func (s *ServiceCompany) GetCompanyInfoList(ctx context.Context, jno int64) (*en
 	}
 
 	// 공종 조회
-	sqlWorkInfoList, err := s.Store.GetCompanyWorkInfoList(ctx, s.SafeDB, jnoSql)
+	workInfoList, err := s.Store.GetCompanyWorkInfoList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetCompanyWorkInfoList err: %w", err)
-	}
-	workInfoList := &entity.WorkInfos{}
-	if err = entity.ConvertSliceToRegular(*sqlWorkInfoList, workInfoList); err != nil {
-		return nil, fmt.Errorf("service_company;companyWorkInfo/ConvertSliceToRegular err: %w", err)
 	}
 
 	companyApiValues := entity.CompanyApiValues{}
@@ -188,8 +155,8 @@ func (s *ServiceCompany) GetCompanyInfoList(ctx context.Context, jno int64) (*en
 		}
 
 		for _, work := range *workInfoList {
-			if item.Jno == work.Jno && item.Cno == work.Cno {
-				item.WorkInfo = append(item.WorkInfo, work.FuncNo)
+			if item.Jno == work.Jno.Int64 && item.Cno == work.Cno.Int64 {
+				item.WorkInfo = append(item.WorkInfo, work.FuncNo.Int64)
 			}
 		}
 	}

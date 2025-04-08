@@ -22,8 +22,8 @@ import (
 // func: 근태인식기 전체 조회
 // @param
 // - page entity.PageSql: 현재페이지 번호, 리스트 목록 개수
-func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql, retry string) (*entity.DeviceSqls, error) {
-	sqls := entity.DeviceSqls{}
+func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Device, retry string) (*entity.Devices, error) {
+	list := entity.Devices{}
 
 	condition := "AND 1=1"
 	if search.DeviceNm.Valid {
@@ -104,17 +104,18 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 				)
 				WHERE RNUM > :2`, condition, retryCondition, order)
 
-	if err := db.SelectContext(ctx, &sqls, query, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &list, query, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetDeviceList err: %v", err)
 	}
 
-	return &sqls, nil
+	return &list, nil
 }
 
 // func: 근태인식기 전체 개수 조회
 // @param
 // -
-func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql, retry string) (int, error) {
+func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search entity.Device, retry string) (int, error) {
 	var count int
 
 	condition := "AND 1=1"
@@ -177,6 +178,7 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetDeviceListCount fail: %w", err)
 	}
 	return count, nil
@@ -185,9 +187,10 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 // func: 근태인식기 추가
 // @param
 // - device entity.DeviceSql: SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, REG_USER
-func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error {
+func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.Device) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
@@ -218,13 +221,17 @@ func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.D
 	_, err = tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, agent, device.RegUser)
 
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
+		origErr := err
+		if err = tx.Rollback(); err != nil {
+			//TODO: 에러 아카이브
+			return fmt.Errorf("AddDevice; Failed to rollback transaction: %v", err)
 		}
-		return fmt.Errorf("AddDevice fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("AddDevice fail: %v", origErr)
 	}
 
 	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
@@ -233,9 +240,10 @@ func (r *Repository) AddDevice(ctx context.Context, db Beginner, device entity.D
 // func: 근태인식기 수정
 // @param
 // - device entity.DeviceSql: DNO, SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, MOD_USER
-func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error {
+func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entity.Device) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
@@ -257,13 +265,16 @@ func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entit
 	_, err = tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, device.ModUser, agent, device.Dno)
 
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
 			return err
 		}
-		return fmt.Errorf("ModifyDevice fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("ModifyDevice Rollback fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
@@ -275,6 +286,7 @@ func (r *Repository) ModifyDevice(ctx context.Context, db Beginner, device entit
 func (r *Repository) RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("Failed to begin transaction: %v", err)
 	}
 
@@ -283,13 +295,16 @@ func (r *Repository) RemoveDevice(ctx context.Context, db Beginner, dno sql.Null
 	_, err = tx.ExecContext(ctx, query, dno)
 
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
+		origErr := err
+		if err = tx.Rollback(); err != nil {
 			return err
 		}
-		return fmt.Errorf("RemoveDevice fail: %v", err)
+		//TODO: 에러 아카이브
+		return fmt.Errorf("RemoveDevice Rollback fail: %v", origErr)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil

@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-func (r *Repository) GetUserInfoPmPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPmPeInfoSqls, error) {
-	userPmPeInfoSqls := entity.UserPmPeInfoSqls{}
+func (r *Repository) GetUserInfoPmPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPmPeInfos, error) {
+	userPmPeInfos := entity.UserPmPeInfos{}
 
 	if len(unoList) == 0 {
-		return &entity.UserPmPeInfoSqls{}, nil
+		return &entity.UserPmPeInfos{}, nil
 	}
 
 	placeholders := make([]string, len(unoList))
@@ -30,9 +30,10 @@ func (r *Repository) GetUserInfoPmPeList(ctx context.Context, db Queryer, unoLis
 			FROM COMMON.V_BIZ_USER_INFO t1
 			WHERE t1.UNO IN (%s)`, strings.Join(placeholders, ","))
 
-	if err := db.SelectContext(ctx, &userPmPeInfoSqls, sql, args...); err != nil {
+	if err := db.SelectContext(ctx, &userPmPeInfos, sql, args...); err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetUserInfoPmPeList fail: %w", err)
 	}
 
-	return &userPmPeInfoSqls, nil
+	return &userPmPeInfos, nil
 }

@@ -13,12 +13,11 @@ type ServiceCode struct {
 }
 
 func (s *ServiceCode) GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error) {
-	sqls, err := s.Store.GetCodeList(ctx, s.DB, pCode)
+	list, err := s.Store.GetCodeList(ctx, s.DB, pCode)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_code/GetCodeList err: %w", err)
 	}
-	codes := &entity.Codes{}
-	codes.ToCodes(sqls)
 
-	return codes, nil
+	return list, nil
 }

@@ -1,8 +1,7 @@
 package entity
 
 import (
-	"database/sql"
-	"time"
+	"github.com/guregu/null"
 )
 
 /**
@@ -16,115 +15,65 @@ import (
 
 // struct: Begin:job 정보
 type JobInfo struct {
-	RowNum        int64  `json:"rnum"`
-	Jno           int64  `json:"jno"`
-	Sno           int64  `json:"sno"`
-	JobName       string `json:"job_name"`
-	JobNo         string `json:"job_no"`
-	JobSd         string `json:"job_sd"`
-	JobEd         string `json:"job_ed"`
-	CompName      string `json:"comp_name"`
-	OrderCompName string `json:"order_comp_name"`
-	JobPmName     string `json:"job_pm_name"`
-	JobPmDutyName string `json:"job_pm_duty_name"`
-	CdNm          string `json:"cd_nm"`
+	RowNum        null.Int    `json:"rnum" db:"RNUM"`
+	Jno           null.Int    `json:"jno" db:"JNO"`
+	Sno           null.Int    `json:"sno" db:"SNO"`
+	JobName       null.String `json:"job_name" db:"JOB_NAME"`
+	JobNo         null.String `json:"job_no" db:"JOB_NO"`
+	JobSd         null.String `json:"job_sd" db:"JOB_SD"`
+	JobEd         null.String `json:"job_ed" db:"JOB_ED"`
+	CompName      null.String `json:"comp_name" db:"COMP_NAME"`
+	OrderCompName null.String `json:"order_comp_name" db:"ORDER_COMP_NAME"`
+	JobPmName     null.String `json:"job_pm_name" db:"JOB_PM_NAME"`
+	JobPmDutyName null.String `json:"job_pm_duty_name" db:"JOB_PM_DUTY_NAME"`
+	CdNm          null.String `json:"cd_nm" db:"CD_NM"`
 }
 type JobInfos []*JobInfo
-type JobInfoSql struct {
-	RowNum        sql.NullInt64  `db:"RNUM"`
-	Jno           sql.NullInt64  `db:"JNO"`
-	Sno           sql.NullInt64  `db:"SNO"`
-	JobName       sql.NullString `db:"JOB_NAME"`
-	JobNo         sql.NullString `db:"JOB_NO"`
-	JobSd         sql.NullString `db:"JOB_SD"`
-	JobEd         sql.NullString `db:"JOB_ED"`
-	CompName      sql.NullString `db:"COMP_NAME"`
-	OrderCompName sql.NullString `db:"ORDER_COMP_NAME"`
-	JobPmName     sql.NullString `db:"JOB_PM_NAME"`
-	JobPmDutyName sql.NullString `db:"DUTY_NAME"`
-	CdNm          sql.NullString `db:"CD_NM"`
-}
-type JobInfoSqls []*JobInfoSql
 
 // struct: End:job 정보
 
 // struct: Begin::현장소장|안전관리자
 type Manager struct {
-	Uno        int64  `json:"uno"`
-	Jno        int64  `json:"jno"`
-	UserName   string `json:"user_name"`
-	DutyName   string `json:"duty_name"`
-	UserId     string `json:"user_id"`
-	TeamLeader string `json:"team_leader"`
-	UserInfo   string `json:"user_info"`
+	Uno        null.Int    `json:"uno" db:"UNO"`
+	Jno        null.Int    `json:"jno" db:"JNO"`
+	UserName   null.String `json:"user_name" db:"USER_NAME"`
+	DutyName   null.String `json:"duty_name" db:"DUTY_NAME"`
+	UserId     null.String `json:"user_id" db:"USER_ID"`
+	TeamLeader null.String `json:"team_leader" db:"TEAM_LEADER"`
+	UserInfo   null.String `json:"user_info" db:"USER_INFO"`
 }
 type Managers []*Manager
-
-type ManagerSql struct {
-	Uno        sql.NullInt64  `db:"UNO"`
-	Jno        sql.NullInt64  `db:"JNO"`
-	UserName   sql.NullString `db:"USER_NAME"`
-	DutyName   sql.NullString `db:"DUTY_NAME"`
-	UserId     sql.NullString `db:"USER_ID"`
-	TeamLeader sql.NullString `db:"TEAM_LEADER"`
-	UserInfo   sql.NullString `db:"USER_INFO"`
-}
-type ManagerSqls []*ManagerSql
 
 // struct: end::현장소장|안전관리자
 
 // struct: Begin::관리감독자
 type Supervisor struct {
-	Uno       int64     `json:"uno"`
-	Jno       int64     `json:"jno"`
-	UserName  string    `json:"user_name"`
-	UserId    string    `json:"user_id"`
-	DutyName  string    `json:"duty_name"`
-	DutyCd    string    `json:"duty_cd"`
-	JobdutyId string    `json:"jobduty_id"`
-	JoinDate  time.Time `json:"join_date"`
-	FuncNo    string    `json:"func_no"`
+	Uno       null.Int    `json:"uno" db:"UNO"`
+	Jno       null.Int    `json:"jno" db:"JNO"`
+	UserName  null.String `json:"user_name" db:"USER_NAME"`
+	UserId    null.String `json:"user_id" db:"USER_ID"`
+	DutyName  null.String `json:"duty_name" db:"DUTY_NAME"`
+	DutyCd    null.String `json:"duty_cd" db:"DUTY_CD"`
+	JobdutyId null.String `json:"jobduty_id" db:"JOBDUTY_ID"`
+	JoinDate  null.Time   `json:"join_date" db:"JOIN_DATE"`
+	FuncNo    null.String `json:"func_no" db:"FUNC_NO"`
 }
 type Supervisors []*Supervisor
-
-type SupervisorSql struct {
-	Uno       sql.NullInt64  `db:"UNO"`
-	Jno       sql.NullInt64  `db:"JNO"`
-	UserName  sql.NullString `db:"USER_NAME"`
-	UserId    sql.NullString `db:"USER_ID"`
-	DutyName  sql.NullString `db:"DUTY_NAME"`
-	DutyCd    sql.NullString `db:"DUTY_CD"`
-	JobdutyId sql.NullString `db:"JOBDUTY_ID"`
-	JoinDate  sql.NullTime   `db:"JOIN_DATE"`
-	FuncNo    sql.NullString `db:"FUNC_NO"`
-}
-type SupervisorSqls []*SupervisorSql
 
 // struct: end::관리감독자
 
 // struct: Begin::협력업체 정보
 type CompanyInfo struct {
-	Jno       int64  `json:"jno"`
-	Cno       int64  `json:"cno"`
-	Id        string `json:"id"`
-	Pw        string `json:"pw"`
-	Cellphone string `json:"cellphone"`
-	Email     string `json:"email"`
-	UserName  string `json:"username"`
-	DutyName  string `json:"duty_name"`
+	Jno       null.Int    `json:"jno" db:"JNO"`
+	Cno       null.Int    `json:"cno" db:"CNO"`
+	Id        null.String `json:"id" db:"ID"`
+	Pw        null.String `json:"pw" db:"PW"`
+	Cellphone null.String `json:"cellphone" db:"CELLPHONE"`
+	Email     null.String `json:"email" db:"EMAIL"`
+	UserName  null.String `json:"username" db:"USER_NAME"`
+	DutyName  null.String `json:"duty_name" db:"DUTY_NAME"`
 }
 type CompanyInfos []*CompanyInfo
-type CompanyInfoSql struct {
-	Jno       sql.NullInt64  `db:"JNO"`
-	Cno       sql.NullInt64  `db:"CNO"`
-	Id        sql.NullString `db:"ID"`
-	Pw        sql.NullString `db:"PW"`
-	Cellphone sql.NullString `db:"CELLPHONE"`
-	Email     sql.NullString `db:"EMAIL"`
-	UserName  sql.NullString `db:"USER_NAME"`
-	DutyName  sql.NullString `db:"DUTY_NAME"`
-}
-type CompanyInfoSqls []*CompanyInfoSql
 
 type CompanyInfoRes struct {
 	Jno        int64   `json:"jno"`
@@ -142,19 +91,12 @@ type CompanyInfoResList []*CompanyInfoRes
 
 // struct: Begin::공종 정보
 type WorkInfo struct {
-	Cno      int64  `json:"Cno"`
-	Jno      int64  `json:"jno"`
-	FuncNo   int64  `json:"func_no"`
-	FuncName string `json:"func_name"`
+	Cno      null.Int    `json:"Cno" db:"CNO"`
+	Jno      null.Int    `json:"jno" db:"JNO"`
+	FuncNo   null.Int    `json:"func_no" db:"FUNC_NO"`
+	FuncName null.String `json:"func_name" db:"FUNC_NAME"`
 }
 type WorkInfos []*WorkInfo
-type WorkInfosql struct {
-	Cno      sql.NullInt64  `db:"CNO"`
-	Jno      sql.NullInt64  `db:"JNO"`
-	FuncNo   sql.NullInt64  `db:"FUNC_NO"`
-	FuncName sql.NullString `db:"FUNC_NAME"`
-}
-type WorkInfosqls []*WorkInfosql
 
 // struct: End::공종 정보
 
