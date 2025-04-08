@@ -74,10 +74,10 @@ type NoticeStore interface {
 }
 
 type DeviceStore interface {
-	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.DeviceSql, retry string) (*entity.DeviceSqls, error)
-	GetDeviceListCount(ctx context.Context, db Queryer, search entity.DeviceSql, retry string) (int, error)
-	AddDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
-	ModifyDevice(ctx context.Context, db Beginner, device entity.DeviceSql) error
+	GetDeviceList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Device, retry string) (*entity.Devices, error)
+	GetDeviceListCount(ctx context.Context, db Queryer, search entity.Device, retry string) (int, error)
+	AddDevice(ctx context.Context, db Beginner, device entity.Device) error
+	ModifyDevice(ctx context.Context, db Beginner, device entity.Device) error
 	RemoveDevice(ctx context.Context, db Beginner, dno sql.NullInt64) error
 }
 

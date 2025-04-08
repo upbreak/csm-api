@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"csm-api/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -55,11 +56,11 @@ func (d *DeviceListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 
-	search.DeviceNm = r.URL.Query().Get("device_nm")
-	search.DeviceSn = r.URL.Query().Get("device_sn")
-	search.SiteNm = r.URL.Query().Get("site_nm")
-	search.Etc = r.URL.Query().Get("etc")
-	search.IsUse = r.URL.Query().Get("is_use")
+	search.DeviceNm = utils.ParseNullString(r.URL.Query().Get("device_nm"))
+	search.DeviceSn = utils.ParseNullString(r.URL.Query().Get("device_sn"))
+	search.SiteNm = utils.ParseNullString(r.URL.Query().Get("site_nm"))
+	search.Etc = utils.ParseNullString(r.URL.Query().Get("etc"))
+	search.IsUse = utils.ParseNullString(r.URL.Query().Get("is_use"))
 	retrySearchText := r.URL.Query().Get("retry_search_text")
 
 	// 근태인식기 목록

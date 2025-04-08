@@ -30,19 +30,16 @@ type ServiceDevice struct {
 func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, search entity.Device, retry string) (*entity.Devices, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
-	searchSql := entity.DeviceSql{}
-	searchSql = *searchSql.OfDeviceSql(search)
-
 	if err != nil {
-		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
-	}
-	dbList, err := s.Store.GetDeviceList(ctx, s.DB, pageSql, searchSql, retry)
-	if err != nil {
+		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
 
-	list := &entity.Devices{}
-	list.ToDevices(dbList)
+	list, err := s.Store.GetDeviceList(ctx, s.DB, pageSql, search, retry)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
+	}
 
 	return list, nil
 }
@@ -51,11 +48,9 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 // @param
 // -
 func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device, retry string) (int, error) {
-	searchSql := entity.DeviceSql{}
-	searchSql = *searchSql.OfDeviceSql(search)
-
-	count, err := s.Store.GetDeviceListCount(ctx, s.DB, searchSql, retry)
+	count, err := s.Store.GetDeviceListCount(ctx, s.DB, search, retry)
 	if err != nil {
+		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_device/GetDeviceListCount err: %w", err)
 	}
 
@@ -66,9 +61,8 @@ func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.De
 // @param
 // - device entity.Device: SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, REG_USER
 func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) error {
-	deviceSql := &entity.DeviceSql{}
-	deviceSql = deviceSql.OfDeviceSql(device)
-	if err := s.Store.AddDevice(ctx, s.TDB, *deviceSql); err != nil {
+	if err := s.Store.AddDevice(ctx, s.TDB, device); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/AddDevice err: %w", err)
 	}
 	return nil
@@ -78,9 +72,8 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) err
 // @param
 // - device entity.DeviceSql: DNO, SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, MOD_USER
 func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) error {
-	deviceSql := &entity.DeviceSql{}
-	deviceSql = deviceSql.OfDeviceSql(device)
-	if err := s.Store.ModifyDevice(ctx, s.TDB, *deviceSql); err != nil {
+	if err := s.Store.ModifyDevice(ctx, s.TDB, device); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/UpdateDevice err: %w", err)
 	}
 	return nil
@@ -97,6 +90,7 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) error {
 		dnoSql = sql.NullInt64{Valid: false}
 	}
 	if err := s.Store.RemoveDevice(ctx, s.TDB, dnoSql); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/RemoveDevice err: %w", err)
 	}
 	return nil
