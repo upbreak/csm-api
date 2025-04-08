@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"csm-api/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -28,17 +29,17 @@ type NoticeListHandler struct {
 func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	uno := r.PathValue("uno")
-	role := r.URL.Query().Get("role")
+	role := utils.ParseNullString(r.URL.Query().Get("role"))
 
-	int64UNO, err := strconv.ParseInt(uno, 10, 64)
+	intUNO := utils.ParseNullInt(uno)
 
-	if err != nil {
+	if uno == "" {
 		RespondJSON(
 			ctx,
 			w,
 			&ErrResponse{
 				Result:         Failure,
-				Message:        err.Error(),
+				Message:        "uno parameter is missing",
 				Details:        ParsingError,
 				HttpStatusCode: http.StatusInternalServerError,
 			},
@@ -71,19 +72,19 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	page.Order = order
 
-	search.Jno, _ = strconv.ParseInt(r.URL.Query().Get("jno"), 10, 64)
-	search.JobLocName = r.URL.Query().Get("loc_name")
-	search.JobName = r.URL.Query().Get("site_nm")
-	search.Title = r.URL.Query().Get("title")
-	search.UserInfo = r.URL.Query().Get("user_info")
+	search.Jno = utils.ParseNullInt(r.URL.Query().Get("jno"))
+	search.JobLocName = utils.ParseNullString(r.URL.Query().Get("job_loc_name"))
+	search.JobName = utils.ParseNullString(r.URL.Query().Get("job_name"))
+	search.Title = utils.ParseNullString(r.URL.Query().Get("title"))
+	search.UserInfo = utils.ParseNullString(r.URL.Query().Get("user_info"))
 
-	notices, err := n.Service.GetNoticeList(ctx, int64UNO, role, page, search)
+	notices, err := n.Service.GetNoticeList(ctx, intUNO, role, page, search)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	count, err := n.Service.GetNoticeListCount(ctx, int64UNO, role, search)
+	count, err := n.Service.GetNoticeListCount(ctx, intUNO, role, search)
 	if err != nil {
 		RespondJSON(
 			ctx,
@@ -120,6 +121,7 @@ type NoticeAddHandler struct {
 func (n *NoticeAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notice := entity.Notice{}
+
 	if err := json.NewDecoder(r.Body).Decode(&notice); err != nil {
 		RespondJSON(
 			ctx,
@@ -210,17 +212,15 @@ type NoticeDeleteHandler struct {
 func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	idx := r.PathValue("idx")
+	intIdx := utils.ParseNullInt(r.PathValue("idx"))
 
-	int64IDX, err := strconv.ParseInt(idx, 10, 64)
-
-	if err != nil {
+	if intIdx.Valid == false {
 		RespondJSON(
 			ctx,
 			w,
 			&ErrResponse{
 				Result:         Failure,
-				Message:        err.Error(),
+				Message:        "idx parameter is missing",
 				Details:        ParsingError,
 				HttpStatusCode: http.StatusInternalServerError,
 			},
@@ -229,7 +229,7 @@ func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := n.Service.RemoveNotice(ctx, int64IDX); err != nil {
+	if err := n.Service.RemoveNotice(ctx, intIdx); err != nil {
 		RespondJSON(
 			ctx,
 			w,
@@ -246,38 +246,4 @@ func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
 
-}
-
-// 공지기간 조회
-type NoticePeriodHandler struct {
-	Service service.NoticeService
-}
-
-// func: 공지기간 조회
-// @params
-// -
-func (n *NoticePeriodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	noticePeriods, err := n.Service.GetNoticePeriod(ctx)
-	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
-	}
-
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			Periods entity.NoticePeriods `json:"periods"`
-		}{Periods: *noticePeriods},
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }

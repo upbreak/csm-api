@@ -4,8 +4,8 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"database/sql"
 	"fmt"
+	"github.com/guregu/null"
 )
 
 type ServiceNotice struct {
@@ -17,36 +17,27 @@ type ServiceNotice struct {
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재 페이지번호, 리스트 목록 개수
-func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno int64, role string, page entity.Page, search entity.Notice) (*entity.Notices, error) {
-	var unoSql sql.NullInt64
-	if uno != 0 {
-		unoSql = sql.NullInt64{Int64: uno, Valid: true}
-	} else {
-		return nil, fmt.Errorf("uno parameter is missing")
-	}
+func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno null.Int, role null.String, page entity.Page, search entity.Notice) (*entity.Notices, error) {
 
 	pageSql := entity.PageSql{}
-	searchSql := &entity.NoticeSql{}
 	pageSql, err := pageSql.OfPageSql(page)
-	searchSql = searchSql.OfNoticeSql(search)
 
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
 	var roleInt int
-	if role == "ADMIN" {
+	if role.String == "ADMIN" {
 		roleInt = 1
 	} else {
 		roleInt = 0
 	}
-	noticeSqls, err := s.Store.GetNoticeList(ctx, s.DB, unoSql, roleInt, pageSql, *searchSql)
+	notices, err := s.Store.GetNoticeList(ctx, s.DB, uno, roleInt, pageSql, search)
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return &entity.Notices{}, fmt.Errorf("fail to list notice: %w", err)
 	}
-
-	notices := &entity.Notices{}
-	notices.ToNotices(noticeSqls)
 
 	return notices, nil
 }
@@ -54,26 +45,18 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno int64, role strin
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno int64, role string, search entity.Notice) (int, error) {
-	searchSql := &entity.NoticeSql{}
-	searchSql = searchSql.OfNoticeSql(search)
-
-	var unoSql sql.NullInt64
-	if uno != 0 {
-		unoSql = sql.NullInt64{Int64: uno, Valid: true}
-	} else {
-		return 0, fmt.Errorf("uno parameter is missing")
-	}
+func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno null.Int, role null.String, search entity.Notice) (int, error) {
 
 	var roleInt int
-	if role == "ADMIN" {
+	if role.String == "ADMIN" {
 		roleInt = 1
 	} else {
 		roleInt = 0
 	}
 
-	count, err := s.Store.GetNoticeListCount(ctx, s.DB, unoSql, roleInt, *searchSql)
+	count, err := s.Store.GetNoticeListCount(ctx, s.DB, uno, roleInt, search)
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
 	}
 
@@ -85,10 +68,9 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno int64, role 
 // @param
 // - notice entity.Notice: JNO, TITLE, CONTENT, SHOW_YN, PERIOD_CODE, REG_UNO, REG_USER
 func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) error {
-	noticeSql := &entity.NoticeSql{}
-	noticeSql = noticeSql.OfNoticeSql(notice)
 
-	if err := s.Store.AddNotice(ctx, s.TDB, *noticeSql); err != nil {
+	if err := s.Store.AddNotice(ctx, s.TDB, notice); err != nil {
+		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/AddNotice err : %w", err)
 	}
 
@@ -99,10 +81,9 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) err
 // @param
 // -notice entity.Notice: IDX, JNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
 func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) error {
-	noticeSql := &entity.NoticeSql{}
-	noticeSql = noticeSql.OfNoticeSql(notice)
 
-	if err := s.Store.ModifyNotice(ctx, s.TDB, *noticeSql); err != nil {
+	if err := s.Store.ModifyNotice(ctx, s.TDB, notice); err != nil {
+		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/ModifyNotice err: %w", err)
 	}
 
@@ -112,36 +93,12 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 // func: 공지사항 삭제
 // @param
 // - IDX: 공지사항 인덱스
-func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx int64) error {
-	var idxSql entity.NoticeID
+func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx null.Int) error {
 
-	if idx != 0 {
-		idxSql = entity.NoticeID(idx)
-	} else {
-		return fmt.Errorf("idx parameter is missing")
-	}
-
-	if err := s.Store.RemoveNotice(ctx, s.TDB, idxSql); err != nil {
+	if err := s.Store.RemoveNotice(ctx, s.TDB, idx); err != nil {
+		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/RemomveNotice err: %w", err)
 	}
 
 	return nil
-}
-
-// func: 공지 기간 조회
-// @param
-// -
-func (s *ServiceNotice) GetNoticePeriod(ctx context.Context) (*entity.NoticePeriods, error) {
-
-	periodSqls, err := s.Store.GetNoticePeriod(ctx, s.DB)
-	if err != nil {
-		return &entity.NoticePeriods{}, fmt.Errorf("service_notice/GetNoticePeriod err: %w", err)
-	}
-
-	periods := &entity.NoticePeriods{}
-	if err = entity.ConvertSliceToRegular(*periodSqls, periods); err != nil {
-		return &entity.NoticePeriods{}, fmt.Errorf("service_notice/ConvertSliceToRegular error: %w", err)
-	}
-
-	return periods, nil
 }

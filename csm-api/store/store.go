@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"database/sql"
+	"github.com/guregu/null"
 	"time"
 )
 
@@ -65,12 +66,11 @@ type CodeStore interface {
 }
 
 type NoticeStore interface {
-	GetNoticeList(ctx context.Context, db Queryer, uno sql.NullInt64, role int, pageSql entity.PageSql, search entity.NoticeSql) (*entity.NoticeSqls, error)
-	GetNoticeListCount(ctx context.Context, db Queryer, uno sql.NullInt64, role int, search entity.NoticeSql) (int, error)
-	AddNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
-	ModifyNotice(ctx context.Context, db Beginner, noticeSql entity.NoticeSql) error
-	RemoveNotice(ctx context.Context, db Beginner, idx entity.NoticeID) error
-	GetNoticePeriod(ctx context.Context, db Queryer) (*entity.NoticePeriodSqls, error)
+	GetNoticeList(ctx context.Context, db Queryer, uno null.Int, role int, pageSql entity.PageSql, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, db Queryer, uno null.Int, role int, search entity.Notice) (int, error)
+	AddNotice(ctx context.Context, db Beginner, notice entity.Notice) error
+	ModifyNotice(ctx context.Context, db Beginner, notice entity.Notice) error
+	RemoveNotice(ctx context.Context, db Beginner, idx null.Int) error
 }
 
 type DeviceStore interface {
