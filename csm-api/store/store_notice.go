@@ -31,11 +31,11 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 
 	// 조건
 	condition := "1=1"
-	condition = utils.Int64WhereConvert2(condition, search.Jno, "JNO")
-	condition = utils.StringWhereConvert2(condition, search.JobLocName, "JOB_LOC_NAME")
-	condition = utils.StringWhereConvert2(condition, search.JobName, "JOB_NAME")
-	condition = utils.StringWhereConvert2(condition, search.Title, "TITLE")
-	condition = utils.StringWhereConvert2(condition, search.UserInfo, "USER_INFO")
+	condition = utils.Int64WhereConvert(condition, search.Jno.NullInt64, "JNO")
+	condition = utils.StringWhereConvert(condition, search.JobLocName.NullString, "JOB_LOC_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.Title.NullString, "TITLE")
+	condition = utils.StringWhereConvert(condition, search.UserInfo.NullString, "USER_INFO")
 
 	var order string
 	if page.Order.Valid {
@@ -122,11 +122,11 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 	var count int
 
 	condition := "1=1"
-	condition = utils.Int64WhereConvert2(condition, search.Jno, "JNO")
-	condition = utils.StringWhereConvert2(condition, search.JobLocName, "JOB_LOC_NAME")
-	condition = utils.StringWhereConvert2(condition, search.JobName, "JOB_NAME")
-	condition = utils.StringWhereConvert2(condition, search.Title, "TITLE")
-	condition = utils.StringWhereConvert2(condition, search.UserInfo, "USER_INFO")
+	condition = utils.Int64WhereConvert(condition, search.Jno.NullInt64, "JNO")
+	condition = utils.StringWhereConvert(condition, search.JobLocName.NullString, "JOB_LOC_NAME")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "JOB_NAME")
+	condition = utils.StringWhereConvert(condition, search.Title.NullString, "TITLE")
+	condition = utils.StringWhereConvert(condition, search.UserInfo.NullString, "USER_INFO")
 
 	query := fmt.Sprintf(`
 			WITH Notice AS (

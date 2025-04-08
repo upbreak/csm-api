@@ -41,6 +41,7 @@ func (s *ServiceWhether) GetWhetherSrtNcst(date string, time string, nx int, ny 
 	// api call
 	body, err := api.CallGetAPI(url)
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("call GetWhetherSrtNcst API error: %v", err)
 	}
 
@@ -56,6 +57,7 @@ func (s *ServiceWhether) GetWhetherSrtNcst(date string, time string, nx int, ny 
 	// response parse
 	var res whether
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("WhetherSrt api JSON parse err: %v", err)
 	}
 
@@ -105,6 +107,7 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 	// api call
 	body, err := api.CallGetAPI(url)
 	if err != nil {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("call GetWhetherWrnMsgList API error: %v", err)
 	}
 
@@ -130,10 +133,12 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 	// response parse
 	var res whether
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("WhetherWrnMsg api JSON parse err: %v", err)
 	}
 
 	if res.Response.Header.ResultCode != "00" {
+		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("WhetherWrnMsg api response err : %s", res.Response.Header.ResultMsg)
 	}
 
