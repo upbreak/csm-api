@@ -60,3 +60,34 @@ func (h *HandlerCode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }
+
+// struct, func: 코드 트리 조회
+type HandlerCodeTree struct {
+	Service service.ServiceCode
+}
+
+func (h *HandlerCodeTree) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	codeTrees, err := h.Service.GetCodeTree(ctx)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			CodeTrees entity.CodeTrees `json:"code_trees"`
+		}{CodeTrees: *codeTrees},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
+
+}

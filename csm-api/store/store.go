@@ -63,6 +63,7 @@ type UserStore interface {
 
 type CodeStore interface {
 	GetCodeList(ctx context.Context, db Queryer, pCode string) (*entity.Codes, error)
+	GetCodeTree(ctx context.Context, db Queryer) (*entity.Codes, error)
 }
 
 type NoticeStore interface {

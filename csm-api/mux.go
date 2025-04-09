@@ -93,9 +93,19 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store: &r,
 		},
 	}
+
+	// 코드 관리 조회
+	codeTreeHandler := &handler.HandlerCodeTree{
+		Service: service.ServiceCode{
+			DB:    safeDb,
+			Store: &r,
+		},
+	}
+
 	mux.Route("/code", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", codeHandler.ServeHTTP)
+		r.Get("/tree", codeTreeHandler.ServeHTTP)
 	})
 
 	// Begin::현장관리
