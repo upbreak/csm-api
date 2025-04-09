@@ -41,12 +41,12 @@ func (r *Repository) GetProjectDailyContentList(ctx context.Context, db Queryer,
 				IRIS_DAILY_JOB t1
 			WHERE
 				t1.IS_USE = 'Y'
-				AND (:1 IS NULL OR t1.JNO = :2)
-				AND (:3 IS NULL OR t1.TARGET_DATE = :4)
+				AND t1.JNO = :2
+				AND TO_CHAR(t1.TARGET_DATE, 'YYYY-MM-DD') = TO_CHAR(:2 , 'YYYY-MM-DD')
 			ORDER BY
 				NVL(t1.REG_DATE, t1.MOD_DATE) DESC`
 
-	if err := db.SelectContext(ctx, &projectDailys, sql, jnoParam, jnoParam, targetDateParam, targetDateParam); err != nil {
+	if err := db.SelectContext(ctx, &projectDailys, sql, jnoParam, targetDateParam); err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetProjectDailyContentList fail: %w", err)
 	}
