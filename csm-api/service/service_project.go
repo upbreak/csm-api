@@ -74,6 +74,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 			if projectInfo.Sno == safe.Sno && projectInfo.Jno == safe.Jno {
 				projectInfo.WorkerCountSafe = safe.SafeCount
 				projectInfo.WorkerCountWork.Int64 = projectInfo.WorkerCountHtenc.Int64 - safe.SafeCount.Int64
+				projectInfo.WorkerCountWork.Valid = true
 				break
 			}
 		}
@@ -106,6 +107,7 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 			if project.Sno == safe.Sno && project.Jno == safe.Jno {
 				project.WorkerCountSafe = safe.SafeCount
 				project.WorkerCountWork.Int64 = project.WorkerCountHtenc.Int64 - safe.SafeCount.Int64
+				project.WorkerCountWork.Valid = true
 				break
 			}
 		}

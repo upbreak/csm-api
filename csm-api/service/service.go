@@ -111,5 +111,6 @@ type AddressSearchAPIService interface {
 }
 
 type EquipService interface {
+	GetEquipList(ctx context.Context) (entity.EquipTemps, error)
 	MergeEquipCnt(ctx context.Context, equips entity.EquipTemps) error
 }

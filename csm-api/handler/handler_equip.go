@@ -11,40 +11,34 @@ type HandlerEquip struct {
 	Service service.EquipService
 }
 
-func (h *HandlerEquip) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerEquip) List(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	list, err := h.Service.GetEquipList(ctx)
+	if err != nil {
+		FailResponse(ctx, w, err)
+	}
+
+	values := struct {
+		List entity.EquipTemps `json:"list"`
+	}{List: list}
+	SuccessValuesResponse(ctx, w, values)
+}
+
+func (h *HandlerEquip) Merge(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	equips := entity.EquipTemps{}
 
 	if err := json.NewDecoder(r.Body).Decode(&equips); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	if err := h.Service.MergeEquipCnt(ctx, equips); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessResponse(ctx, w)
 }
