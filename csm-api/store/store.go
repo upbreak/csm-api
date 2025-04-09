@@ -106,5 +106,6 @@ type CompanyStore interface {
 }
 
 type EquipStore interface {
+	GetEquipList(ctx context.Context, db Queryer) (entity.EquipTemps, error)
 	MergeEquipCnt(ctx context.Context, db Beginner, equips entity.EquipTemps) error
 }

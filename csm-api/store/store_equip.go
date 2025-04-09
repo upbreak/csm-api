@@ -6,6 +6,25 @@ import (
 	"fmt"
 )
 
+func (r *Repository) GetEquipList(ctx context.Context, db Queryer) (entity.EquipTemps, error) {
+	list := entity.EquipTemps{}
+
+	query := `
+			SELECT 
+			    T1.SNO, 
+			    T1.JNO, 
+			    NVL(T2.CNT, 0) AS CNT, 
+			    T3.JOB_NAME
+			FROM IRIS_SITE_JOB T1
+			LEFT JOIN IRIS_EQUIP_TEMP T2 ON T1.SNO = T2.SNO AND T1.JNO = T2.JNO 
+			LEFT JOIN S_JOB_INFO T3 ON T1.JNO = T3.JNO`
+
+	if err := db.SelectContext(ctx, &list, query); err != nil {
+		return list, fmt.Errorf("GetEquipList fail: %w", err)
+	}
+	return list, nil
+}
+
 func (r *Repository) MergeEquipCnt(ctx context.Context, db Beginner, equips entity.EquipTemps) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -19,29 +38,24 @@ func (r *Repository) MergeEquipCnt(ctx context.Context, db Beginner, equips enti
 				SELECT
 					:1 AS SNO,
 					:2 AS JNO,
-					:3 AS CNT,
-					TRUNC(SYSDATE) AS RECORD_DATE,
-				    :4 AS REG_USER
+					:3 AS CNT
 				FROM DUAL
 			) T2 
 			ON (
 				T1.SNO = T2.SNO
 				AND T1.JNO = T2.JNO
-				AND T1.RECORD_DATE = T2.RECORD_DATE
 			)
 			WHEN MATCHED THEN
 				UPDATE SET
-					T1.CNT = T2.CNT,
-			    	T1.REG_USER = T2.REG_USER
+					T1.CNT = T2.CNT
 				WHERE T1.SNO = T2.SNO
 				AND T1.JNO = T2.JNO
-				AND T1.RECORD_DATE = T2.RECORD_DATE
 			WHEN NOT MATCHED THEN
-				INSERT (SNO, JNO, CNT, RECORD_DATE, REG_USER)
-				VALUES (T2.SNO, T2.JNO, T2.CNT, T2.RECORD_DATE, T2.REG_USER)`
+				INSERT (SNO, JNO, CNT)
+				VALUES (T2.SNO, T2.JNO, T2.CNT)`
 
 	for _, equip := range equips {
-		if _, err = tx.QueryContext(ctx, query, equip.Sno, equip.Jno, equip.Cnt, equip.RegUser); err != nil {
+		if _, err = tx.QueryContext(ctx, query, equip.Sno, equip.Jno, equip.Cnt); err != nil {
 			origErr := err
 			err = tx.Rollback()
 			if err != nil {

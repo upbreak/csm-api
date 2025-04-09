@@ -32,7 +32,8 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 					t1.USER_ID,
 					NVL(t2.USER_NM, ' ') AS USER_NM,
 					TO_CHAR(t1.RECORD_DATE, 'YYYY-MM-DD') AS RECORD_DATE,
-					NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT
+					NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT,
+					t2.WORKER_TYPE
 				FROM IRIS_WORKER_DAILY_SET t1
 				LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
 				WHERE t1.SNO > 100
@@ -51,7 +52,8 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 									 WHEN RECORD_DATE = TO_CHAR(:4, 'YYYY-MM-DD')
 									  AND (INSTR(DEPARTMENT, '하이테크') > 0 
 									   OR INSTR(DEPARTMENT, 'HTENC') > 0 
-									   OR INSTR(DEPARTMENT, 'HTE') > 0)
+									   OR INSTR(DEPARTMENT, 'HTE') > 0
+									   OR WORKER_TYPE = '01')
 									 THEN USER_ID || '-' || RECORD_DATE
 									 END) AS WORKER_COUNT_HTENC,
 					COUNT(DISTINCT CASE 
@@ -59,6 +61,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 									  AND INSTR(DEPARTMENT, '하이테크') = 0
 									  AND INSTR(DEPARTMENT, 'HTENC') = 0
 									  AND INSTR(DEPARTMENT, 'HTE') = 0
+									  AND WORKER_TYPE <> '01'
 									  AND (INSTR(DEPARTMENT, '관리') > 0 
 										   OR INSTR(USER_NM, '관리') > 0)
 									 THEN USER_ID || '-' || RECORD_DATE
@@ -68,12 +71,17 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 									  AND INSTR(DEPARTMENT, '하이테크') = 0
 									  AND INSTR(DEPARTMENT, 'HTENC') = 0
 									  AND INSTR(DEPARTMENT, 'HTE') = 0
+									  AND WORKER_TYPE <> '01'
 									  AND (INSTR(DEPARTMENT, '관리') = 0 
 										   AND INSTR(USER_NM, '관리') = 0)
 									 THEN USER_ID || '-' || RECORD_DATE
 									 END) AS WORKER_COUNT_NOT_MANAGER
 				FROM base
 				GROUP BY SNO, JNO
+			),
+			equip AS (
+				SELECT SNO, JNO, CNT
+				FROM IRIS_EQUIP_TEMP
 			)
 			SELECT
 				t1.SNO,
@@ -119,17 +127,16 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				NVL(wc.WORKER_COUNT_DATE, 0) AS WORKER_COUNT_DATE,
 				NVL(wc.WORKER_COUNT_HTENC, 0) AS WORKER_COUNT_HTENC,
 				NVL(wc.WORKER_COUNT_MANAGER, 0) AS WORKER_COUNT_MANAGER,
-				NVL(wc.WORKER_COUNT_NOT_MANAGER, 0) AS WORKER_COUNT_NOT_MANAGER
+				NVL(wc.WORKER_COUNT_NOT_MANAGER, 0) AS WORKER_COUNT_NOT_MANAGER,
+				NVL(eq.CNT, 0) AS EQUIP_COUNT
 			FROM IRIS_SITE_JOB t1
 			INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
 			INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 			INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
-			INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state 
-				 AND t5.major_cd = 'JOB_STATE'
-			INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE 
-				 AND t6.major_cd = 'JOB_TYPE' 
-			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO 
-				 AND t1.JNO = wc.JNO
+			INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
+			INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE AND t6.major_cd = 'JOB_TYPE' 
+			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO AND t1.JNO = wc.JNO
+			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
 			AND (:7 IS NULL OR t1.SNO = :8)
 			ORDER BY IS_DEFAULT DESC`
@@ -155,7 +162,8 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 						t1.USER_ID,
 						NVL(t2.USER_NM, ' ') AS USER_NM,
 						TO_CHAR(t1.RECORD_DATE, 'YYYY-MM-DD') AS RECORD_DATE,
-						NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT
+						NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT,
+						t2.WORKER_TYPE
 					FROM IRIS_WORKER_DAILY_SET t1
 					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
 					WHERE t1.SNO > 100
@@ -173,7 +181,8 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 										 WHEN RECORD_DATE = TO_CHAR(:2, 'YYYY-MM-DD')
 										  AND (INSTR(DEPARTMENT, '하이테크') > 0 
 										   OR INSTR(DEPARTMENT, 'HTENC') > 0 
-										   OR INSTR(DEPARTMENT, 'HTE') > 0)
+										   OR INSTR(DEPARTMENT, 'HTE') > 0
+										   OR WORKER_TYPE = '01')
 										 THEN USER_ID || '-' || RECORD_DATE
 										 END) AS WORKER_COUNT_HTENC,
 						COUNT(DISTINCT CASE 
@@ -181,6 +190,7 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 										  AND INSTR(DEPARTMENT, '하이테크') = 0
 										  AND INSTR(DEPARTMENT, 'HTENC') = 0
 										  AND INSTR(DEPARTMENT, 'HTE') = 0
+										  AND WORKER_TYPE <> '01'
 										  AND (INSTR(DEPARTMENT, '관리') > 0 
 											   OR INSTR(USER_NM, '관리') > 0)
 										 THEN USER_ID || '-' || RECORD_DATE
@@ -190,12 +200,17 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 										  AND INSTR(DEPARTMENT, '하이테크') = 0
 										  AND INSTR(DEPARTMENT, 'HTENC') = 0
 										  AND INSTR(DEPARTMENT, 'HTE') = 0
+										  AND WORKER_TYPE <> '01'
 										  AND (INSTR(DEPARTMENT, '관리') = 0 
 											   AND INSTR(USER_NM, '관리') = 0)
 										 THEN USER_ID || '-' || RECORD_DATE
 										 END) AS WORKER_COUNT_NOT_MANAGER
 					FROM base
 					GROUP BY SNO, JNO
+				),
+				equip AS (
+					SELECT SNO, JNO, CNT
+					FROM IRIS_EQUIP_TEMP
 				)
 				SELECT 
 					t1.SNO,
@@ -204,10 +219,11 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 					NVL(wc.WORKER_COUNT_DATE, 0) AS WORKER_COUNT_DATE,
 					NVL(wc.WORKER_COUNT_HTENC, 0) AS WORKER_COUNT_HTENC,
 					NVL(wc.WORKER_COUNT_MANAGER, 0) AS WORKER_COUNT_MANAGER,
-					NVL(wc.WORKER_COUNT_NOT_MANAGER, 0) AS WORKER_COUNT_NOT_MANAGER
+					NVL(wc.WORKER_COUNT_NOT_MANAGER, 0) AS WORKER_COUNT_NOT_MANAGER,
+					NVL(eq.CNT, 0) AS EQUIP_COUNT
 				FROM IRIS_SITE_JOB t1
-				LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO 
-					 AND t1.JNO = wc.JNO
+				LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO AND t1.JNO = wc.JNO
+				LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 				WHERE t1.SNO > 100`
 
 	if err := db.SelectContext(ctx, &list, query, targetDate, targetDate, targetDate, targetDate); err != nil {
@@ -226,14 +242,16 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 
 	query := `
 				WITH htenc_cnt AS (
-				  SELECT DISTINCT 
-						 SNO,
-						 JNO,
-						 USER_NM
-				  FROM IRIS_RECD_SET
-				  WHERE SNO > 100
-					AND TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
-					AND INSTR(NVL(DEPARTMENT, ' '), '하이테크') > 0
+					SELECT T1.SNO, T1.JNO, T2.USER_NM
+					FROM IRIS_WORKER_DAILY_SET t1
+					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
+					WHERE TO_CHAR(T1.RECORD_DATE, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
+					AND (
+						INSTR(T2.DEPARTMENT, '하이테크') > 0 
+						OR INSTR(T2.DEPARTMENT, 'HTENC') > 0 
+						OR INSTR(T2.DEPARTMENT, 'HTE') > 0
+						OR T2.WORKER_TYPE = '01'
+					)
 				),
 				safe_cnt AS (
 				  SELECT t1.JNO, USER_NAME
@@ -248,19 +266,27 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 					AND t1.FUNC_CODE = 510
 					AND t1.CHARGE = '21'
 					AND t1.IS_USE = 'Y'
+				),
+				cnt AS (
+					SELECT 
+					  ht.SNO,
+					  ht.JNO,
+					  COUNT(*) AS SAFE_COUNT
+					FROM htenc_cnt ht
+					WHERE EXISTS (
+					  SELECT 1
+					  FROM safe_cnt s
+					  WHERE s.JNO = ht.JNO
+						AND INSTR(ht.USER_NM, s.USER_NAME) > 0
+					)
+					GROUP BY ht.SNO, ht.JNO
 				)
 				SELECT 
-				  ht.SNO,
-				  ht.JNO,
-				  COUNT(*) AS SAFE_COUNT
-				FROM htenc_cnt ht
-				WHERE EXISTS (
-				  SELECT 1
-				  FROM safe_cnt s
-				  WHERE s.JNO = ht.JNO
-					AND INSTR(ht.USER_NM, s.USER_NAME) > 0
-				)
-				GROUP BY ht.SNO, ht.JNO`
+					t1.SNO, 
+					t1.JNO, 
+					NVL(t2.SAFE_COUNT, 0) AS SAFE_COUNT
+				FROM IRIS_SITE_JOB t1
+				LEFT JOIN cnt t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO`
 
 	if err := db.SelectContext(ctx, &list, query, targetDate); err != nil {
 		//TODO: 에러 아카이브
