@@ -154,7 +154,7 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 // func: 근로자 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
-func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
+func (r *Repository) GetAbsentWorkerList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
 	workers := entity.Workers{}
 
 	var columns []string
@@ -185,7 +185,7 @@ func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page
 
 	if err := db.SelectContext(ctx, &workers, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
 		//TODO: 에러 아카이브
-		return nil, fmt.Errorf("GetWorkerListByUserId fail: %v", err)
+		return nil, fmt.Errorf("GetAbsentWorkerList fail: %v", err)
 	}
 
 	return &workers, nil
@@ -194,7 +194,7 @@ func (r *Repository) GetWorkerListByUserId(ctx context.Context, db Queryer, page
 // func: 근로자 개수 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
-func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error) {
+func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error) {
 	var count int
 
 	var columns []string
@@ -221,7 +221,7 @@ func (r *Repository) GetWorkerCountByUserId(ctx context.Context, db Queryer, sea
 			return 0, nil
 		}
 		//TODO: 에러 아카이브
-		return 0, fmt.Errorf("GetWorkerCountByUserId fail: %w", err)
+		return 0, fmt.Errorf("GetAbsentWorkerCount fail: %w", err)
 	}
 	return count, nil
 }

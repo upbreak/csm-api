@@ -62,7 +62,7 @@ func (s *ServiceWorker) GetWorkerTotalCount(ctx context.Context, search entity.W
 // func: 근로자 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
-func (s *ServiceWorker) GetWorkerListByUserId(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
+func (s *ServiceWorker) GetAbsentWorkerList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
 	// regular type ->  sql type 변환
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
@@ -72,10 +72,10 @@ func (s *ServiceWorker) GetWorkerListByUserId(ctx context.Context, page entity.P
 	}
 
 	// 조회
-	list, err := s.Store.GetWorkerListByUserId(ctx, s.DB, pageSql, search, retry)
+	list, err := s.Store.GetAbsentWorkerList(ctx, s.DB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
-		return nil, fmt.Errorf("service_worker/GetWorkerListByUserId err: %v", err)
+		return nil, fmt.Errorf("service_worker/GetAbsentWorkerList err: %v", err)
 	}
 
 	return list, nil
@@ -84,11 +84,11 @@ func (s *ServiceWorker) GetWorkerListByUserId(ctx context.Context, page entity.P
 // func: 근로자 개수 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
-func (s *ServiceWorker) GetWorkerCountByUserId(ctx context.Context, search entity.WorkerDaily, retry string) (int, error) {
-	count, err := s.Store.GetWorkerCountByUserId(ctx, s.DB, search, retry)
+func (s *ServiceWorker) GetAbsentWorkerCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error) {
+	count, err := s.Store.GetAbsentWorkerCount(ctx, s.DB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
-		return 0, fmt.Errorf("service_worker;ByUserId/StoreGetWorkerCountByUserId err: %v", err)
+		return 0, fmt.Errorf("service_worker;ByUserId/GetAbsentWorkerCount err: %v", err)
 	}
 	return count, nil
 }

@@ -45,6 +45,7 @@ type ProjectInfo struct {
 	WorkerCountSafe       null.Int    `json:"worker_count_safe" db:"WORKER_COUNT_SAFE"`
 	WorkerCountManager    null.Int    `json:"worker_count_manager" db:"WORKER_COUNT_MANAGER"`
 	WorkerCountNotManager null.Int    `json:"worker_count_not_manager" db:"WORKER_COUNT_NOT_MANAGER"`
+	EquipCount            null.Int    `json:"equip_count" db:"EQUIP_COUNT"`
 	Base
 
 	ProjectPeList    *UserPmPeInfos `json:"project_pe_list"`

@@ -74,6 +74,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 			if projectInfo.Sno == safe.Sno && projectInfo.Jno == safe.Jno {
 				projectInfo.WorkerCountSafe = safe.SafeCount
 				projectInfo.WorkerCountWork.Int64 = projectInfo.WorkerCountHtenc.Int64 - safe.SafeCount.Int64
+				projectInfo.WorkerCountWork.Valid = true
 				break
 			}
 		}
@@ -106,6 +107,7 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 			if project.Sno == safe.Sno && project.Jno == safe.Jno {
 				project.WorkerCountSafe = safe.SafeCount
 				project.WorkerCountWork.Int64 = project.WorkerCountHtenc.Int64 - safe.SafeCount.Int64
+				project.WorkerCountWork.Valid = true
 				break
 			}
 		}
@@ -242,117 +244,6 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 
 	return count, nil
 
-}
-
-// func: 조직도 조회: 고객사
-// @param
-// - JNO
-func (p *ServiceProject) GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error) {
-	var jnoSql sql.NullInt64
-
-	if jno != 0 {
-		jnoSql = sql.NullInt64{Valid: true, Int64: jno}
-	} else {
-		jnoSql = sql.NullInt64{Valid: false}
-	}
-
-	clientSql := &entity.OrganizationSqls{}
-	clientSql, err := p.Store.GetClientOrganization(ctx, p.DB, jnoSql)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/GetClientOrganization: %w", err)
-	}
-
-	clients := &entity.Organizations{} //  []organization
-	if err := entity.ConvertSliceToRegular(*clientSql, clients); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
-	}
-
-	organizations := entity.OrganizationPartitions{}
-	if len(*clients) != 0 {
-		// 공종 별로 구분하여 데이터 반환
-		funcName := (*clients)[0].FuncName
-		funcClients := &entity.Organizations{}
-		for _, client := range *clients {
-			if funcName != client.FuncName {
-				organization := &entity.OrganizationPartition{}
-				organization.FuncName = funcName
-				organization.OrganizationList = funcClients
-				organizations = append(organizations, organization)
-				funcName = client.FuncName
-				funcClients = &entity.Organizations{}
-			}
-
-			*funcClients = append(*funcClients, client)
-		}
-
-		organization := &entity.OrganizationPartition{}
-		organization.FuncName = funcName
-		organization.OrganizationList = funcClients
-		organizations = append(organizations, organization)
-	}
-
-	return &organizations, nil
-}
-
-// func: 조직도 조회: 계약자(외부직원, 내부직원, 협력사)
-// @param
-// - JNO
-func (p *ServiceProject) GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error) {
-	var jnoSql sql.NullInt64
-
-	if jno != 0 {
-		jnoSql = sql.NullInt64{Valid: true, Int64: jno}
-	} else {
-		jnoSql = sql.NullInt64{Valid: false}
-	}
-
-	funcNameSqls, err := p.Store.GetFuncNameList(ctx, p.DB)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return &entity.OrganizationPartitions{}, fmt.Errorf("service_projcet/GetFuncNameList: %w", err)
-	}
-
-	funcNames := &entity.FuncNames{}
-	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
-		//TODO: 에러 아카이브
-		return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/CovertSliceToRegular: %w", err)
-	}
-
-	organizations := entity.OrganizationPartitions{}
-	for _, funcName := range *funcNames {
-		var funcNoSql sql.NullInt64
-		if funcName.FuncNo != 0 {
-			funcNoSql = sql.NullInt64{Valid: true, Int64: funcName.FuncNo}
-		} else {
-			funcNoSql = sql.NullInt64{Valid: false}
-		}
-
-		organization := entity.OrganizationPartition{}
-		hitechSql := &entity.OrganizationSqls{}
-		hitechSql, err := p.Store.GetHitechOrganization(ctx, p.DB, jnoSql, funcNoSql)
-		if err != nil {
-			//TODO: 에러 아카이브
-			return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/GetHitechOrganization: %w", err)
-		}
-		if len(*hitechSql) == 0 {
-			continue
-		}
-
-		hitech := &entity.Organizations{}
-		if err := entity.ConvertSliceToRegular(*hitechSql, hitech); err != nil {
-			//TODO: 에러 아카이브
-			return &entity.OrganizationPartitions{}, fmt.Errorf("service_project/ConvertSliceToRegular: %w", err)
-		}
-
-		organization.FuncName = funcName.FuncName
-		organization.OrganizationList = hitech
-
-		organizations = append(organizations, &organization)
-	}
-
-	return &organizations, nil
 }
 
 // 본인이 속한 프로젝트 이름 목록

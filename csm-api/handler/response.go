@@ -66,3 +66,42 @@ func RespondJSON(ctx context.Context, w http.ResponseWriter, body any, status in
 		fmt.Printf("write response error: %v", err)
 	}
 }
+
+func FailResponse(ctx context.Context, w http.ResponseWriter, err error) {
+	RespondJSON(
+		ctx,
+		w,
+		&ErrResponse{
+			Result:         Failure,
+			Message:        err.Error(),
+			HttpStatusCode: http.StatusInternalServerError,
+		},
+		http.StatusOK)
+}
+
+func BadRequestResponse(ctx context.Context, w http.ResponseWriter) {
+	RespondJSON(
+		ctx,
+		w,
+		&ErrResponse{
+			Result:         Failure,
+			Message:        http.StatusText(http.StatusBadRequest),
+			HttpStatusCode: http.StatusInternalServerError,
+		},
+		http.StatusOK)
+}
+
+func SuccessResponse(ctx context.Context, w http.ResponseWriter) {
+	rsp := Response{
+		Result: Success,
+	}
+	RespondJSON(ctx, w, rsp, http.StatusOK)
+}
+
+func SuccessValuesResponse(ctx context.Context, w http.ResponseWriter, values any) {
+	rsp := Response{
+		Result: Success,
+		Values: values,
+	}
+	RespondJSON(ctx, w, rsp, http.StatusOK)
+}

@@ -20,14 +20,14 @@ import (
  */
 
 // struct: 브이월드 주소 api 조회
-type ServiceAddressSearching struct {
+type ServiceAddressSearch struct {
 	ApiKey *config.ApiConfig
 }
 
 // func: 도로명주소로 위도, 경도 조회
 // @param
 // - roadAddress string: 도로명주소
-func (s *ServiceAddressSearching) GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error) {
+func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error) {
 
 	if roadAddress == "" {
 		//TODO: 에러 아카이브
@@ -110,7 +110,7 @@ func (s *ServiceAddressSearching) GetAPILatitudeLongtitude(roadAddress string) (
 // 지도 x, y좌표 조회
 // @params
 //   - roadAddress : 도로명 주소
-func (s *ServiceAddressSearching) GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error) {
+func (s *ServiceAddressSearch) GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error) {
 	if roadAddress == "" {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("roadAddress parameter is missing")
