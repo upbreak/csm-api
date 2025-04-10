@@ -9,8 +9,8 @@ import (
 )
 
 type ServiceProjectDaily struct {
-	DB    store.Queryer
-	Store store.ProjectDailyStore
+	SafeDB store.Queryer
+	Store  store.ProjectDailyStore
 }
 
 // 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
@@ -18,7 +18,7 @@ type ServiceProjectDaily struct {
 // @param jno: 프로젝트 관리번호
 // @param targetDate: 현재 시간
 func (s *ServiceProjectDaily) GetProjectDailyContentList(ctx context.Context, jno int64, targetDate time.Time) (*entity.ProjectDailys, error) {
-	projectDailys, err := s.Store.GetProjectDailyContentList(ctx, s.DB, jno, targetDate)
+	projectDailys, err := s.Store.GetProjectDailyContentList(ctx, s.SafeDB, jno, targetDate)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project_daily/GetProjectDailyContentList err: %w", err)

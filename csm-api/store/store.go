@@ -16,18 +16,18 @@ type SiteStore interface {
 	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
 	GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error)
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
-	ModifySite(ctx context.Context, db Beginner, site entity.Site) error
-	AddSite(ctx context.Context, db Queryer, tdb Beginner, jno int64, user entity.User) error
+	ModifySite(ctx context.Context, tx Execer, site entity.Site) error
+	AddSite(ctx context.Context, db Queryer, tx Execer, jno int64, user entity.User) error
 }
 
 type SitePosStore interface {
 	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error)
-	ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePos) error
+	ModifySitePosData(ctx context.Context, tx Execer, sno int64, sitePosSql entity.SitePos) error
 }
 
 type SiteDateStore interface {
 	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDate, error)
-	ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDate) error
+	ModifySiteDate(ctx context.Context, tx Execer, sno int64, siteDateSql entity.SiteDate) error
 }
 
 type ProjectStore interface {
@@ -44,10 +44,10 @@ type ProjectStore interface {
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
-	AddProject(ctx context.Context, db Beginner, project entity.ReqProject) error
-	ModifyDefaultProject(ctx context.Context, db Beginner, project entity.ReqProject) error
-	ModifyUseProject(ctx context.Context, db Beginner, project entity.ReqProject) error
-	RemoveProject(ctx context.Context, db Beginner, sno int64, jno int64) error
+	AddProject(ctx context.Context, tx Execer, project entity.ReqProject) error
+	ModifyDefaultProject(ctx context.Context, tx Execer, project entity.ReqProject) error
+	ModifyUseProject(ctx context.Context, tx Execer, project entity.ReqProject) error
+	RemoveProject(ctx context.Context, tx Execer, sno int64, jno int64) error
 }
 
 type OrganizationStore interface {
@@ -71,9 +71,9 @@ type CodeStore interface {
 type NoticeStore interface {
 	GetNoticeList(ctx context.Context, db Queryer, uno null.Int, role int, pageSql entity.PageSql, search entity.Notice) (*entity.Notices, error)
 	GetNoticeListCount(ctx context.Context, db Queryer, uno null.Int, role int, search entity.Notice) (int, error)
-	AddNotice(ctx context.Context, db Beginner, notice entity.Notice) error
-	ModifyNotice(ctx context.Context, db Beginner, notice entity.Notice) error
-	RemoveNotice(ctx context.Context, db Beginner, idx null.Int) error
+	AddNotice(ctx context.Context, tx Execer, notice entity.Notice) error
+	ModifyNotice(ctx context.Context, tx Execer, notice entity.Notice) error
+	RemoveNotice(ctx context.Context, tx Execer, idx null.Int) error
 }
 
 type DeviceStore interface {
@@ -89,13 +89,13 @@ type WorkerStore interface {
 	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.Worker, retry string) (int, error)
 	GetAbsentWorkerList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error)
 	GetAbsentWorkerCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
-	AddWorker(ctx context.Context, db Beginner, worker entity.Worker) error
-	ModifyWorker(ctx context.Context, db Beginner, worker entity.Worker) error
+	AddWorker(ctx context.Context, tx Execer, worker entity.Worker) error
+	ModifyWorker(ctx context.Context, tx Execer, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
 	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
-	MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailys) error
-	ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailys) error
-	ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailys) error
+	MergeSiteBaseWorker(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyWorkerDeadline(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyWorkerProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 }
 
 type CompanyStore interface {
@@ -110,5 +110,5 @@ type CompanyStore interface {
 
 type EquipStore interface {
 	GetEquipList(ctx context.Context, db Queryer) (entity.EquipTemps, error)
-	MergeEquipCnt(ctx context.Context, db Beginner, equips entity.EquipTemps) error
+	MergeEquipCnt(ctx context.Context, tx Execer, equips entity.EquipTemps) error
 }

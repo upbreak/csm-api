@@ -31,12 +31,28 @@ func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*enti
 // @param
 // - sno: 현장고유번호
 // - siteDate: 현장 시간 (opening_date, closing_plan_date, closing_forecast_date, closing_actual_date)
-func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) error {
+func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) (err error) {
+	tx, err := s.TDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_site_date/ModifySiteDate err: %w", err)
+	}
 
-	if err := s.Store.ModifySiteDate(ctx, s.TDB, sno, siteDate); err != nil {
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_site_date/ModifySiteDate rollback err: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_site_date/ModifySiteDate commit err: %w", commitErr)
+			}
+		}
+	}()
+
+	if err := s.Store.ModifySiteDate(ctx, tx, sno, siteDate); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site_date/ModifySiteDate err: %w", err)
 	}
 
-	return nil
+	return
 }

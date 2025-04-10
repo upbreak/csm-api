@@ -89,8 +89,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// 코드조회
 	codeHandler := &handler.HandlerCode{
 		Service: service.ServiceCode{
-			DB:    safeDb,
-			Store: &r,
+			SafeDB: safeDb,
+			Store:  &r,
 		},
 	}
 	mux.Route("/code", func(r chi.Router) {
@@ -101,36 +101,28 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::현장관리
 	siteHandler := &handler.HandlerSite{
 		Service: &service.ServiceSite{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:            safeDb,
+			SafeTDB:           safeDb,
+			Store:             &r,
+			ProjectStore:      &r,
+			ProjectDailyStore: &r,
+			SitePosStore:      &r,
+			SiteDateStore:     &r,
 			ProjectService: &service.ServiceProject{
-				DB:    safeDb,
-				Store: &r,
-				UserService: &service.ServiceUser{
-					DB:    safeDb,
-					Store: &r,
-				},
-			},
-			ProjectDailyService: &service.ServiceProjectDaily{
-				DB:    safeDb,
-				Store: &r,
-			},
-			SitePosService: &service.ServiceSitePos{
-				DB:    safeDb,
-				Store: &r,
-			},
-			SiteDateService: &service.ServiceSiteDate{
-				DB:    safeDb,
-				Store: &r,
+				SafeDB:    safeDb,
+				Store:     &r,
+				UserStore: &r,
 			},
 			WhetherApiService: &service.ServiceWhether{
 				ApiKey: apiCfg,
 			},
+			AddressSearchAPIService: &service.ServiceAddressSearch{
+				ApiKey: apiCfg,
+			},
 		},
 		CodeService: &service.ServiceCode{
-			DB:    safeDb,
-			Store: &r,
+			SafeDB: safeDb,
+			Store:  &r,
 		},
 		Jwt: jwt,
 	}
@@ -182,9 +174,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::프로젝트 조회
 	projectHandler := &handler.HandlerProject{
 		Service: &service.ServiceProject{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/project", func(r chi.Router) {
@@ -206,8 +198,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::조직도
 	organizationHandler := &handler.HandlerOrganization{
 		Service: &service.ServiceOrganization{
-			DB:    timesheetDb,
-			Store: &r,
+			SafeDB: timesheetDb,
+			Store:  &r,
 		},
 	}
 	mux.Route("/organization", func(r chi.Router) {
@@ -219,9 +211,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::근태인식기
 	deviceHandler := &handler.DeviceHandler{
 		Service: &service.ServiceDevice{
-			SafeQueryer:  safeDb,
-			SafeBeginner: safeDb,
-			Store:        &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/device", func(r chi.Router) {
@@ -236,9 +228,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::근로자
 	workerHandler := handler.HandlerWorker{
 		Service: &service.ServiceWorker{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/worker", func(r chi.Router) {
@@ -276,9 +268,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::공지사항
 	noticeHandler := &handler.NoticeHandler{
 		Service: &service.ServiceNotice{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/notice", func(router chi.Router) {
@@ -294,9 +286,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// 장비 핸들러
 	equipHandler := &handler.HandlerEquip{
 		Service: &service.ServiceEquip{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/equip", func(r chi.Router) {
