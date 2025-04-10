@@ -17,295 +17,159 @@ import (
  */
 
 // struct: job 정보 조회
-type HandlerJobInfoCompany struct {
+type HandlerCompany struct {
 	Service service.CompanyService
 }
 
 // func: job 정보 조회
 // @param
 // - http get paramter
-func (h *HandlerJobInfoCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCompany) JobInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// get parameter
 	jno := r.URL.Query().Get("jno")
 	if jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 	jnoInt, _ := strconv.ParseInt(jno, 10, 64)
 
 	data, err := h.Service.GetJobInfo(ctx, jnoInt)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			Data entity.JobInfo `json:"data"`
-		}{Data: *data},
-	}
+	values := struct {
+		Data entity.JobInfo `json:"data"`
+	}{Data: *data}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-}
-
-// struct: 현장소장
-type HandlerSiteManagerCompany struct {
-	Service service.CompanyService
+	SuccessValuesResponse(ctx, w, values)
 }
 
 // func: 현장소장 조회
 // @param
 // - http get paramter
-func (h *HandlerSiteManagerCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCompany) SiteManager(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// get parameter
 	jno := r.URL.Query().Get("jno")
 	if jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 	jnoInt, _ := strconv.ParseInt(jno, 10, 64)
 
 	list, err := h.Service.GetSiteManagerList(ctx, jnoInt)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List entity.Managers `json:"list"`
-		}{List: *list},
-	}
+	values := struct {
+		List entity.Managers `json:"list"`
+	}{List: *list}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-}
-
-// struct: 안전관리자
-type HandlerSafeManagerCompany struct {
-	Service service.CompanyService
+	SuccessValuesResponse(ctx, w, values)
 }
 
 // func: 안전관리자 조회
 // @param
 // - http get paramter
-func (h *HandlerSafeManagerCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCompany) SafeManager(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// get parameter
 	jno := r.URL.Query().Get("jno")
 	if jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 	jnoInt, _ := strconv.ParseInt(jno, 10, 64)
 
 	list, err := h.Service.GetSafeManagerList(ctx, jnoInt)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List entity.Managers `json:"list"`
-		}{List: *list},
-	}
+	values := struct {
+		List entity.Managers `json:"list"`
+	}{List: *list}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-}
-
-// struct: 관리감독자
-type HandlerSupervisorCompany struct {
-	Service service.CompanyService
+	SuccessValuesResponse(ctx, w, values)
 }
 
 // func: 관리감독자 조회
 // @param
 // - http get paramter
-func (h *HandlerSupervisorCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCompany) Supervisor(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// get parameter
 	jno := r.URL.Query().Get("jno")
 	if jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 	jnoInt, _ := strconv.ParseInt(jno, 10, 64)
 
 	list, err := h.Service.GetSupervisorList(ctx, jnoInt)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List entity.Supervisors `json:"list"`
-		}{List: *list},
-	}
+	values := struct {
+		List entity.Supervisors `json:"list"`
+	}{List: *list}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-}
-
-// struct: 관리감독자
-type HandlerWorkInfoCompany struct {
-	Service service.CompanyService
+	SuccessValuesResponse(ctx, w, values)
 }
 
 // func: 공종 정보 조회
 // @param
-func (h *HandlerWorkInfoCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCompany) WorkInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	list, err := h.Service.GetWorkInfoList(ctx)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List entity.WorkInfos `json:"list"`
-		}{List: *list},
-	}
+	values := struct {
+		List entity.WorkInfos `json:"list"`
+	}{List: *list}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-}
-
-// struct: 협력업체 정보
-type HandlerCompanyInfoCompany struct {
-	Service service.CompanyService
+	SuccessValuesResponse(ctx, w, values)
 }
 
 // func: 협력업체 정보
 // @param
 // - http get paramter
-func (h *HandlerCompanyInfoCompany) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCompany) CompanyInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// get parameter
 	jno := r.URL.Query().Get("jno")
 	if jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 	jnoInt, _ := strconv.ParseInt(jno, 10, 64)
 
 	list, err := h.Service.GetCompanyInfoList(ctx, jnoInt)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List entity.CompanyInfoResList `json:"list"`
-		}{List: *list},
-	}
+	values := struct {
+		List entity.CompanyInfoResList `json:"list"`
+	}{List: *list}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessValuesResponse(ctx, w, values)
 }

@@ -19,14 +19,14 @@ import (
  */
 
 // struct : 공지사항 조회
-type NoticeListHandler struct {
+type NoticeHandler struct {
 	Service service.NoticeService
 }
 
 // func : 공지사항 전체조회
 // @param
 // - response: hhtp get parameter
-func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (n *NoticeHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	uno := r.PathValue("uno")
 	role := utils.ParseNullString(r.URL.Query().Get("role"))
@@ -34,16 +34,7 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	intUNO := utils.ParseNullInt(uno)
 
 	if uno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "uno parameter is missing",
-				Details:        ParsingError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
@@ -55,16 +46,7 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	order := r.URL.Query().Get(entity.OrderKey)
 
 	if pageNum == "" || rowSize == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
@@ -86,164 +68,76 @@ func (n *NoticeListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	count, err := n.Service.GetNoticeListCount(ctx, intUNO, role, search)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			Notices entity.Notices `json:"notices"`
-			Count   int            `json:"count"`
-		}{Notices: *notices, Count: count},
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-
-}
-
-// struct: 공지사항 추가
-type NoticeAddHandler struct {
-	Service service.NoticeService
+	values := struct {
+		Notices entity.Notices `json:"notices"`
+		Count   int            `json:"count"`
+	}{Notices: *notices, Count: count}
+	SuccessValuesResponse(ctx, w, values)
 }
 
 // func: 공지사항 추가
 // @param
 // - request: entity.Notice - json(raw)
-func (n *NoticeAddHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (n *NoticeHandler) Add(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	notice := entity.Notice{}
 
 	if err := json.NewDecoder(r.Body).Decode(&notice); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
 	err := n.Service.AddNotice(ctx, notice)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataAddFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
-
-}
-
-// 공지사항 수정
-type NoticeModifyHandler struct {
-	Service service.NoticeService
+	SuccessResponse(ctx, w)
 }
 
 // func: 공지사항 수정
 // @param
 // - request: entity.Notice - json(raw)
-func (n *NoticeModifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (n *NoticeHandler) Modify(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// request 데이터 파싱
 	notice := entity.Notice{}
 	if err := json.NewDecoder(r.Body).Decode(&notice); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	if err := n.Service.ModifyNotice(ctx, notice); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataModifyFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
-
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
-
-}
-
-// 공지사항 삭제
-type NoticeDeleteHandler struct {
-	Service service.NoticeService
+	SuccessResponse(ctx, w)
 }
 
 // func: 공지사항 삭제
 // @param
 // - idx : 공지사항 인덱스
-func (n *NoticeDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (n *NoticeHandler) Remove(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	intIdx := utils.ParseNullInt(r.PathValue("idx"))
 
 	if intIdx.Valid == false {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "idx parameter is missing",
-				Details:        ParsingError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
-
+		BadRequestResponse(ctx, w)
 		return
 	}
 
 	if err := n.Service.RemoveNotice(ctx, intIdx); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataRemoveFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
-
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	RespondJSON(ctx, w, &Response{Result: Success}, http.StatusOK)
-
+	SuccessResponse(ctx, w)
 }
