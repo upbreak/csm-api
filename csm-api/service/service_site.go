@@ -128,7 +128,6 @@ func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time
 // @param
 // -
 func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) error {
-
 	if site.Sno.Int64 == 0 {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("sno parameter is missing")

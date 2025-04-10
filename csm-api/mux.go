@@ -219,9 +219,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::근태인식기
 	deviceHandler := &handler.DeviceHandler{
 		Service: &service.ServiceDevice{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeQueryer:  safeDb,
+			SafeBeginner: safeDb,
+			Store:        &r,
 		},
 	}
 	mux.Route("/device", func(r chi.Router) {
