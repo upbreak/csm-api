@@ -50,13 +50,7 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 //     LATITUDE, LONGTITUDE,
 //     ROAD_ADDRESS_NAME_DEPTH1, ROAD_ADDRESS_NAME_DEPTH2, ROAD_ADDRESS_NAME_DEPTH3, ROAD_ADDRESS_NAME_DEPTH4, ROAD_ADDRESS_NAME_DEPTH5,
 //     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
-func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int64, sitePosSql entity.SitePos) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("store/site_pos. Failed to begin transaction: %v", err)
-	}
-
+func (r *Repository) ModifySitePosData(ctx context.Context, tx Execer, sno int64, sitePosSql entity.SitePos) error {
 	query := `
 			MERGE INTO IRIS_SITE_POS M
 			USING (
@@ -128,7 +122,7 @@ func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int
 					P.UDF_VAL_03
 				)`
 
-	_, err = tx.ExecContext(ctx, query,
+	if _, err := tx.ExecContext(ctx, query,
 		sno,
 		sitePosSql.AddressNameDepth1,
 		sitePosSql.AddressNameDepth2,
@@ -144,21 +138,8 @@ func (r *Repository) ModifySitePosData(ctx context.Context, db Beginner, sno int
 		sitePosSql.RoadAddressNameDepth5,
 		sitePosSql.RoadAddress,
 		sitePosSql.ZoneCode,
-		sitePosSql.BuildingName)
-
-	if err != nil {
-		origErr := err
-		if err = tx.Rollback(); err != nil {
-			//TODO: 에러 아카이브
-			return fmt.Errorf("store/site_pos. ModifySitePosData Rollback fail: %v", err)
-		}
-		//TODO: 에러 아카이브
-		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", origErr)
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("store/site_pos. Failed to commit transaction: %v", err)
+		sitePosSql.BuildingName); err != nil {
+		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", err)
 	}
 
 	return nil

@@ -19,9 +19,9 @@ import (
 
 // struct: 근태인식기 서비스 구조체
 type ServiceDevice struct {
-	SafeQueryer  store.Queryer
-	SafeBeginner store.Beginner
-	Store        store.DeviceStore
+	SafeDB  store.Queryer
+	SafeTDB store.Beginner
+	Store   store.DeviceStore
 }
 
 // func: 근태인식기 조회
@@ -35,7 +35,7 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
 
-	list, err := s.Store.GetDeviceList(ctx, s.SafeQueryer, pageSql, search, retry)
+	list, err := s.Store.GetDeviceList(ctx, s.SafeDB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
@@ -48,7 +48,7 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 // @param
 // -
 func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device, retry string) (int, error) {
-	count, err := s.Store.GetDeviceListCount(ctx, s.SafeQueryer, search, retry)
+	count, err := s.Store.GetDeviceListCount(ctx, s.SafeDB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_device/GetDeviceListCount err: %w", err)
@@ -61,7 +61,7 @@ func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.De
 // @param
 // - device entity.Device: SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, REG_USER
 func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (err error) {
-	tx, err := s.SafeBeginner.BeginTx(ctx, nil)
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("service_device/AddDevice BeginTx fail err: %w", err)
 	}
@@ -71,10 +71,9 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_device/AddDevice Rollback err: %w", rollbackErr)
 			}
-			err = fmt.Errorf("service_device/AddDevice err: %w", err)
 		} else {
-			if err = tx.Commit(); err != nil {
-				err = fmt.Errorf("service_device/AddDevice Commit err: %w", err)
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_device/AddDevice Commit err: %w", commitErr)
 			}
 		}
 	}()
@@ -90,7 +89,7 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 // @param
 // - device entity.DeviceSql: DNO, SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, MOD_USER
 func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) (err error) {
-	tx, err := s.SafeBeginner.BeginTx(ctx, nil)
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/ModifyDevice BeginTx fail err: %w", err)
@@ -102,10 +101,9 @@ func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) 
 				//TODO: 에러 아카이브
 				err = fmt.Errorf("service_device/ModifyDevice Rollback err: %w", rollbackErr)
 			}
-			err = fmt.Errorf("service_device/ModifyDevice Rollback err: %w", err)
 		} else {
-			if err = tx.Commit(); err != nil {
-				err = fmt.Errorf("service_device/ModifyDevice Commit err: %w", err)
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_device/ModifyDevice Commit err: %w", commitErr)
 			}
 		}
 	}()
@@ -121,7 +119,7 @@ func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) 
 // @param
 // - dno int64: 홍채인식기 고유번호
 func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error) {
-	tx, err := s.SafeBeginner.BeginTx(ctx, nil)
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("service_device/RemoveDevice BeginTx fail err: %w", err)
 	}
@@ -131,10 +129,9 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error)
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_device/RemoveDevice Rollback err: %w", rollbackErr)
 			}
-			err = fmt.Errorf("service_device/RemoveDevice Rollback err: %w", err)
 		} else {
-			if err = tx.Commit(); err != nil {
-				err = fmt.Errorf("service_device/RemoveDevice Commit err: %w", err)
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_device/RemoveDevice Commit err: %w", commitErr)
 			}
 		}
 	}()

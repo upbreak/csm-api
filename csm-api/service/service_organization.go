@@ -9,8 +9,8 @@ import (
 )
 
 type ServiceOrganization struct {
-	DB    store.Queryer
-	Store store.OrganizationStore
+	SafeDB store.Queryer
+	Store  store.OrganizationStore
 }
 
 // func: 조직도 조회: 고객사
@@ -26,7 +26,7 @@ func (s *ServiceOrganization) GetOrganizationClientList(ctx context.Context, jno
 	}
 
 	clientSql := &entity.OrganizationSqls{}
-	clientSql, err := s.Store.GetOrganizationClientList(ctx, s.DB, jnoSql)
+	clientSql, err := s.Store.GetOrganizationClientList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetOrganizationClientList: %w", err)
@@ -77,7 +77,7 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 		jnoSql = sql.NullInt64{Valid: false}
 	}
 
-	funcNameSqls, err := s.Store.GetFuncNameList(ctx, s.DB)
+	funcNameSqls, err := s.Store.GetFuncNameList(ctx, s.SafeDB)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetFuncNameList: %w", err)
@@ -100,7 +100,7 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 
 		organization := entity.OrganizationPartition{}
 		hitechSql := &entity.OrganizationSqls{}
-		hitechSql, err := s.Store.GetOrganizationHtencList(ctx, s.DB, jnoSql, funcNoSql)
+		hitechSql, err := s.Store.GetOrganizationHtencList(ctx, s.SafeDB, jnoSql, funcNoSql)
 		if err != nil {
 			//TODO: 에러 아카이브
 			return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetOrganizationHtencList: %w", err)

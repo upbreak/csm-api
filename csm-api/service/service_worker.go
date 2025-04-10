@@ -17,9 +17,9 @@ import (
  */
 
 type ServiceWorker struct {
-	DB    store.Queryer
-	TDB   store.Beginner
-	Store store.WorkerStore
+	SafeDB  store.Queryer
+	SafeTDB store.Beginner
+	Store   store.WorkerStore
 }
 
 // func: 전체 근로자 조회
@@ -37,7 +37,7 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 	}
 
 	// 조회
-	list, err := s.Store.GetWorkerTotalList(ctx, s.DB, pageSql, search, retry)
+	list, err := s.Store.GetWorkerTotalList(ctx, s.SafeDB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker/GetWorkerTotalList err: %v", err)
@@ -51,7 +51,7 @@ func (s *ServiceWorker) GetWorkerTotalList(ctx context.Context, page entity.Page
 // - searchTime string: 조회 날짜
 // - retry string: 통합검색 텍스트
 func (s *ServiceWorker) GetWorkerTotalCount(ctx context.Context, search entity.Worker, retry string) (int, error) {
-	count, err := s.Store.GetWorkerTotalCount(ctx, s.DB, search, retry)
+	count, err := s.Store.GetWorkerTotalCount(ctx, s.SafeDB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_worker/GetWorkerTotalCount err: %v", err)
@@ -72,7 +72,7 @@ func (s *ServiceWorker) GetAbsentWorkerList(ctx context.Context, page entity.Pag
 	}
 
 	// 조회
-	list, err := s.Store.GetAbsentWorkerList(ctx, s.DB, pageSql, search, retry)
+	list, err := s.Store.GetAbsentWorkerList(ctx, s.SafeDB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker/GetAbsentWorkerList err: %v", err)
@@ -85,7 +85,7 @@ func (s *ServiceWorker) GetAbsentWorkerList(ctx context.Context, page entity.Pag
 // @param
 // - userId string
 func (s *ServiceWorker) GetAbsentWorkerCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error) {
-	count, err := s.Store.GetAbsentWorkerCount(ctx, s.DB, search, retry)
+	count, err := s.Store.GetAbsentWorkerCount(ctx, s.SafeDB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_worker;ByUserId/GetAbsentWorkerCount err: %v", err)
@@ -96,25 +96,59 @@ func (s *ServiceWorker) GetAbsentWorkerCount(ctx context.Context, search entity.
 // func: 근로자 추가
 // @param
 // -
-func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) error {
-	err := s.Store.AddWorker(ctx, s.TDB, worker)
+func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;AddWorker err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;AddWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;AddWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.AddWorker(ctx, tx, worker)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/AddWorker err: %v", err)
 	}
-	return nil
+	return
 }
 
 // func: 근로자 수정
 // @param
 // -
-func (s *ServiceWorker) ModifyWorker(ctx context.Context, worker entity.Worker) error {
-	err := s.Store.ModifyWorker(ctx, s.TDB, worker)
+func (s *ServiceWorker) ModifyWorker(ctx context.Context, worker entity.Worker) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;ModifyWorker err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.ModifyWorker(ctx, tx, worker)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorker err: %v", err)
 	}
-	return nil
+	return
 }
 
 // func: 현장 근로자 조회
@@ -131,7 +165,7 @@ func (s *ServiceWorker) GetWorkerSiteBaseList(ctx context.Context, page entity.P
 	}
 
 	// 조회
-	list, err := s.Store.GetWorkerSiteBaseList(ctx, s.DB, pageSql, search, retry)
+	list, err := s.Store.GetWorkerSiteBaseList(ctx, s.SafeDB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_worker/GetWorkerSiteBaseList err: %v", err)
@@ -144,7 +178,7 @@ func (s *ServiceWorker) GetWorkerSiteBaseList(ctx context.Context, page entity.P
 // @param
 // - searchTime string: 조회 날짜
 func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error) {
-	count, err := s.Store.GetWorkerSiteBaseCount(ctx, s.DB, search, retry)
+	count, err := s.Store.GetWorkerSiteBaseCount(ctx, s.SafeDB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_worker/GetWorkerSiteBaseCount err: %v", err)
@@ -155,33 +189,83 @@ func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entit
 // func: 현장 근로자 추가/수정
 // @param
 // -
-func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) error {
-	if err := s.Store.MergeSiteBaseWorker(ctx, s.TDB, workers); err != nil {
+func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;MergeSiteBaseWorker err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;MergeWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;MergeWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+	if err = s.Store.MergeSiteBaseWorker(ctx, tx, workers); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
 	}
 
-	return nil
+	return
 }
 
 // func: 현장 근로자 일괄마감
 // @param
 // -
-func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) error {
-	if err := s.Store.ModifyWorkerDeadline(ctx, s.TDB, workers); err != nil {
+func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;ModifyWorkerDeadline err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.ModifyWorkerDeadline(ctx, tx, workers); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorkerDeadline err: %v", err)
 	}
-	return nil
+	return
 }
 
 // func: 현장 근로자 프로젝트 변경
 // @param
 // -
-func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error {
-	if err := s.Store.ModifyWorkerProject(ctx, s.TDB, workers); err != nil {
+func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;ModifyWorkerProject err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.ModifyWorkerProject(ctx, tx, workers); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorkerProject err: %v", err)
 	}
-	return nil
+	return
 }

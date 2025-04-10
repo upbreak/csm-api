@@ -229,14 +229,7 @@ func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, searc
 // func: 근로자 추가
 // @param
 // -
-func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.Worker) error {
-	// 트랜잭션 시작
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("failed to begin transaction: %v", err)
-	}
-
+func (r *Repository) AddWorker(ctx context.Context, tx Execer, worker entity.Worker) error {
 	agent := utils.GetAgent()
 
 	// IRIS_WORKER_SET에 INSERT하는 쿼리
@@ -251,39 +244,23 @@ func (r *Repository) AddWorker(ctx context.Context, db Beginner, worker entity.W
 			:10, :11, :12
 		)`
 
-	_, err = tx.ExecContext(ctx, insertQuery,
+	_, err := tx.ExecContext(ctx, insertQuery,
 		worker.Sno, worker.Jno, worker.UserId, worker.UserNm, worker.Department,
 		worker.Phone, worker.WorkerType, worker.IsRetire /*, SYSDATE*/, agent,
 		worker.RegUser, worker.RegUno, worker.RegNo,
 	)
-
 	if err != nil {
-		origErr := err
-		if err = tx.Rollback(); err != nil {
-			//TODO: 에러 아카이브
-			return err
-		}
 		//TODO: 에러 아카이브
-		return fmt.Errorf("AddWorker; IRIS_WORKER_SET INSERT fail: %v", origErr)
+		return fmt.Errorf("AddWorker; IRIS_WORKER_SET INSERT fail: %v", err)
 	}
 
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("failed to commit transaction: %v", err)
-	}
 	return nil
 }
 
 // func: 근로자 수정
 // @param
 // -
-func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entity.Worker) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("failed to begin transaction: %v", err)
-	}
-
+func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.Worker) error {
 	agent := utils.GetAgent()
 
 	query := `
@@ -302,13 +279,8 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 	)
 
 	if err != nil {
-		origErr := err
-		if err = tx.Rollback(); err != nil {
-			//TODO: 에러 아카이브
-			return err
-		}
 		//TODO: 에러 아카이브
-		return fmt.Errorf("ModifyWorker fail: %v", origErr)
+		return fmt.Errorf("ModifyWorker fail: %v", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -321,10 +293,6 @@ func (r *Repository) ModifyWorker(ctx context.Context, db Beginner, worker entit
 		return fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected)
 	}
 
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("failed to commit transaction: %v", err)
-	}
 	return nil
 }
 
@@ -445,13 +413,7 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 // func: 현장 근로자 추가/수정
 // @param
 // -
-func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, workers entity.WorkerDailys) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("Failed to begin transaction: %v", err)
-	}
-
+func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
 	agent := utils.GetAgent()
 
 	query := `
@@ -494,48 +456,16 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE)
 					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE)`
 
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		origErr := err
-		err = tx.Rollback()
-		if err != nil {
-			//TODO: 에러 아카이브
-			return fmt.Errorf("MergeSiteBaseWorker;PrepareContext Rollback fail: %w", err)
-		}
-		//TODO: 에러 아카이브
-		return fmt.Errorf("MergeSiteBaseWorker;PrepareContext fail: %w", origErr)
-	}
-	defer stmt.Close()
-
 	for _, worker := range workers {
-		_, err = stmt.ExecContext(ctx,
-			worker.Sno,
-			worker.Jno,
-			worker.UserId,
-			worker.RecordDate,
-			worker.InRecogTime,
-			worker.OutRecogTime,
-			agent,
-			worker.ModUser,
-			worker.ModUno,
-			worker.IsDeadline,
+		_, err := tx.ExecContext(ctx, query,
+			worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
+			worker.OutRecogTime, agent, worker.ModUser, worker.ModUno, worker.IsDeadline,
 			worker.WorkState,
 		)
 		if err != nil {
-			origErr := err
-			err = tx.Rollback()
-			if err != nil {
-				//TODO: 에러 아카이브
-				return fmt.Errorf("MergeSiteBaseWorker;ExecContext Rollback fail: %w", err)
-			}
 			//TODO: 에러 아카이브
-			return fmt.Errorf("MergeSiteBaseWorker fail: %w", origErr)
+			return fmt.Errorf("MergeSiteBaseWorker fail: %w", err)
 		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("MergeSiteBaseWorker Commit fail: %w", err)
 	}
 
 	return nil
@@ -544,12 +474,7 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, db Beginner, worke
 // func: 현장 근로자 일괄마감
 // @param
 // -
-func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, workers entity.WorkerDailys) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("BeginTx fail: %w", err)
-	}
+func (r *Repository) ModifyWorkerDeadline(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
 	agent := utils.GetAgent()
 
 	query := `
@@ -565,44 +490,15 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, work
 				AND USER_ID = :6
 				AND RECORD_DATE = :7`
 
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		origErr := err
-		err = tx.Rollback()
-		if err != nil {
-			//TODO: 에러 아카이브
-			return fmt.Errorf("MergeSiteBaseWorker;PrepareContext Rollback fail: %w", err)
-		}
-		//TODO: 에러 아카이브
-		return fmt.Errorf("ModifyWorkerDeadline;PrepareContext fail: %w", origErr)
-	}
-	defer stmt.Close()
-
 	for _, worker := range workers {
-		_, err = stmt.ExecContext(ctx,
-			agent,
-			worker.ModUser,
-			worker.ModUno,
-			worker.Sno,
-			worker.Jno,
-			worker.UserId,
-			worker.RecordDate,
+		_, err := tx.ExecContext(ctx, query,
+			agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno,
+			worker.UserId, worker.RecordDate,
 		)
 		if err != nil {
-			origErr := err
-			err = tx.Rollback()
-			if err != nil {
-				//TODO: 에러 아카이브
-				return fmt.Errorf("ModifyWorkerDeadline;ExecContext Rollback fail: %w", err)
-			}
 			//TODO: 에러 아카이브
-			return fmt.Errorf("ModifyWorkerDeadline fail: %w", origErr)
+			return fmt.Errorf("ModifyWorkerDeadline fail: %w", err)
 		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("ModifyWorkerDeadline Commit fail: %w", err)
 	}
 
 	return nil
@@ -611,13 +507,7 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, db Beginner, work
 // func: 현장 근로자 프로젝트 변경
 // @param
 // -
-func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, workers entity.WorkerDailys) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("BeginTx fail: %w", err)
-	}
-
+func (r *Repository) ModifyWorkerProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
 	agent := utils.GetAgent()
 
 	query := `
@@ -633,45 +523,15 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, db Beginner, worke
 				AND USER_ID = :7
 				AND RECORD_DATE = :8`
 
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		origErr := err
-		err = tx.Rollback()
-		if err != nil {
-			//TODO: 에러 아카이브
-			return fmt.Errorf("ModifyWorkerProject;PrepareContext Rollback fail: %w", err)
-		}
-		//TODO: 에러 아카이브
-		return fmt.Errorf("ModifyWorkerProject;PrepareContext fail: %w", origErr)
-	}
-	defer stmt.Close()
-
 	for _, worker := range workers {
-		_, err = stmt.ExecContext(ctx,
-			worker.AfterJno,
-			agent,
-			worker.ModUser,
-			worker.ModUno,
-			worker.Sno,
-			worker.Jno,
-			worker.UserId,
-			worker.RecordDate,
+		_, err := tx.ExecContext(ctx, query,
+			worker.AfterJno, agent, worker.ModUser, worker.ModUno, worker.Sno,
+			worker.Jno, worker.UserId, worker.RecordDate,
 		)
 		if err != nil {
-			origErr := err
-			err = tx.Rollback()
-			if err != nil {
-				//TODO: 에러 아카이브
-				return fmt.Errorf("ModifyWorkerProject;ExecContext Rollback fail: %w", err)
-			}
 			//TODO: 에러 아카이브
-			return fmt.Errorf("ModifyWorkerProject fail: %w", origErr)
+			return fmt.Errorf("ModifyWorkerProject fail: %w", err)
 		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("ModifyWorkerProject Commit fail: %w", err)
 	}
 
 	return nil

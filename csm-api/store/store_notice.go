@@ -178,13 +178,7 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 // func: 공지사항 추가
 // @param
 // - notice entity.NoticeSql: SNO, TITLE, CONTENT, SHOW_YN, REG_UNO, REG_USER
-func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.Notice) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브 처리
-		fmt.Println("AddNotice Begin transaction fail: %w", err)
-	}
-
+func (r *Repository) AddNotice(ctx context.Context, tx Execer, notice entity.Notice) error {
 	// 공지사항
 	contentCLOB := godror.Lob{
 		IsClob: true,
@@ -229,21 +223,10 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.N
 --				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
 		`
 
-	_, origErr := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
+	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
 
-	if origErr != nil {
-		//TODO: 에러 아카이브 처리
-		if err = tx.Rollback(); err != nil {
-
-			//TODO: 에러 아카이브 처리
-			return fmt.Errorf("AddNotice Rollback transaction fail: %w", err)
-		}
-		return fmt.Errorf("store/notice. AddNotice fail %v", origErr)
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브 처리
-		return fmt.Errorf("AddNotice Commit transaction fail: %v", err)
+	if err != nil {
+		return fmt.Errorf("store/notice. AddNotice fail %v", err)
 	}
 
 	return nil
@@ -252,14 +235,7 @@ func (r *Repository) AddNotice(ctx context.Context, db Beginner, notice entity.N
 // func: 공지사항 수정
 // @param
 // - notice entity.NoticeSql: IDX, SNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
-func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, notice entity.Notice) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		fmt.Println(
-			//TODO: 에러 아카이브 처리
-			"ModifyNotice Begin transaction fail: %w", err)
-	}
-
+func (r *Repository) ModifyNotice(ctx context.Context, tx Execer, notice entity.Notice) error {
 	query := `
 				UPDATE IRIS_NOTICE_BOARD
 				SET
@@ -279,20 +255,10 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, notice entit
 					IDX = :11
 			`
 
-	_, origErr := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
+	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
 
-	if origErr != nil {
-		if err = tx.Rollback(); err != nil {
-			//TODO: 에러 아카이브 처리
-			return fmt.Errorf("ModifyNotice Rollback transaction fail: %w", err)
-		}
-		//TODO: 에러 아카이브 처리
-		return fmt.Errorf("store/notice. ModifyNotice fail: %v", origErr)
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브 처리
-		return fmt.Errorf("ModifyNotice Commit transaction fail: %v", err)
+	if err != nil {
+		return fmt.Errorf("store/notice. ModifyNotice fail: %v", err)
 	}
 
 	return nil
@@ -301,14 +267,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, db Beginner, notice entit
 // func: 공지사항 삭제
 // @param
 // - idx: 공지사항 인덱스
-func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx null.Int) error {
-	tx, err := db.BeginTx(ctx, nil)
-
-	if err != nil {
-		//TODO: 에러 아카이브 처리
-		fmt.Println("store/notice. Failed to begint transaction: %w", err)
-	}
-
+func (r *Repository) RemoveNotice(ctx context.Context, tx Execer, idx null.Int) error {
 	query := `
 		UPDATE IRIS_NOTICE_BOARD 
 		SET 
@@ -317,20 +276,9 @@ func (r *Repository) RemoveNotice(ctx context.Context, db Beginner, idx null.Int
 			IDX = :1
 			`
 
-	_, origErr := tx.ExecContext(ctx, query, idx)
-
-	if origErr != nil {
-		if err = tx.Rollback(); err != nil {
-			//TODO: 에러 아카이브 처리
-			return fmt.Errorf("RemoveNotice Rollback transaction fail: %w", err)
-		}
-		//TODO: 에러 아카이브 처리
-		return fmt.Errorf("store/notice. RemoveNotice fail: %v", origErr)
-	}
-
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브 처리
-		return fmt.Errorf("RemoveNotice Commit transaction fail: %v", err)
+	_, err := tx.ExecContext(ctx, query, idx)
+	if err != nil {
+		return fmt.Errorf("store/notice. RemoveNotice fail: %v", err)
 	}
 
 	return nil

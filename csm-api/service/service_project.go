@@ -12,24 +12,24 @@ import (
 )
 
 type ServiceProject struct {
-	DB          store.Queryer
-	TDB         store.Beginner
-	Store       store.ProjectStore
-	UserService UserService
+	SafeDB    store.Queryer
+	SafeTDB   store.Beginner
+	Store     store.ProjectStore
+	UserStore store.UserStore
 }
 
 // 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
 //
 // @param sno: 현장 고유번호, , targetDate time.Time: 현재시간
 func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error) {
-	projectInfos, err := p.Store.GetProjectList(ctx, p.DB, sno, targetDate)
+	projectInfos, err := p.Store.GetProjectList(ctx, p.SafeDB, sno, targetDate)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectList error: %w", err)
 	}
 
 	// 안전관리자 수 조회
-	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
+	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.SafeDB, targetDate)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
@@ -62,7 +62,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 		}
 
 		// pm, pe 정보 일괄 조회
-		userPmPeList, err := p.UserService.GetUserInfoPmPeList(ctx, unoList)
+		userPmPeList, err := p.UserStore.GetUserInfoPmPeList(ctx, p.SafeDB, unoList)
 		if err != nil {
 			//TODO: 에러 아카이브
 			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
@@ -88,14 +88,14 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 // - sno int64 현장 번호, targetDate time.Time: 현재시간
 func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error) {
 	// 근로자 수 조회
-	projectInfos, err := p.Store.GetProjectWorkerCountList(ctx, p.DB, targetDate)
+	projectInfos, err := p.Store.GetProjectWorkerCountList(ctx, p.SafeDB, targetDate)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectWorkerCountList error: %w", err)
 	}
 
 	// 안전관리자 수 조회
-	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.DB, targetDate)
+	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.SafeDB, targetDate)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
@@ -120,7 +120,7 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 // @param
 // -
 func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error) {
-	list, err := p.Store.GetProjectNmList(ctx, p.DB)
+	list, err := p.Store.GetProjectNmList(ctx, p.SafeDB)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
@@ -140,7 +140,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.DB, pageSql, search)
+	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.SafeDB, pageSql, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
@@ -153,7 +153,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 // @param
 // -
 func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
-	count, err := p.Store.GetUsedProjectCount(ctx, p.DB, search)
+	count, err := p.Store.GetUsedProjectCount(ctx, p.SafeDB, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetUsedProjectCount error: %w", err)
@@ -173,7 +173,7 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetAllProjectList(ctx, p.DB, pageSql, search)
+	jobInfos, err := p.Store.GetAllProjectList(ctx, p.SafeDB, pageSql, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
@@ -187,7 +187,7 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 // @param
 // -
 func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
-	count, err := p.Store.GetAllProjectCount(ctx, p.DB, search)
+	count, err := p.Store.GetAllProjectCount(ctx, p.SafeDB, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)
@@ -215,7 +215,7 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetStaffProjectList(ctx, p.DB, pageSql, search, unoSql)
+	jobInfos, err := p.Store.GetStaffProjectList(ctx, p.SafeDB, pageSql, search, unoSql)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetStaffProjectList: %w", err)
@@ -236,7 +236,7 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 		unoSql = sql.NullInt64{Valid: false}
 	}
 
-	count, err := p.Store.GetStaffProjectCount(ctx, p.DB, search, unoSql)
+	count, err := p.Store.GetStaffProjectCount(ctx, p.SafeDB, search, unoSql)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetStaffProjectCount error: %w", err)
@@ -262,7 +262,7 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, rol
 	} else {
 		roleInt = 0
 	}
-	projectInfos, err := p.Store.GetProjectNmUnoList(ctx, p.DB, unoSql, roleInt)
+	projectInfos, err := p.Store.GetProjectNmUnoList(ctx, p.SafeDB, unoSql, roleInt)
 
 	if err != nil {
 		//TODO: 에러 아카이브
@@ -283,7 +283,7 @@ func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.
 		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ofPageSql error: %w", err)
 	}
 
-	list, err := s.Store.GetNonUsedProjectList(ctx, s.DB, pageSql, search, retry)
+	list, err := s.Store.GetNonUsedProjectList(ctx, s.SafeDB, pageSql, search, retry)
 
 	if err != nil {
 		//TODO: 에러 아카이브
@@ -297,7 +297,7 @@ func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.
 // @param
 // -
 func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error) {
-	count, err := s.Store.GetNonUsedProjectCount(ctx, s.DB, search, retry)
+	count, err := s.Store.GetNonUsedProjectCount(ctx, s.SafeDB, search, retry)
 
 	if err != nil {
 		//TODO: 에러 아카이브
@@ -310,47 +310,115 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 // func: 현장 프로젝트 추가
 // @param
 // -
-func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProject) error {
-	err := s.Store.AddProject(ctx, s.TDB, project)
+func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProject) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_project/AddProject BeginTx error: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_project/AddProject Rollback error: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_project/AddProject Commit error: %w", commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.AddProject(ctx, tx, project)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/AddProject error: %w", err)
 	}
-	return nil
+	return
 }
 
 // func: 현장 기본 프로젝트 변경
 // @param
 // -
-func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error {
-	err := s.Store.ModifyDefaultProject(ctx, s.TDB, project)
+func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entity.ReqProject) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_project/ModifyDefaultProject BeginTx error: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_project/ModifyDefaultProject Rollback error: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_project/ModifyDefaultProject Commit error: %w", commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.ModifyDefaultProject(ctx, tx, project)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/ModifyDefaultProject error: %w", err)
 	}
-	return nil
+	return
 }
 
 // func: 현장 프로젝트 사용여부 변경
 // @param
 // -
-func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.ReqProject) error {
-	err := s.Store.ModifyUseProject(ctx, s.TDB, project)
+func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.ReqProject) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_project/ModifyUseProject BeginTx error: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_project/ModifyUseProject Rollback error: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_project/ModifyUseProject Commit error: %w", commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.ModifyUseProject(ctx, tx, project)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/ModifyUseProject error: %w", err)
 	}
-	return nil
+	return
 }
 
 // func: 현장 프로젝트 삭제
 // @param
 // -
-func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64) error {
-	err := s.Store.RemoveProject(ctx, s.TDB, sno, jno)
+func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_project/RemoveProject BeginTx error: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_project/RemoveProject Rollback error: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_project/RemoveProject Commit error: %w", commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.RemoveProject(ctx, tx, sno, jno)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/RemoveProject error: %w", err)
 	}
-	return nil
+	return
 }

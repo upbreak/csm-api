@@ -25,13 +25,7 @@ func (r *Repository) GetEquipList(ctx context.Context, db Queryer) (entity.Equip
 	return list, nil
 }
 
-func (r *Repository) MergeEquipCnt(ctx context.Context, db Beginner, equips entity.EquipTemps) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("MergeEquipCnt BeginTx fail: %v", err)
-	}
-
+func (r *Repository) MergeEquipCnt(ctx context.Context, tx Execer, equips entity.EquipTemps) error {
 	query := `
 			MERGE INTO IRIS_EQUIP_TEMP T1
 			USING(
@@ -55,21 +49,11 @@ func (r *Repository) MergeEquipCnt(ctx context.Context, db Beginner, equips enti
 				VALUES (T2.SNO, T2.JNO, T2.CNT)`
 
 	for _, equip := range equips {
-		if _, err = tx.QueryContext(ctx, query, equip.Sno, equip.Jno, equip.Cnt); err != nil {
-			origErr := err
-			err = tx.Rollback()
-			if err != nil {
-				//TODO: 에러 아카이브 처리
-				return fmt.Errorf("MergeEquipCnt Rollback fail: %v\n", err)
-			}
+		if _, err := tx.ExecContext(ctx, query, equip.Sno, equip.Jno, equip.Cnt); err != nil {
 			//TODO: 에러 아카이브
-			return fmt.Errorf("MergeEquipCnt QueryContext fail: %v", origErr)
+			return fmt.Errorf("MergeEquipCnt ExecContext fail: %v", err)
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("MergeEquipCnt Commit fail: %v\n", err)
-	}
 	return nil
 }
