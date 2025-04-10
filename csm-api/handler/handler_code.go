@@ -20,43 +20,24 @@ type HandlerCode struct {
 	Service service.ServiceCode
 }
 
-func (h *HandlerCode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCode) ListByPCode(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	pCode := r.URL.Query().Get("p_code")
 	if pCode == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
 	list, err := h.Service.GetCodeList(ctx, pCode)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
+		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List entity.Codes `json:"list"`
-		}{List: *list},
-	}
+	values := struct {
+		List entity.Codes `json:"list"`
+	}{List: *list}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessValuesResponse(ctx, w, values)
 }

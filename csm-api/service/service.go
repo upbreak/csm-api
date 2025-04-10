@@ -39,8 +39,6 @@ type ProjectService interface {
 	GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
 	GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error)
-	GetClientOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
-	GetHitechOrganization(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error)
@@ -48,6 +46,11 @@ type ProjectService interface {
 	ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, project entity.ReqProject) error
 	RemoveProject(ctx context.Context, sno int64, jno int64) error
+}
+
+type OrganizationService interface {
+	GetOrganizationClientList(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
+	GetOrganizationHtencList(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 }
 
 type ProjectDailyService interface {
@@ -81,8 +84,8 @@ type DeviceService interface {
 type WorkerService interface {
 	GetWorkerTotalList(ctx context.Context, page entity.Page, search entity.Worker, retry string) (*entity.Workers, error)
 	GetWorkerTotalCount(ctx context.Context, search entity.Worker, retry string) (int, error)
-	GetWorkerListByUserId(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.Workers, error)
-	GetWorkerCountByUserId(ctx context.Context, search entity.WorkerDaily, retry string) (int, error)
+	GetAbsentWorkerList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.Workers, error)
+	GetAbsentWorkerCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error)
 	AddWorker(ctx context.Context, worker entity.Worker) error
 	ModifyWorker(ctx context.Context, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)

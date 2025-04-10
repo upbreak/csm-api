@@ -79,6 +79,18 @@ func FailResponse(ctx context.Context, w http.ResponseWriter, err error) {
 		http.StatusOK)
 }
 
+func BadRequestResponse(ctx context.Context, w http.ResponseWriter) {
+	RespondJSON(
+		ctx,
+		w,
+		&ErrResponse{
+			Result:         Failure,
+			Message:        http.StatusText(http.StatusBadRequest),
+			HttpStatusCode: http.StatusInternalServerError,
+		},
+		http.StatusOK)
+}
+
 func SuccessResponse(ctx context.Context, w http.ResponseWriter) {
 	rsp := Response{
 		Result: Success,

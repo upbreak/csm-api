@@ -41,9 +41,6 @@ type ProjectStore interface {
 	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
 	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error)
-	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
-	GetClientOrganization(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
-	GetHitechOrganization(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
@@ -51,6 +48,12 @@ type ProjectStore interface {
 	ModifyDefaultProject(ctx context.Context, db Beginner, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, db Beginner, project entity.ReqProject) error
 	RemoveProject(ctx context.Context, db Beginner, sno int64, jno int64) error
+}
+
+type OrganizationStore interface {
+	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
+	GetOrganizationClientList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)
+	GetOrganizationHtencList(ctx context.Context, db Queryer, jno sql.NullInt64, funcNo sql.NullInt64) (*entity.OrganizationSqls, error)
 }
 
 type ProjectDailyStore interface {
@@ -84,8 +87,8 @@ type DeviceStore interface {
 type WorkerStore interface {
 	GetWorkerTotalList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Worker, retry string) (*entity.Workers, error)
 	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.Worker, retry string) (int, error)
-	GetWorkerListByUserId(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error)
-	GetWorkerCountByUserId(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
+	GetAbsentWorkerList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error)
+	GetAbsentWorkerCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
 	AddWorker(ctx context.Context, db Beginner, worker entity.Worker) error
 	ModifyWorker(ctx context.Context, db Beginner, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)

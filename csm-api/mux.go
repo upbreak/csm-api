@@ -95,14 +95,14 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Route("/code", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", codeHandler.ServeHTTP)
+		r.Get("/", codeHandler.ListByPCode)
 	})
 
 	// Begin::현장관리
-	// 현장관리 조회
-	siteListHandler := &handler.SiteListHandler{
+	siteHandler := &handler.HandlerSite{
 		Service: &service.ServiceSite{
 			DB:    safeDb,
+			TDB:   safeDb,
 			Store: &r,
 			ProjectService: &service.ServiceProject{
 				DB:    safeDb,
@@ -134,70 +134,27 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 		Jwt: jwt,
 	}
+	mux.Route("/site", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/", siteHandler.List)           // 현장관리 조회
+		r.Put("/", siteHandler.Modify)         // 수정
+		r.Get("/nm", siteHandler.SiteNameList) // 현장명 조회
+		r.Get("/stats", siteHandler.StatsList) // 현장상태조회
+		r.Post("/", siteHandler.Add)           // 현장 생성
+	})
+	// End::현장관리
 
-	// 현장 관리 수정
-	siteModifyHandler := &handler.SiteModifyHandler{
-		Service: &service.ServiceSite{
-			TDB:   safeDb,
-			Store: &r,
-			SitePosService: &service.ServiceSitePos{
-				TDB:   safeDb,
-				Store: &r,
-			},
-			SiteDateService: &service.ServiceSiteDate{
-				TDB:   safeDb,
-				Store: &r,
-			},
-			AddressSearchAPIService: &service.ServiceAddressSearching{
-				ApiKey: apiCfg,
-			},
-			ProjectService: &service.ServiceProject{
-				TDB:   safeDb,
-				Store: &r,
-			},
-		},
-	}
-
-	// 현장 이름 리스트 조회
-	siteNmListHandler := &handler.SiteNmListHandler{
-		Service: &service.ServiceSite{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-
-	// 현장 상태 리스트 조회
-	siteStatsHandler := &handler.SiteStatsHandler{
-		Service: &service.ServiceSite{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-
-	// 지도 x, y좌표 조회
-	siteRoadAddressHandler := &handler.SiteRoadAddressHandler{
-		Service: &service.ServiceAddressSearching{
+	// Begin::지도좌표
+	roadAddressHandler := &handler.HandlerRoadAddress{
+		Service: &service.ServiceAddressSearch{
 			ApiKey: apiCfg,
 		},
 	}
-	// 현장 생성
-	siteAddHandler := &handler.HandlerAddSite{
-		Service: &service.ServiceSite{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	mux.Route("/site", func(r chi.Router) {
+	mux.Route("/map", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", siteListHandler.ServeHTTP)
-		r.Put("/", siteModifyHandler.ServeHTTP)
-		r.Get("/nm", siteNmListHandler.ServeHTTP)
-		r.Get("/stats", siteStatsHandler.ServeHTTP)
-		r.Get("/point", siteRoadAddressHandler.ServeHTTP)
-		r.Post("/", siteAddHandler.ServeHTTP)
+		r.Get("/point", roadAddressHandler.AddressPoint)
 	})
-	// End::현장관리
+	// End::지도좌표
 
 	// Begin:: api 호출
 	// 기상청 초단기 실황
@@ -223,308 +180,113 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// End:: api 호출
 
 	// Begin::프로젝트 조회
-	// 프로젝트별 근로자 수 조회
-	projectWorkerCountHandler := &handler.HandlerProjectWorkerCount{
+	projectHandler := &handler.HandlerProject{
 		Service: &service.ServiceProject{
 			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 프로젝트 이름 데이터 조회
-	projectNmHandler := &handler.HandlerProjectNm{
-		Service: &service.ServiceProject{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 프로젝트 전체 조회
-	usedProjectHandler := &handler.HandlerUsedProject{
-		Service: &service.ServiceProject{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 진행중인 프로젝트 전체 조회
-	allProjectHandler := &handler.HandlerAllProject{
-		Service: &service.ServiceProject{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 조직도 프로젝트 정보
-	staffProjectHandler := &handler.HandlerStaffProject{
-		Service: &service.ServiceProject{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 조직도 정보
-	organizationHandler := &handler.HandlerOrganization{
-		Service: &service.ServiceProject{
-			DB:    timesheetDb,
-			Store: &r,
-		},
-	}
-	// 본인이 속한 프로젝트 이름 데이터 조회
-	projectNmUnoHandler := &handler.HandlerProjectNmUno{
-		Service: &service.ServiceProject{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 현장근태 사용되지 않은 프로젝트
-	nonProjectHandler := &handler.HandlerNonUsedProject{
-		Service: &service.ServiceProject{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 프로젝트 추가
-	addProjectHandler := &handler.HandlerAddProject{
-		Service: &service.ServiceProject{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 기본 프로젝트 변경
-	modifyDefaultProjectHandler := &handler.HandlerModifyDefaultProject{
-		Service: &service.ServiceProject{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 프로젝트 사용여부 변경
-	modifyUseProjectHandler := &handler.HandlerModifyUseProject{
-		Service: &service.ServiceProject{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 프로젝트 삭제
-	removeProjectHandler := &handler.HandlerRemoveProject{
-		Service: &service.ServiceProject{
 			TDB:   safeDb,
 			Store: &r,
 		},
 	}
 	mux.Route("/project", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/count", projectWorkerCountHandler.ServeHTTP)
-		r.Get("/used", usedProjectHandler.ServeHTTP)
-		r.Get("/all", allProjectHandler.ServeHTTP)
-		r.Get("/nm", projectNmHandler.ServeHTTP)
-		r.Get("/staff/{uno}", staffProjectHandler.ServeHTTP)
-		r.Get("/organization/{jno}", organizationHandler.ServeHTTP)
-		r.Get("/nm/{uno}", projectNmUnoHandler.ServeHTTP)
-		r.Get("/non-used", nonProjectHandler.ServeHTTP)
-		r.Post("/", addProjectHandler.ServeHTTP)
-		r.Put("/default", modifyDefaultProjectHandler.ServeHTTP)
-		r.Put("/use", modifyUseProjectHandler.ServeHTTP)
-		r.Delete("/{sno}/{jno}", removeProjectHandler.ServeHTTP)
+		r.Get("/", projectHandler.RegList)                        // 공사관리시스템 등록 프로젝트 전체 조회
+		r.Get("/worker-count", projectHandler.WorkerCountList)    // 프로젝트별 근로자 수 조회
+		r.Get("/enterprise", projectHandler.EnterpriseList)       // 프로젝트 전체 조회
+		r.Get("/job_name", projectHandler.JobNameList)            // 프로젝트 이름 조회
+		r.Get("/my-org/{uno}", projectHandler.MyOrgList)          // 본인이 속한 조직도의 프로젝트 조회
+		r.Get("/my-job_name/{uno}", projectHandler.MyJobNameList) // 본인이 속한 프로젝트 이름 목록
+		r.Get("/non-reg", projectHandler.NonRegList)              // 현장근태 사용되지 않은 프로젝트
+		r.Post("/", projectHandler.Add)                           // 추가
+		r.Put("/default", projectHandler.ModifyDefault)           // 현장 기본 프로젝트 변경
+		r.Put("/use", projectHandler.ModifyIsUse)                 // 현장 프로젝트 사용여부 변경
+		r.Delete("/{sno}/{jno}", projectHandler.Remove)           // 현장 프로젝트 삭제
 	})
 	// End::프로젝트 조회
 
+	// Begin::조직도
+	organizationHandler := &handler.HandlerOrganization{
+		Service: &service.ServiceOrganization{
+			DB:    timesheetDb,
+			Store: &r,
+		},
+	}
+	mux.Route("/organization", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/{jno}", organizationHandler.ByProjectList) // 선택한 프로젝트의 조직도 조회
+	})
+	// End::조직도
+
 	// Begin::근태인식기
-	// 조회
-	deviceListHandler := &handler.DeviceListHandler{
+	deviceHandler := &handler.DeviceHandler{
 		Service: &service.ServiceDevice{
 			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 추가
-	deviceAddHandler := &handler.DeviceAddHandler{
-		Service: &service.ServiceDevice{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 수정
-	deviceModifyHandler := &handler.DeviceModifyHandler{
-		Service: &service.ServiceDevice{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 삭제
-	deviceRemoveHandler := &handler.DeviceRemoveHandler{
-		Service: &service.ServiceDevice{
 			TDB:   safeDb,
 			Store: &r,
 		},
 	}
 	mux.Route("/device", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", deviceListHandler.ServeHTTP)
-		r.Post("/", deviceAddHandler.ServeHTTP)
-		r.Put("/", deviceModifyHandler.ServeHTTP)
-		r.Delete("/{id}", deviceRemoveHandler.ServeHTTP)
+		r.Get("/", deviceHandler.List)          // 조회
+		r.Post("/", deviceHandler.Add)          // 추가
+		r.Put("/", deviceHandler.Modify)        // 수정
+		r.Delete("/{id}", deviceHandler.Remove) // 삭제
 	})
 	// End::근태인식기
 
 	// Begin::근로자
-	// 전체 근로자 조회
-	workerTotalListHandler := handler.HandlerWorkerTotalList{
+	workerHandler := handler.HandlerWorker{
 		Service: &service.ServiceWorker{
 			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 근로자 추가
-	workerAddHandler := &handler.HandlerWorkerAdd{
-		Service: &service.ServiceWorker{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 근로자 검색 (현장 근로자 추가 전용)
-	workerByUserIdHandler := &handler.HandlerWorkerByUserId{
-		Service: &service.ServiceWorker{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 근로자 수정
-	workerModHandler := &handler.HandlerWorkerMod{
-		Service: &service.ServiceWorker{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 근로자 조회
-	workerSiteBaseListHandler := &handler.HandlerWorkerSiteBaseList{
-		Service: &service.ServiceWorker{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 근로자 추가/수정
-	workerSiteBaseMergeHandler := &handler.HandlerSiteBaseMerge{
-		Service: &service.ServiceWorker{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 근로자 일괄마감
-	workerDeadlineHandler := &handler.HandlerWorkerDeadline{
-		Service: &service.ServiceWorker{
-			TDB:   safeDb,
-			Store: &r,
-		},
-	}
-	// 현장 근로자 프로젝트 변경
-	workerProjectHandler := &handler.HandlerWorkerProject{
-		Service: &service.ServiceWorker{
 			TDB:   safeDb,
 			Store: &r,
 		},
 	}
 	mux.Route("/worker", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/total", workerTotalListHandler.ServeHttp)
-		r.Post("/total", workerAddHandler.ServeHttp)
-		r.Get("/total/simple", workerByUserIdHandler.ServeHttp)
-		r.Put("/total", workerModHandler.ServeHttp)
-		r.Get("/site-base", workerSiteBaseListHandler.ServeHttp)
-		r.Post("/site-base", workerSiteBaseMergeHandler.ServeHttp)
-		r.Post("/site-base/deadline", workerDeadlineHandler.ServeHttp)
-		r.Post("/site-base/project", workerProjectHandler.ServeHttp)
+		r.Get("/total", workerHandler.TotalList)                    // 전체근로자 조회
+		r.Get("/total/simple", workerHandler.AbsentList)            // 근로자 검색(현장근로자 추가시 사용)
+		r.Post("/total", workerHandler.Add)                         // 추가
+		r.Put("/total", workerHandler.Modify)                       // 수정
+		r.Get("/site-base", workerHandler.SiteBaseList)             // 현장근로자 조회
+		r.Post("/site-base", workerHandler.Merge)                   // 현장근로자 추가&수정
+		r.Post("/site-base/deadline", workerHandler.ModifyDeadline) // 현장근로자 마감처리
+		r.Post("/site-base/project", workerHandler.ModifyProject)   // 현장근로자 프로젝트 이동
 	})
 	// End::근로자
 
 	// Begin::협력업체
-	// job(프로젝트) 정보
-	companyJobInfoHandler := handler.HandlerJobInfoCompany{
+	companyHandler := handler.HandlerCompany{
 		Service: &service.ServiceCompany{
-			SafeDB: safeDb,
-			Store:  &r,
-		},
-	}
-	// 현장소장
-	companySiteManagerHandler := handler.HandlerSiteManagerCompany{
-		Service: &service.ServiceCompany{
+			SafeDB:      safeDb,
 			TimeSheetDB: timesheetDb,
 			Store:       &r,
 		},
 	}
-	// 안전관리자
-	companySafeManagerHandler := handler.HandlerSafeManagerCompany{
-		Service: &service.ServiceCompany{
-			SafeDB: safeDb,
-			Store:  &r,
-		},
-	}
-	// 관리감독자 정보
-	companySupervisorHandler := handler.HandlerSupervisorCompany{
-		Service: &service.ServiceCompany{
-			SafeDB: safeDb,
-			Store:  &r,
-		},
-	}
-	// 공종 정보
-	companyWorkInfoHandler := handler.HandlerWorkInfoCompany{
-		Service: &service.ServiceCompany{
-			SafeDB: safeDb,
-			Store:  &r,
-		},
-	}
-	// 협력업체 정보
-	companyCompanyInfoHandler := handler.HandlerCompanyInfoCompany{
-		Service: &service.ServiceCompany{
-			SafeDB: safeDb,
-			Store:  &r,
-		},
-	}
 	mux.Route("/company", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/job-info", companyJobInfoHandler.ServeHTTP)
-		r.Get("/site-manager", companySiteManagerHandler.ServeHTTP)
-		r.Get("/safe-manager", companySafeManagerHandler.ServeHTTP)
-		r.Get("/supervisor", companySupervisorHandler.ServeHTTP)
-		r.Get("/work-info", companyWorkInfoHandler.ServeHTTP)
-		r.Get("/company-info", companyCompanyInfoHandler.ServeHTTP)
+		r.Get("/job-info", companyHandler.JobInfo)         // job 정보 조회
+		r.Get("/site-manager", companyHandler.SiteManager) // 현장소장 조회
+		r.Get("/safe-manager", companyHandler.SafeManager) // 안전관리자 조회
+		r.Get("/supervisor", companyHandler.Supervisor)    // 관리감독자 조회
+		r.Get("/work-info", companyHandler.WorkInfo)       // 공종 정보 조회
+		r.Get("/company-info", companyHandler.CompanyInfo) // 협력업체 정보
 	})
 	// End::협력업체
 
 	// Begin::공지사항
+	noticeHandler := &handler.NoticeHandler{
+		Service: &service.ServiceNotice{
+			DB:    safeDb,
+			TDB:   safeDb,
+			Store: &r,
+		},
+	}
 	mux.Route("/notice", func(router chi.Router) {
 		router.Use(handler.AuthMiddleware(jwt))
-
-		// 공지사항 추가
-		noticeAddHandler := &handler.NoticeAddHandler{
-			Service: &service.ServiceNotice{
-				TDB:   safeDb,
-				Store: &r,
-			},
-		}
-
-		// 전체 공지사항 조회
-		noticeListHandler := &handler.NoticeListHandler{
-			Service: &service.ServiceNotice{
-				DB:    safeDb,
-				Store: &r,
-			},
-		}
-
-		// 공지사항 수정
-		noticeModifyHandler := &handler.NoticeModifyHandler{
-			Service: &service.ServiceNotice{
-				TDB:   safeDb,
-				Store: &r,
-			},
-		}
-		// 공지사항 삭제
-		noticeDeleteHandler := &handler.NoticeDeleteHandler{
-			Service: &service.ServiceNotice{
-				TDB:   safeDb,
-				Store: &r,
-			},
-		}
-
-		router.Post("/", noticeAddHandler.ServeHTTP)
-		router.Get("/{uno}", noticeListHandler.ServeHTTP)
-		router.Put("/", noticeModifyHandler.ServeHTTP)
-		router.Delete("/{idx}", noticeDeleteHandler.ServeHTTP)
+		router.Get("/{uno}", noticeHandler.List)      // 조회
+		router.Post("/", noticeHandler.Add)           // 추가
+		router.Put("/", noticeHandler.Modify)         // 수정
+		router.Delete("/{idx}", noticeHandler.Remove) // 삭제
 	})
 	// End::공지사항
 

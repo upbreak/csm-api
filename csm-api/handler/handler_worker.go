@@ -18,14 +18,14 @@ import (
  * -
  */
 
-type HandlerWorkerTotalList struct {
+type HandlerWorker struct {
 	Service service.WorkerService
 }
 
 // func: 전체 근로자 조회
 // @param
 // - response: http get paramter
-func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) TotalList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// http get paramter를 저장할 구조체 생성 및 파싱
@@ -46,16 +46,7 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	retrySearch := r.URL.Query().Get("retry_search")
 
 	if pageNum == "" || rowSize == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
@@ -73,54 +64,28 @@ func (h *HandlerWorkerTotalList) ServeHttp(w http.ResponseWriter, r *http.Reques
 	// 조회
 	list, err := h.Service.GetWorkerTotalList(ctx, page, search, retrySearch)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	// 개수 조회
 	count, err := h.Service.GetWorkerTotalCount(ctx, search, retrySearch)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List  entity.Workers `json:"list"`
-			Count int            `json:"count"`
-		}{List: *list, Count: count},
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	values := struct {
+		List  entity.Workers `json:"list"`
+		Count int            `json:"count"`
+	}{List: *list, Count: count}
+	SuccessValuesResponse(ctx, w, values)
 }
 
-type HandlerWorkerSiteBaseList struct {
-	Service service.WorkerService
-}
-
-// struct, func: 근로자 검색(현장근로자 추가시 사용)
-type HandlerWorkerByUserId struct {
-	Service service.WorkerService
-}
-
-func (h *HandlerWorkerByUserId) ServeHttp(w http.ResponseWriter, r *http.Request) {
+// func: 출근 안한 근로자 검색
+// @param
+// -
+func (h *HandlerWorker) AbsentList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	page := entity.Page{}
@@ -132,16 +97,7 @@ func (h *HandlerWorkerByUserId) ServeHttp(w http.ResponseWriter, r *http.Request
 	jno := r.URL.Query().Get("jno")
 
 	if pageNum == "" || rowSize == "" || jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 	page.PageNum, _ = strconv.Atoi(pageNum)
@@ -149,145 +105,75 @@ func (h *HandlerWorkerByUserId) ServeHttp(w http.ResponseWriter, r *http.Request
 	search.Jno = utils.ParseNullInt(jno)
 	search.SearchStartTime = utils.ParseNullString(searchStartTime)
 
-	list, err := h.Service.GetWorkerListByUserId(ctx, page, search, retrySearch)
+	list, err := h.Service.GetAbsentWorkerList(ctx, page, search, retrySearch)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	count, err := h.Service.GetWorkerCountByUserId(ctx, search, retrySearch)
+	count, err := h.Service.GetAbsentWorkerCount(ctx, search, retrySearch)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List  entity.Workers `json:"list"`
-			Count int            `json:"count"`
-		}{List: *list, Count: count},
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	values := struct {
+		List  entity.Workers `json:"list"`
+		Count int            `json:"count"`
+	}{List: *list, Count: count}
+	SuccessValuesResponse(ctx, w, values)
 }
 
-// struct, func: 근로자 추가
-type HandlerWorkerAdd struct {
-	Service service.WorkerService
-}
-
+// func: 근로자 추가
 // @param
 // - http method: post
 // - param: entity.Worker - json(raw)
-func (h *HandlerWorkerAdd) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) Add(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	//데이터 파싱
 	worker := entity.Worker{}
 	if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	err := h.Service.AddWorker(ctx, worker)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataAddFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-	}
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessResponse(ctx, w)
 }
 
-// struct, func: 근로자 수정
-type HandlerWorkerMod struct {
-	Service service.WorkerService
-}
-
+// func: 근로자 수정
 // @param
 // - http method: put
 // - param: entity.Worker - json(raw)
-func (h *HandlerWorkerMod) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) Modify(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	//데이터 파싱
 	worker := entity.Worker{}
 	if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	err := h.Service.ModifyWorker(ctx, worker)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataModifyFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-	}
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessResponse(ctx, w)
 }
 
 // func: 현장 근로자 조회
 // @param
 // - response: http get paramter
-func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) SiteBaseList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// http get paramter를 저장할 구조체 생성 및 파싱
@@ -307,16 +193,7 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	searchEndTime := r.URL.Query().Get("search_end_time")
 
 	if pageNum == "" || rowSize == "" || searchStartTime == "" || searchEndTime == "" || jno == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
@@ -334,182 +211,86 @@ func (h *HandlerWorkerSiteBaseList) ServeHttp(w http.ResponseWriter, r *http.Req
 	// 조회
 	list, err := h.Service.GetWorkerSiteBaseList(ctx, page, search, retrySearch)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	// 개수 조회
 	count, err := h.Service.GetWorkerSiteBaseCount(ctx, search, retrySearch)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			List  entity.WorkerDailys `json:"list"`
-			Count int                 `json:"count"`
-		}{List: *list, Count: count},
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	values := struct {
+		List  entity.WorkerDailys `json:"list"`
+		Count int                 `json:"count"`
+	}{List: *list, Count: count}
+	SuccessValuesResponse(ctx, w, values)
 }
 
-// struct, func: 현장근로자 추가/수정
-type HandlerSiteBaseMerge struct {
-	Service service.WorkerService
-}
-
+// func: 현장근로자 추가/수정
 // @param
 // - http method: post
 // - param: entity.WorkerDailys - json(raw)
-func (h *HandlerSiteBaseMerge) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) Merge(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	//데이터 파싱
 	workers := entity.WorkerDailys{}
 	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	err := h.Service.MergeSiteBaseWorker(ctx, workers)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataMergeFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
-
-	rsp := Response{
-		Result: Success,
-	}
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessResponse(ctx, w)
 }
 
-// struct, func: 근로자 일괄마감
-type HandlerWorkerDeadline struct {
-	Service service.WorkerService
-}
-
+// func: 근로자 일괄마감
 // @param
 // - http method: post
 // - param: entity.WorkerDailys - json(raw)
-func (h *HandlerWorkerDeadline) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) ModifyDeadline(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	//데이터 파싱
 	workers := entity.WorkerDailys{}
 	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	err := h.Service.ModifyWorkerDeadline(ctx, workers)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataModifyFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-	}
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessResponse(ctx, w)
 }
 
-// struct, func: 현장 근로자 프로젝트 변경
-type HandlerWorkerProject struct {
-	Service service.WorkerService
-}
-
+// func: 현장 근로자 프로젝트 변경
 // @param
 // - http method: post
 // - param: entity.WorkerDailys - json(raw)
-func (h *HandlerWorkerProject) ServeHttp(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerWorker) ModifyProject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	//데이터 파싱
 	workers := entity.WorkerDailys{}
 	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        BodyDataParseError,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	err := h.Service.ModifyWorkerProject(ctx, workers)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        DataModifyFailed,
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-	}
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessResponse(ctx, w)
 }
