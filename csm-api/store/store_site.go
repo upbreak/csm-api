@@ -45,16 +45,11 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				END AS CURRENT_SITE_STATS
 			FROM
 				IRIS_SITE_SET t1
-				INNER JOIN IRIS_SITE_JOB t2 
-					ON t1.SNO = t2.SNO 
-					AND t2.IS_DEFAULT = 'Y'
-				INNER JOIN S_JOB_INFO t3 
-					ON t2.JNO = t3.JNO
-				LEFT JOIN IRIS_RECD_SET t4
-					ON t1.SNO = t4.SNO
-					AND TO_CHAR(t4.RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
-			WHERE
-				t1.SNO > 100
+				INNER JOIN IRIS_SITE_JOB t2 ON t1.SNO = t2.SNO AND t2.IS_DEFAULT = 'Y'
+				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO
+				LEFT JOIN IRIS_RECD_SET t4 ON t1.SNO = t4.SNO AND TO_CHAR(t4.RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
+			WHERE t1.SNO > 100
+			AND t1.IS_USE = 'Y'
 			GROUP BY
 				t1.SNO,
 				t2.JNO,
