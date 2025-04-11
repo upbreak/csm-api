@@ -1,6 +1,9 @@
 package entity
 
-import "github.com/guregu/null"
+import (
+	"fmt"
+	"github.com/guregu/null"
+)
 
 type Code struct {
 	Level     null.Int    `json:"level" db:"LEVEL"`
@@ -32,3 +35,55 @@ type CodeTree struct {
 }
 
 type CodeTrees []*CodeTree
+
+// 코드를 코드트리 구조로 변환
+func ConvertCodesToCodeTree(codes Codes, pCode string) (codeTrees CodeTrees, err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("entity/ConvertCodesToCodeTree: %v", r)
+		}
+	}()
+
+	for i := 0; i < len(codes); i++ {
+
+		// 부모가 다른 경우 넘기기
+		if codes[i].PCode.Valid && codes[i].PCode.String != pCode {
+			continue
+		}
+
+		// code의 값 tree 형태로 변환
+		codeTree := &CodeTree{}
+
+		codeTree.IDX = codes[i].IDX
+		codeTree.Level = codes[i].Level
+		codeTree.Code = codes[i].Code
+
+		// root는 root값 입력하기
+		if codes[i].PCode.String == "" {
+			codeTree.PCode.String = "root"
+			codeTree.PCode.Valid = true
+		} else {
+			codeTree.PCode = codes[i].PCode
+		}
+
+		// 하위 code 넣기
+		codeTree.Children = &CodeTrees{}
+		child, err := ConvertCodesToCodeTree(codes[i+1:], codes[i].Code.String) // 현재 코드가 다음 레벨의 부모코드
+		if err != nil {
+			return nil, err
+		}
+		codeTree.Children = &child
+		if len(child) > 0 {
+			codeTree.Expand.Bool = true
+			codeTree.Expand.Valid = true
+		} else {
+			codeTree.Expand.Bool = false
+			codeTree.Expand.Valid = true
+		}
+		codeTree.CodeSet = codes[i]
+		codeTrees = append(codeTrees, codeTree)
+	}
+
+	return
+}

@@ -89,23 +89,15 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// 코드조회
 	codeHandler := &handler.HandlerCode{
 		Service: service.ServiceCode{
-			DB:    safeDb,
-			Store: &r,
-		},
-	}
-
-	// 코드 관리 조회
-	codeTreeHandler := &handler.HandlerCodeTree{
-		Service: service.ServiceCode{
-			DB:    safeDb,
-			Store: &r,
+			SafeDB: safeDb,
+			Store:  &r,
 		},
 	}
 
 	mux.Route("/code", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", codeHandler.ListByPCode)
-		r.Get("/tree", codeTreeHandler.ServeHTTP)
+		r.Get("/tree", codeHandler.ListCodeTree)
 	})
 
 	// Begin::현장관리
@@ -139,8 +131,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			},
 		},
 		CodeService: &service.ServiceCode{
-			DB:    safeDb,
-			Store: &r,
+			SafeDB: safeDb,
+			Store:  &r,
 		},
 		Jwt: jwt,
 	}

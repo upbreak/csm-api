@@ -42,33 +42,18 @@ func (h *HandlerCode) ListByPCode(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
-// struct, func: 코드 트리 조회
-type HandlerCodeTree struct {
-	Service service.ServiceCode
-}
-
-func (h *HandlerCodeTree) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HandlerCode) ListCodeTree(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	codeTrees, err := h.Service.GetCodeTree(ctx)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
+		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			CodeTrees entity.CodeTrees `json:"code_trees"`
-		}{CodeTrees: *codeTrees},
-	}
+	values := struct {
+		CodeTrees entity.CodeTrees `json:"code_trees"`
+	}{CodeTrees: *codeTrees}
 
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
-
+	SuccessValuesResponse(ctx, w, values)
 }
