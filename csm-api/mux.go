@@ -103,30 +103,22 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::현장관리
 	siteHandler := &handler.HandlerSite{
 		Service: &service.ServiceSite{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:            safeDb,
+			SafeTDB:           safeDb,
+			Store:             &r,
+			ProjectStore:      &r,
+			ProjectDailyStore: &r,
+			SitePosStore:      &r,
+			SiteDateStore:     &r,
 			ProjectService: &service.ServiceProject{
-				DB:    safeDb,
-				Store: &r,
-				UserService: &service.ServiceUser{
-					DB:    safeDb,
-					Store: &r,
-				},
-			},
-			ProjectDailyService: &service.ServiceProjectDaily{
-				DB:    safeDb,
-				Store: &r,
-			},
-			SitePosService: &service.ServiceSitePos{
-				DB:    safeDb,
-				Store: &r,
-			},
-			SiteDateService: &service.ServiceSiteDate{
-				DB:    safeDb,
-				Store: &r,
+				SafeDB:    safeDb,
+				Store:     &r,
+				UserStore: &r,
 			},
 			WhetherApiService: &service.ServiceWhether{
+				ApiKey: apiCfg,
+			},
+			AddressSearchAPIService: &service.ServiceAddressSearch{
 				ApiKey: apiCfg,
 			},
 		},
@@ -138,11 +130,12 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Route("/site", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", siteHandler.List)           // 현장관리 조회
-		r.Put("/", siteHandler.Modify)         // 수정
-		r.Get("/nm", siteHandler.SiteNameList) // 현장명 조회
-		r.Get("/stats", siteHandler.StatsList) // 현장상태조회
-		r.Post("/", siteHandler.Add)           // 현장 생성
+		r.Get("/", siteHandler.List)                // 현장관리 조회
+		r.Get("/nm", siteHandler.SiteNameList)      // 현장명 조회
+		r.Get("/stats", siteHandler.StatsList)      // 현장상태조회
+		r.Post("/", siteHandler.Add)                // 현장 생성
+		r.Put("/", siteHandler.Modify)              // 수정
+		r.Put("/non-use", siteHandler.ModifyNonUse) // 현장 사용안함
 	})
 	// End::현장관리
 
@@ -184,9 +177,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::프로젝트 조회
 	projectHandler := &handler.HandlerProject{
 		Service: &service.ServiceProject{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/project", func(r chi.Router) {
@@ -208,8 +201,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::조직도
 	organizationHandler := &handler.HandlerOrganization{
 		Service: &service.ServiceOrganization{
-			DB:    timesheetDb,
-			Store: &r,
+			SafeDB: timesheetDb,
+			Store:  &r,
 		},
 	}
 	mux.Route("/organization", func(r chi.Router) {
@@ -221,9 +214,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::근태인식기
 	deviceHandler := &handler.DeviceHandler{
 		Service: &service.ServiceDevice{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/device", func(r chi.Router) {
@@ -238,9 +231,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::근로자
 	workerHandler := handler.HandlerWorker{
 		Service: &service.ServiceWorker{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/worker", func(r chi.Router) {
@@ -278,9 +271,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// Begin::공지사항
 	noticeHandler := &handler.NoticeHandler{
 		Service: &service.ServiceNotice{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/notice", func(router chi.Router) {
@@ -296,9 +289,9 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	// 장비 핸들러
 	equipHandler := &handler.HandlerEquip{
 		Service: &service.ServiceEquip{
-			DB:    safeDb,
-			TDB:   safeDb,
-			Store: &r,
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 	}
 	mux.Route("/equip", func(r chi.Router) {

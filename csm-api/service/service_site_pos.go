@@ -46,9 +46,25 @@ func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity
 //   - sitePos: 현장 정보 (ADDRESS_NAME_DEPTH1, ADDRESS_NAME_DEPTH2, ADDRESS_NAME_DEPTH3, ADDRESS_NAME_DEPTH4, ADDRESS_NAME_DEPTH5,
 //     ROAD_ADDRESS_NAME_DEPTH1, ROAD_ADDRESS_NAME_DEPTH2, ROAD_ADDRESS_NAME_DEPTH3, ROAD_ADDRESS_NAME_DEPTH4, ROAD_ADDRESS_NAME_DEPTH5,
 //     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
-func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) error {
+func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) (err error) {
+	tx, err := s.TDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_site_pos/TBeginTx err: %w", err)
+	}
 
-	if err := s.Store.ModifySitePosData(ctx, s.TDB, sno, sitePos); err != nil {
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_site_pos/TRollback err: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_site_pos/TXCommit err: %w", commitErr)
+			}
+		}
+	}()
+
+	if err := s.Store.ModifySitePosData(ctx, tx, sno, sitePos); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site_pos/ModifySitePosData err: %w", err)
 	}

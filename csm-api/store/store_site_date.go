@@ -40,13 +40,7 @@ func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64)
 // @param
 // - sno: 현장고유번호
 // - siteDate: 현장 시간 (opening_date, closing_plan_date, closing_forecast_date, closing_actual_date)
-func (r *Repository) ModifySiteDate(ctx context.Context, db Beginner, sno int64, siteDateSql entity.SiteDate) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("store/site_date. Failed to begin transaction: %v", err)
-	}
-
+func (r *Repository) ModifySiteDate(ctx context.Context, tx Execer, sno int64, siteDateSql entity.SiteDate) error {
 	query := fmt.Sprintf(`
 			UPDATE IRIS_SITE_DATE 
 			SET
@@ -59,19 +53,23 @@ func (r *Repository) ModifySiteDate(ctx context.Context, db Beginner, sno int64,
 				AND IS_USE = 'Y'
 			`)
 
-	_, err = tx.ExecContext(ctx, query, siteDateSql.OpeningDate, siteDateSql.ClosingPlanDate, siteDateSql.ClosingForecastDate, siteDateSql.ClosingActualDate, sno)
-	if err != nil {
-		origErr := err
-		if err = tx.Rollback(); err != nil {
-			return err
-		}
-		//TODO: 에러 아카이브
-		return fmt.Errorf("store/site_date. ModifySiteDate fail: %v", origErr)
+	if _, err := tx.ExecContext(ctx, query, siteDateSql.OpeningDate, siteDateSql.ClosingPlanDate, siteDateSql.ClosingForecastDate, siteDateSql.ClosingActualDate, sno); err != nil {
+		return fmt.Errorf("ModifySiteDate fail: %w", err)
 	}
 
-	if err = tx.Commit(); err != nil {
-		//TODO: 에러 아카이브
-		return fmt.Errorf("store/site_date. failed to commit transaction: %v", err)
+	return nil
+}
+
+// func: 현장 날짜 사용안함 변경
+// @param
+// -
+func (r *Repository) ModifySiteDateIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+	query := `
+			UPDATE IRIS_SITE_DATE
+			SET IS_USE = 'N'
+			WHERE SNO = :1`
+	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+		return fmt.Errorf("ModifySiteDateIsNonUse fail: %w", err)
 	}
 
 	return nil

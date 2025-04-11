@@ -60,6 +60,9 @@ type Preparer interface {
 
 type Execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+type NamedExecer interface {
 	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
 }
 
