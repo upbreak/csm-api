@@ -59,3 +59,18 @@ func (r *Repository) ModifySiteDate(ctx context.Context, tx Execer, sno int64, s
 
 	return nil
 }
+
+// func: 현장 날짜 사용안함 변경
+// @param
+// -
+func (r *Repository) ModifySiteDateIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+	query := `
+			UPDATE IRIS_SITE_DATE
+			SET IS_USE = 'N'
+			WHERE SNO = :1`
+	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+		return fmt.Errorf("ModifySiteDateIsNonUse fail: %w", err)
+	}
+
+	return nil
+}

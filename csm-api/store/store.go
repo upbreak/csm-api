@@ -18,16 +18,19 @@ type SiteStore interface {
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, tx Execer, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tx Execer, jno int64, user entity.User) error
+	ModifySiteIsNonUse(ctx context.Context, tx Execer, sno int64) error
 }
 
 type SitePosStore interface {
 	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error)
 	ModifySitePosData(ctx context.Context, tx Execer, sno int64, sitePosSql entity.SitePos) error
+	ModifySitePosIsNonUse(ctx context.Context, tx Execer, sno int64) error
 }
 
 type SiteDateStore interface {
 	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDate, error)
 	ModifySiteDate(ctx context.Context, tx Execer, sno int64, siteDateSql entity.SiteDate) error
+	ModifySiteDateIsNonUse(ctx context.Context, tx Execer, sno int64) error
 }
 
 type ProjectStore interface {
@@ -48,6 +51,7 @@ type ProjectStore interface {
 	ModifyDefaultProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	RemoveProject(ctx context.Context, tx Execer, sno int64, jno int64) error
+	ModifyProjectIsNonUse(ctx context.Context, tx Execer, sno int64) error
 }
 
 type OrganizationStore interface {

@@ -128,11 +128,12 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Route("/site", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", siteHandler.List)           // 현장관리 조회
-		r.Put("/", siteHandler.Modify)         // 수정
-		r.Get("/nm", siteHandler.SiteNameList) // 현장명 조회
-		r.Get("/stats", siteHandler.StatsList) // 현장상태조회
-		r.Post("/", siteHandler.Add)           // 현장 생성
+		r.Get("/", siteHandler.List)                // 현장관리 조회
+		r.Get("/nm", siteHandler.SiteNameList)      // 현장명 조회
+		r.Get("/stats", siteHandler.StatsList)      // 현장상태조회
+		r.Post("/", siteHandler.Add)                // 현장 생성
+		r.Put("/", siteHandler.Modify)              // 수정
+		r.Put("/non-use", siteHandler.ModifyNonUse) // 현장 사용안함
 	})
 	// End::현장관리
 
