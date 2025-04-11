@@ -26,6 +26,7 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 	sql := `SELECT
 				t1.SNO,
 				t1.SITE_NM,
+				t1.WORK_RATE,
 				t1.ETC,
 				t1.LOC_CODE,
 				t1.LOC_NAME,
@@ -54,6 +55,7 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				t1.SNO,
 				t2.JNO,
 				t1.SITE_NM,
+				t1.WORK_RATE,
 				t1.ETC,
 				t1.LOC_CODE,
 				t1.LOC_NAME,
@@ -144,15 +146,16 @@ func (r *Repository) ModifySite(ctx context.Context, tx Execer, site entity.Site
 			UPDATE IRIS_SITE_SET 
 			SET
 			    SITE_NM = :1,
-			    ETC = :2,
-				MOD_UNO = :3,
-				MOD_USER = :4,
-				MOD_AGENT = :5,
+			    WORK_RATE = :2,
+			    ETC = :3,
+				MOD_UNO = :4,
+				MOD_USER = :5,
+				MOD_AGENT = :6,
 				MOD_DATE = SYSDATE
 			WHERE
-			    SNO = :6
+			    SNO = :7
 			`
-	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
+	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.WorkRate, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site. ModifySite fail: %v", err)
 	}
