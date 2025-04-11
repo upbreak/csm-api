@@ -27,6 +27,7 @@ type Point struct {
 type Site struct {
 	Sno                null.Int    `json:"sno" db:"SNO"`
 	SiteNm             null.String `json:"site_nm" db:"SITE_NM"`
+	WorkRate           null.Int    `json:"work_rate" db:"WORK_RATE"`
 	Etc                null.String `json:"etc" db:"ETC"`
 	LocCode            null.String `json:"loc_code" db:"LOC_CODE"`
 	LocName            null.String `json:"loc_name" db:"LOC_NAME"`
