@@ -145,3 +145,18 @@ func (r *Repository) ModifySitePosData(ctx context.Context, tx Execer, sno int64
 	return nil
 
 }
+
+// func: 현장 위치 사용안함 변경
+// @param
+// -
+func (r *Repository) ModifySitePosIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+	query := `
+			UPDATE IRIS_SITE_POS
+			SET IS_USE = 'N'
+			WHERE SNO = :1`
+	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+		return fmt.Errorf("store/site_pos. ModifySitePosIsNonUse fail: %w", err)
+	}
+
+	return nil
+}

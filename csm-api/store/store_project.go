@@ -876,3 +876,18 @@ func (r *Repository) RemoveProject(ctx context.Context, tx Execer, sno int64, jn
 	}
 	return nil
 }
+
+// func: 현장 프로젝트 사용안함 변경
+// @param
+// -
+func (r *Repository) ModifyProjectIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+	query := `
+			UPDATE IRIS_SITE_JOB
+			SET IS_USE = 'N'
+			WHERE SNO = :1`
+	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+		return fmt.Errorf("ModifyProjectIsNonUse. Failed to modify default project: %w", err)
+	}
+
+	return nil
+}

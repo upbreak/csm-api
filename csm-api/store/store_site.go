@@ -220,3 +220,18 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tx Execer, jno int
 
 	return nil
 }
+
+// func: 현장 사용안함 변경
+// @param
+// -
+func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+	query := `
+			UPDATE IRIS_SITE_SET
+			SET IS_USE = 'N'
+			WHERE SNO = :1`
+	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+		return fmt.Errorf("store/site. ModifySiteIsNonUse fail: %w", err)
+	}
+
+	return nil
+}

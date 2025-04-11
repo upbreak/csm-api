@@ -163,3 +163,25 @@ func (h *HandlerSite) Add(w http.ResponseWriter, r *http.Request) {
 
 	SuccessResponse(ctx, w)
 }
+
+// func: 현장 사용안함 변경
+// @param
+// -
+func (h *HandlerSite) ModifyNonUse(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	temp := struct {
+		Sno int64 `json:"sno"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&temp); err != nil {
+	}
+	if temp.Sno == 0 {
+		BadRequestResponse(ctx, w)
+	}
+
+	if err := h.Service.ModifySiteIsNonUse(ctx, temp.Sno); err != nil {
+		FailResponse(ctx, w, err)
+	}
+
+	SuccessResponse(ctx, w)
+}
