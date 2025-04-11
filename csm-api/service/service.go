@@ -65,6 +65,7 @@ type UserService interface {
 type CodeService interface {
 	GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error)
 	GetCodeTree(ctx context.Context) (*entity.CodeTrees, error)
+	MergeCode(ctx context.Context, code entity.Code) error
 }
 
 type NoticeService interface {

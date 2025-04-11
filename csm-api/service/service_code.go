@@ -8,8 +8,9 @@ import (
 )
 
 type ServiceCode struct {
-	SafeDB store.Queryer
-	Store  store.CodeStore
+	SafeDB  store.Queryer
+	SafeTDB store.Beginner
+	Store   store.CodeStore
 }
 
 func (s *ServiceCode) GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error) {
@@ -22,7 +23,9 @@ func (s *ServiceCode) GetCodeList(ctx context.Context, pCode string) (*entity.Co
 	return list, nil
 }
 
-// 코드트리 조회
+// func: 코드트리 조회
+// @param
+// -
 func (s *ServiceCode) GetCodeTree(ctx context.Context) (*entity.CodeTrees, error) {
 
 	// 코드리스트 조회
@@ -41,4 +44,33 @@ func (s *ServiceCode) GetCodeTree(ctx context.Context) (*entity.CodeTrees, error
 
 	return &trees, nil
 
+}
+
+// func: 코드트리 조회
+// @param
+// -
+func (s *ServiceCode) MergeCode(ctx context.Context, code entity.Code) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_code/MergeCode err: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_code/MergeCode err: %v\n; rollback err: %w", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_code/MergeCode err: %v\n; commit err: %w", err, commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.MergeCode(ctx, tx, code); err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("service_code/MergeCode err: %w", err)
+	}
+
+	return
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"encoding/json"
 	"net/http"
 )
 
@@ -56,4 +57,22 @@ func (h *HandlerCode) ListCodeTree(w http.ResponseWriter, r *http.Request) {
 	}{CodeTrees: *codeTrees}
 
 	SuccessValuesResponse(ctx, w, values)
+}
+
+func (h *HandlerCode) Merge(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 데이터 파싱
+	code := entity.Code{}
+	if err := json.NewDecoder(r.Body).Decode(&code); err != nil {
+		FailResponse(ctx, w, err)
+	}
+
+	err := h.Service.MergeCode(ctx, code)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	SuccessResponse(ctx, w)
 }

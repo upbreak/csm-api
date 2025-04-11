@@ -20,6 +20,7 @@ type Code struct {
 	SortNo    null.Int    `json:"sort_no" db:"SORT_NO"`
 	IsUse     null.String `json:"is_use" db:"IS_USE"`
 	Etc       null.String `json:"etc" db:"ETC"`
+	Base
 }
 
 type Codes []*Code
@@ -71,10 +72,10 @@ func ConvertCodesToCodeTree(codes Codes, pCode string) (codeTrees CodeTrees, err
 		codeTree.Children = &CodeTrees{}
 		child, err := ConvertCodesToCodeTree(codes[i+1:], codes[i].Code.String) // 현재 코드가 다음 레벨의 부모코드
 		if err != nil {
-			return nil, err
+			return codeTrees, err
 		}
-		codeTree.Children = &child
 		if len(child) > 0 {
+			codeTree.Children = &child
 			codeTree.Expand.Bool = true
 			codeTree.Expand.Valid = true
 		} else {
