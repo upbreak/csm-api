@@ -69,6 +69,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 						sorted_data.WORKER_TYPE,
 						sorted_data.IS_RETIRE,
 						sorted_data.RETIRE_DATE,
+						sorted_data.IS_MANAGE,
 						sorted_data.REG_USER,
 						sorted_data.REG_DATE,
 						sorted_data.MOD_USER,
@@ -87,6 +88,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							t1.WORKER_TYPE,
 							t1.IS_RETIRE,
 							t1.RETIRE_DATE,
+							t1.IS_MANAGE,
 							t1.REG_USER,
 							t1.REG_DATE,
 							t1.MOD_USER,
@@ -268,13 +270,13 @@ func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.
 				SET 
 					USER_NM = :1, DEPARTMENT = :2, PHONE = :3, WORKER_TYPE = :4, IS_RETIRE = :5,
 					RETIRE_DATE = :6, MOD_DATE = SYSDATE, MOD_AGENT = :7, MOD_USER = :8, MOD_UNO = :9, TRG_EDITABLE_YN = 'N',
-					REG_NO = :10
-				WHERE SNO = :11 AND JNO = :12 AND USER_ID = :13`
+					REG_NO = :10, IS_MANAGE = :11
+				WHERE SNO = :12 AND JNO = :13 AND USER_ID = :14`
 
 	result, err := tx.ExecContext(ctx, query,
 		worker.UserNm, worker.Department, worker.Phone, worker.WorkerType, worker.IsRetire,
 		worker.RetireDate /*, SYSDATE*/, agent, worker.ModUser, worker.ModUno,
-		worker.RegNo,
+		worker.RegNo, worker.IsManage,
 		worker.Sno, worker.Jno, worker.UserId,
 	)
 
