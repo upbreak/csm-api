@@ -66,6 +66,7 @@ type CodeService interface {
 	GetCodeList(ctx context.Context, pCode string) (*entity.Codes, error)
 	GetCodeTree(ctx context.Context) (*entity.CodeTrees, error)
 	MergeCode(ctx context.Context, code entity.Code) error
+	RemoveCode(ctx context.Context, idx int64) error
 }
 
 type NoticeService interface {

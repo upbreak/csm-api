@@ -99,7 +99,8 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/", codeHandler.ListByPCode)
 		r.Get("/tree", codeHandler.ListCodeTree)
-		r.Post("/", codeHandler.Merge) // 추가 및 수정
+		r.Post("/", codeHandler.Merge)         // 추가 및 수정
+		r.Delete("/{idx}", codeHandler.Remove) // 삭제
 
 	})
 

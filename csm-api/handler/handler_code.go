@@ -5,6 +5,7 @@ import (
 	"csm-api/service"
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 /**
@@ -74,5 +75,22 @@ func (h *HandlerCode) Merge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	SuccessResponse(ctx, w)
+}
+
+func (h *HandlerCode) Remove(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	idx, err := strconv.ParseInt(r.PathValue("idx"), 0, 64)
+	if err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	err = h.Service.RemoveCode(ctx, idx)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
 	SuccessResponse(ctx, w)
 }

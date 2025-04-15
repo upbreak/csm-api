@@ -46,7 +46,7 @@ func (s *ServiceCode) GetCodeTree(ctx context.Context) (*entity.CodeTrees, error
 
 }
 
-// func: 코드트리 조회
+// func: 코드트리 수정 및 저장
 // @param
 // -
 func (s *ServiceCode) MergeCode(ctx context.Context, code entity.Code) (err error) {
@@ -70,6 +70,34 @@ func (s *ServiceCode) MergeCode(ctx context.Context, code entity.Code) (err erro
 	if err = s.Store.MergeCode(ctx, tx, code); err != nil {
 		// TODO: 에러 아카이브
 		return fmt.Errorf("service_code/MergeCode err: %w", err)
+	}
+
+	return
+}
+
+// func: 코드 삭제
+// @param
+// -
+func (s *ServiceCode) RemoveCode(ctx context.Context, idx int64) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_code/RemoveCode err: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_code/RemoveCode err: %v\n; rollback err: %w", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_code/RemoveCode err: %v\n; commit err: %w", err, commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.RemoveCode(ctx, tx, idx); err != nil {
+		return fmt.Errorf("service_code/RemoveCode err: %w", err)
 	}
 
 	return

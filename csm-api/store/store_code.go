@@ -137,3 +137,19 @@ func (r *Repository) MergeCode(ctx context.Context, tx Execer, code entity.Code)
 
 	return nil
 }
+
+func (r *Repository) RemoveCode(ctx context.Context, tx Execer, idx int64) error {
+	query := `
+		UPDATE IRIS_CODE_SET
+		SET 
+			DEL_YN = 'Y'
+		WHERE 
+			IDX = :1			
+	`
+
+	if _, err := tx.ExecContext(ctx, query, idx); err != nil {
+		return fmt.Errorf("service_code/RemoveCode err: %w", err)
+	}
+
+	return nil
+}
