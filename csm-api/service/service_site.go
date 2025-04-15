@@ -198,8 +198,14 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 			//TODO: 에러 아카이브
 			return fmt.Errorf("service_site/GetApiLatitudeLongtitude err: %w", err)
 		}
-		sitePos.Latitude.Float64 = point.Latitude
-		sitePos.Longitude.Float64 = point.Longitude
+		if point.Latitude != 0.0 {
+			sitePos.Latitude.Float64 = point.Latitude
+			sitePos.Latitude.Valid = true
+		}
+		if point.Longitude != 0.0 {
+			sitePos.Longitude.Float64 = point.Longitude
+			sitePos.Longitude.Valid = true
+		}
 
 		if err = s.SitePosStore.ModifySitePosData(ctx, tx, site.Sno.Int64, sitePos); err != nil {
 			//TODO: 에러 아카이브

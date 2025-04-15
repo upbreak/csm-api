@@ -139,6 +139,7 @@ func (r *Repository) ModifySitePosData(ctx context.Context, tx Execer, sno int64
 		sitePosSql.RoadAddress,
 		sitePosSql.ZoneCode,
 		sitePosSql.BuildingName); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", err)
 	}
 

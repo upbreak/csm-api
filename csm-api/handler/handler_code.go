@@ -3,7 +3,9 @@ package handler
 import (
 	"csm-api/entity"
 	"csm-api/service"
+	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 /**
@@ -40,4 +42,55 @@ func (h *HandlerCode) ListByPCode(w http.ResponseWriter, r *http.Request) {
 	}{List: *list}
 
 	SuccessValuesResponse(ctx, w, values)
+}
+
+func (h *HandlerCode) ListCodeTree(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	codeTrees, err := h.Service.GetCodeTree(ctx)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	values := struct {
+		CodeTrees entity.CodeTrees `json:"code_trees"`
+	}{CodeTrees: *codeTrees}
+
+	SuccessValuesResponse(ctx, w, values)
+}
+
+func (h *HandlerCode) Merge(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 데이터 파싱
+	code := entity.Code{}
+	if err := json.NewDecoder(r.Body).Decode(&code); err != nil {
+		FailResponse(ctx, w, err)
+	}
+
+	err := h.Service.MergeCode(ctx, code)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	SuccessResponse(ctx, w)
+}
+
+func (h *HandlerCode) Remove(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	idx, err := strconv.ParseInt(r.PathValue("idx"), 0, 64)
+	if err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	err = h.Service.RemoveCode(ctx, idx)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	SuccessResponse(ctx, w)
 }
