@@ -17,6 +17,7 @@ type Worker struct {
 	WorkerType  null.String `json:"worker_type" db:"WORKER_TYPE"`
 	IsUse       null.String `json:"is_use" db:"IS_USE"`
 	IsRetire    null.String `json:"is_retire" db:"IS_RETIRE"`
+	IsManage    null.String `json:"is_manage" db:"IS_MANAGE"`
 	RetireDate  null.Time   `json:"retire_date" db:"RETIRE_DATE"`
 	RecordDate  null.String `json:"record_date" db:"RECORD_DATE"`
 	RegNo       null.String `json:"reg_no" db:"REG_NO"`
