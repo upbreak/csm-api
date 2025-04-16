@@ -117,6 +117,10 @@ type AddressSearchAPIService interface {
 	GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error)
 }
 
+type RestDateApiService interface {
+	GetRestDelDates(year string, month string) (entity.RestDates, error)
+}
+
 type EquipService interface {
 	GetEquipList(ctx context.Context) (entity.EquipTemps, error)
 	MergeEquipCnt(ctx context.Context, equips entity.EquipTemps) error
