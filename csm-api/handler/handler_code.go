@@ -22,6 +22,9 @@ type HandlerCode struct {
 	Service service.ServiceCode
 }
 
+// func: 코드 조회
+// @param
+// - p_code: 부모 코드
 func (h *HandlerCode) ListByPCode(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -44,6 +47,9 @@ func (h *HandlerCode) ListByPCode(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
+// func: 코드트리 조회
+// @param
+// -
 func (h *HandlerCode) ListCodeTree(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -60,6 +66,9 @@ func (h *HandlerCode) ListCodeTree(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
+// func: 코드 수정 및 생성
+// @param
+// - code
 func (h *HandlerCode) Merge(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -78,6 +87,9 @@ func (h *HandlerCode) Merge(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(ctx, w)
 }
 
+// func: 코드 삭제
+// @param
+// - idx: 삭제할 코드 pk
 func (h *HandlerCode) Remove(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -93,4 +105,27 @@ func (h *HandlerCode) Remove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	SuccessResponse(ctx, w)
+}
+
+// func: 코드순서 변경
+// @param
+// - codeSorts
+func (h *HandlerCode) SortNoModify(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 데이터 파싱
+	codeSorts := entity.CodeSorts{}
+	if err := json.NewDecoder(r.Body).Decode(&codeSorts); err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	err := h.Service.ModifySortNo(ctx, codeSorts)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	SuccessResponse(ctx, w)
+
 }

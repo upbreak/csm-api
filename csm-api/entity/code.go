@@ -25,6 +25,13 @@ type Code struct {
 
 type Codes []*Code
 
+type CodeSort struct {
+	IDX    null.Int `json:"idx" db:"IDX"`
+	SortNo null.Int `json:"sort_no" db:"SORT_NO"`
+}
+
+type CodeSorts []*CodeSort
+
 type CodeTree struct {
 	IDX      null.Int    `json:"idx" db:"IDX"` // level이 1이 아니면 쌓아야함.
 	Code     null.String `json:"code" db:"CODE"`

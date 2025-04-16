@@ -102,3 +102,34 @@ func (s *ServiceCode) RemoveCode(ctx context.Context, idx int64) (err error) {
 
 	return
 }
+
+// func: 코드순서 변경
+// @param
+// -
+func (s *ServiceCode) ModifySortNo(ctx context.Context, codeSorts entity.CodeSorts) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	defer func() {
+
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				//TODO: 에러 아카이브
+				err = fmt.Errorf("service_code/MergeCode err: %v\n; rollback err: %w", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				//TODO: 에러 아카이브
+				err = fmt.Errorf("service_code/MergeCode err: %v\n; commit err: %w", err, commitErr)
+			}
+		}
+	}()
+
+	for _, codeSort := range codeSorts {
+		if err = s.Store.ModifySortNo(ctx, tx, *codeSort); err != nil {
+			//TODO: 에러 아카이브
+			return fmt.Errorf("service_code/ModifySortNo err: %w", err)
+		}
+	}
+
+	return
+
+}
