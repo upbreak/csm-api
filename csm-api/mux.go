@@ -170,12 +170,19 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		},
 	}
 
+	// 공휴일 조회
+	restDatehandler := &handler.HandlerRestDate{
+		Service: &service.ServiceRestDate{
+			ApiKey: apiCfg,
+		},
+	}
+
 	mux.Route("/api", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/whether/srt", handlerWhetherSrt.ServeHTTP)
 		r.Get("/whether/wrn", handlerWhetherWrn.ServeHTTP)
+		r.Get("/rest-date", restDatehandler.ServeHTTP)
 	})
-
 	// End:: api 호출
 
 	// Begin::프로젝트 조회

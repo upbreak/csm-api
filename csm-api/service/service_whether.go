@@ -30,7 +30,7 @@ type ServiceWhether struct {
 func (s *ServiceWhether) GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error) {
 	// 초단기실황 url
 	url := fmt.Sprintf("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst?dataType=JSON&ServiceKey=%s&base_date=%s&base_time=%s&nx=%d&ny=%d&numOfRows=%d",
-		s.ApiKey.WhetherApiKey,
+		s.ApiKey.DataGoApiKey,
 		date,
 		time,
 		nx,
@@ -96,13 +96,13 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 	endDate := now.Format("20060102")
 
 	url := fmt.Sprintf("http://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnMsg?serviceKey=%s&pageNo=%s&numOfRows=%s&dataType=%s&fromTmFc=%s&toTmFc=%s&stnId=%s",
-		s.ApiKey.WhetherApiKey, // 데이터 포털 API 키
-		"1",                    // 페이지 번호
-		"20",                   // 한 페이지 결과 수
-		"JSON",                 // 응답 자료 형식
-		startDate,              // 발표시각 from
-		endDate,                //endDate,                // 발표시각 to
-		"108") // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
+		s.ApiKey.DataGoApiKey, // 데이터 포털 API 키
+		"1",                   // 페이지 번호
+		"20",                  // 한 페이지 결과 수
+		"JSON",                // 응답 자료 형식
+		startDate,             // 발표시각 from
+		endDate,               //endDate,                // 발표시각 to
+		"108")                 // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
 
 	// api call
 	body, err := api.CallGetAPI(url)
