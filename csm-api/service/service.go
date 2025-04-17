@@ -68,6 +68,7 @@ type CodeService interface {
 	MergeCode(ctx context.Context, code entity.Code) error
 	RemoveCode(ctx context.Context, idx int64) error
 	ModifySortNo(ctx context.Context, codeSorts entity.CodeSorts) error
+	DuplicateCheckCode(ctx context.Context, code string) (bool, error)
 }
 
 type NoticeService interface {
