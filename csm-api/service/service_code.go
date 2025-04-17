@@ -133,3 +133,21 @@ func (s *ServiceCode) ModifySortNo(ctx context.Context, codeSorts entity.CodeSor
 	return
 
 }
+
+// func: 코드 중복 검사
+// @param
+// - code
+func (s *ServiceCode) DuplicateCheckCode(ctx context.Context, code string) (bool, error) {
+
+	count, err := s.Store.DuplicateCheckCode(ctx, s.SafeDB, code)
+	if err != nil {
+		return false, fmt.Errorf("service_code/DuplicateCheckCode err: %w", err)
+	}
+
+	if count > 0 {
+		return true, nil
+	}
+
+	return false, nil
+
+}

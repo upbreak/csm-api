@@ -129,3 +129,20 @@ func (h *HandlerCode) SortNoModify(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(ctx, w)
 
 }
+
+// func: 코드 중복 검사
+// @param
+// - code
+func (h *HandlerCode) DuplicateByCode(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//데이터 파싱
+	code := r.URL.Query().Get("code")
+	value, err := h.Service.DuplicateCheckCode(ctx, code)
+
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	SuccessValuesResponse(ctx, w, value)
+}

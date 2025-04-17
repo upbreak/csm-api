@@ -74,6 +74,7 @@ type CodeStore interface {
 	MergeCode(ctx context.Context, tx Execer, code entity.Code) error
 	RemoveCode(ctx context.Context, tx Execer, idx int64) error
 	ModifySortNo(ctx context.Context, tx Execer, codeSort entity.CodeSort) error
+	DuplicateCheckCode(ctx context.Context, db Queryer, code string) (int, error)
 }
 
 type NoticeStore interface {

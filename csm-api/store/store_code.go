@@ -62,6 +62,7 @@ func (r *Repository) GetCodeTree(ctx context.Context, db Queryer) (*entity.Codes
 	return &codes, nil
 }
 
+// func: 코드트리 수정 및 저장
 func (r *Repository) MergeCode(ctx context.Context, tx Execer, code entity.Code) error {
 	query := `
 			MERGE INTO IRIS_CODE_SET C1
@@ -138,6 +139,7 @@ func (r *Repository) MergeCode(ctx context.Context, tx Execer, code entity.Code)
 	return nil
 }
 
+// func: 코드 삭제
 func (r *Repository) RemoveCode(ctx context.Context, tx Execer, idx int64) error {
 	query := `
 		UPDATE IRIS_CODE_SET
@@ -148,12 +150,13 @@ func (r *Repository) RemoveCode(ctx context.Context, tx Execer, idx int64) error
 	`
 
 	if _, err := tx.ExecContext(ctx, query, idx); err != nil {
-		return fmt.Errorf("service_code/RemoveCode err: %w", err)
+		return fmt.Errorf("store_code/RemoveCode err: %w", err)
 	}
 
 	return nil
 }
 
+// func: 코드순서 변경
 func (r *Repository) ModifySortNo(ctx context.Context, tx Execer, codeSort entity.CodeSort) error {
 	query := `
 		UPDATE 
@@ -164,7 +167,28 @@ func (r *Repository) ModifySortNo(ctx context.Context, tx Execer, codeSort entit
 			IDX = :2                 
 		`
 	if _, err := tx.ExecContext(ctx, query, codeSort.SortNo, codeSort.IDX); err != nil {
-		return fmt.Errorf("service_code/ModifyCodeSort err: %w", err)
+		return fmt.Errorf("store_code/ModifyCodeSort err: %w", err)
 	}
 	return nil
+}
+
+// func: 코드 중복 검사
+func (r *Repository) DuplicateCheckCode(ctx context.Context, db Queryer, code string) (int, error) {
+	var count int
+
+	query := `
+		SELECT 
+		    COUNT(*) 
+		FROM
+		    IRIS_CODE_SET
+		WHERE
+		    DEL_YN = 'Y'
+			AND CODE = :1
+		`
+
+	if err := db.GetContext(ctx, &count, query, code); err != nil {
+		return -1, fmt.Errorf("store_code/DuplicateCheckCode err: %w", err)
+	}
+
+	return count, nil
 }
