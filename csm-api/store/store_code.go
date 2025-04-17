@@ -153,3 +153,18 @@ func (r *Repository) RemoveCode(ctx context.Context, tx Execer, idx int64) error
 
 	return nil
 }
+
+func (r *Repository) ModifySortNo(ctx context.Context, tx Execer, codeSort entity.CodeSort) error {
+	query := `
+		UPDATE 
+		    IRIS_CODE_SET
+		SET
+			"ORDER" = :1
+		WHERE
+			IDX = :2                 
+		`
+	if _, err := tx.ExecContext(ctx, query, codeSort.SortNo, codeSort.IDX); err != nil {
+		return fmt.Errorf("service_code/ModifyCodeSort err: %w", err)
+	}
+	return nil
+}

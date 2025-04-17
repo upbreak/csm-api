@@ -73,6 +73,7 @@ type CodeStore interface {
 	GetCodeTree(ctx context.Context, db Queryer) (*entity.Codes, error)
 	MergeCode(ctx context.Context, tx Execer, code entity.Code) error
 	RemoveCode(ctx context.Context, tx Execer, idx int64) error
+	ModifySortNo(ctx context.Context, tx Execer, codeSort entity.CodeSort) error
 }
 
 type NoticeStore interface {

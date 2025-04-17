@@ -86,7 +86,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Get("/jwt-validation", jwtVaildHandler.ServeHTTP)
 
-	// 코드조회
+	// Begin :: 코드관리
 	codeHandler := &handler.HandlerCode{
 		Service: service.ServiceCode{
 			SafeDB:  safeDb,
@@ -97,12 +97,14 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 
 	mux.Route("/code", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", codeHandler.ListByPCode)
-		r.Get("/tree", codeHandler.ListCodeTree)
-		r.Post("/", codeHandler.Merge)         // 추가 및 수정
-		r.Delete("/{idx}", codeHandler.Remove) // 삭제
+		r.Get("/", codeHandler.ListByPCode)       // code 조회
+		r.Get("/tree", codeHandler.ListCodeTree)  // codeTree 조회
+		r.Post("/", codeHandler.Merge)            // 코드 추가 및 수정
+		r.Delete("/{idx}", codeHandler.Remove)    // 코드 삭제
+		r.Post("/sort", codeHandler.SortNoModify) // 코드순서 수정
 
 	})
+	// End :: 코드관리
 
 	// Begin::현장관리
 	siteHandler := &handler.HandlerSite{

@@ -89,12 +89,12 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 	var res AddressSearching
 	if err = json.Unmarshal([]byte(body), &res); err != nil {
 		//TODO: 에러 아카이브
-		return point, fmt.Errorf("AddressSearch api JSON parse err: %v", err)
+		return nil, fmt.Errorf("AddressSearch api JSON parse err: %v", err)
 	}
 
-	if res.Response.Status == "ERROR" {
+	if res.Response.Status != "OK" {
 		//TODO: 에러 아카이브
-		return point, fmt.Errorf("AddressSearch api response err: %s", res.Response.Error.Text)
+		return nil, fmt.Errorf("AddressSearch api response err: %s", res.Response.Error.Text)
 
 	} else {
 		items := res.Response.Result.Items
@@ -164,7 +164,7 @@ func (s *ServiceAddressSearch) GetAPISiteMapPoint(roadAddress string) (*entity.M
 		return nil, fmt.Errorf("SiteMapPoint api JSON parse err: %v", err)
 	}
 
-	if res.Response.Status == "ERROR" {
+	if res.Response.Status != "OK" {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("SiteMapPoint api response err: %s", res.Response.Error.Text)
 	}
