@@ -127,3 +127,10 @@ type EquipService interface {
 	GetEquipList(ctx context.Context) (entity.EquipTemps, error)
 	MergeEquipCnt(ctx context.Context, equips entity.EquipTemps) error
 }
+
+type ScheduleService interface {
+	GetRestScheduleList(ctx context.Context, jno int64, year string, month string) (entity.RestSchedules, error)
+	AddRestSchedule(ctx context.Context, schedule entity.RestSchedules) error
+	ModifyRestSchedule(ctx context.Context, schedule entity.RestSchedule) error
+	RemoveRestSchedule(ctx context.Context, cno int64) error
+}
