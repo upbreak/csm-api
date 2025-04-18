@@ -312,8 +312,25 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		r.Get("/", equipHandler.List)   // 장비 조회 (임시)
 		r.Post("/", equipHandler.Merge) // 장비 입력 (임시)
 	})
-
 	// End::장비
+
+	// Begin::일정관리
+	// 휴무일
+	restScheduleHandler := &handler.HandlerRestSchedule{
+		Service: &service.ServiceSchedule{
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
+		},
+	}
+	mux.Route("/schedule", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Get("/rest", restScheduleHandler.RestList)            // 휴무일 조회
+		r.Post("/rest", restScheduleHandler.RestAdd)            // 휴무일 추가
+		r.Put("/rest", restScheduleHandler.RestModify)          // 휴무일 수정
+		r.Delete("/rest/{cno}", restScheduleHandler.RestRemove) // 휴무일 삭제
+	})
+	// End::일정관리
 
 	// 라우팅:: end
 

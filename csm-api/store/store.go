@@ -121,3 +121,10 @@ type EquipStore interface {
 	GetEquipList(ctx context.Context, db Queryer) (entity.EquipTemps, error)
 	MergeEquipCnt(ctx context.Context, tx Execer, equips entity.EquipTemps) error
 }
+
+type ScheduleStore interface {
+	GetRestScheduleList(ctx context.Context, db Queryer, jno int64, year string, month string) (entity.RestSchedules, error)
+	AddRestSchedule(ctx context.Context, tx Execer, schedule entity.RestSchedules) error
+	ModifyRestSchedule(ctx context.Context, tx Execer, schedule entity.RestSchedule) error
+	RemoveRestSchedule(ctx context.Context, tx Execer, cno int64) error
+}
