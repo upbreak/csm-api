@@ -182,7 +182,7 @@ func (r *Repository) DuplicateCheckCode(ctx context.Context, db Queryer, code st
 		FROM
 		    IRIS_CODE_SET
 		WHERE
-		    DEL_YN = 'Y'
+		    DEL_YN = 'N'
 			AND CODE = :1
 		`
 
