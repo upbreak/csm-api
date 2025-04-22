@@ -4,8 +4,10 @@ import (
 	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/service"
+	"csm-api/utils"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -94,8 +96,28 @@ func (s *HandlerSite) Modify(w http.ResponseWriter, r *http.Request) {
 // -
 func (s *HandlerSite) SiteNameList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	page := entity.Page{}
+	search := entity.Site{}
 
-	list, err := s.Service.GetSiteNmList(ctx)
+	pageNum := r.URL.Query().Get(entity.PageNumKey)
+	rowSize := r.URL.Query().Get(entity.RowSizeKey)
+	order := r.URL.Query().Get(entity.OrderKey)
+
+	if pageNum == "" || rowSize == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+	page.PageNum, _ = strconv.Atoi(pageNum)
+	page.RowSize, _ = strconv.Atoi(rowSize)
+	page.Order = order
+
+	search.Sno = utils.ParseNullInt(r.URL.Query().Get("sno"))
+	search.SiteNm = utils.ParseNullString(r.URL.Query().Get("site_nm"))
+	search.Etc = utils.ParseNullString(r.URL.Query().Get("etc"))
+	search.LocName = utils.ParseNullString(r.URL.Query().Get("loc_name"))
+
+	// http get paramter를 저장할 구조체 생성
+	list, err := s.Service.GetSiteNmList(ctx, page, search)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

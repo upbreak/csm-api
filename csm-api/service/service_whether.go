@@ -154,7 +154,7 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 
 	for _, warningMsg := range warningMsgs {
 		response := entity.WhetherWrnMsg{}
-		warning, areaStr, resultBool := strings.Cut(warningMsg, ":")
+		warning, areaStr, _ := strings.Cut(warningMsg, ":")
 
 		warning = strings.TrimSpace(warning)
 
@@ -173,25 +173,26 @@ func (s *ServiceWhether) GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error) {
 
 		var areaList []string
 
-		// 특보 지역 구분(시도 단위로)
-		if resultBool {
-
-			areaStr = strings.ReplaceAll(areaStr, "도, ", "도), ")
-			for _, area := range strings.Split(areaStr, "), ") {
-				// 값이 없으면 넘기기
-				if area == "" {
-					continue
-				}
-				addStr := ""
-				if strings.Contains(area, "(") {
-					addStr = ")"
-				}
-				areaList = append(areaList, strings.TrimSpace(area)+addStr)
-			}
-
-		} else {
-			continue
-		}
+		// 특보 지역 구분(시도 단위로) 완도, 진도, 초도 등의 지명인 경우 이상하게 나와서 보류.
+		//if resultBool {
+		//
+		//	areaStr = strings.ReplaceAll(areaStr, "도, ", "도), ")
+		//	for _, area := range strings.Split(areaStr, "), ") {
+		//		// 값이 없으면 넘기기
+		//		if area == "" {
+		//			continue
+		//		}
+		//		addStr := ""
+		//		if strings.Contains(area, "(") {
+		//			addStr = ")"
+		//		}
+		//		areaList = append(areaList, strings.TrimSpace(area)+addStr)
+		//	}
+		//
+		//} else {
+		//	continue
+		//}
+		areaList = append(areaList, areaStr)
 
 		// 특보 정보 입력
 		if len(areaList) > 0 {

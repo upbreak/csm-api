@@ -113,8 +113,15 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 // func: 현장 데이터 리스트 조회
 // @param
 // -
-func (s *ServiceSite) GetSiteNmList(ctx context.Context) (*entity.Sites, error) {
-	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB)
+func (s *ServiceSite) GetSiteNmList(ctx context.Context, page entity.Page, search entity.Site) (*entity.Sites, error) {
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return nil, fmt.Errorf("service_site/GetSiteNmList OfPageSql err : %w", err)
+	}
+	fmt.Printf("search: %+v\n", search)
+	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB, pageSql, search)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteNmList err: %w", err)

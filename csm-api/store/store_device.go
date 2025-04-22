@@ -96,7 +96,7 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 						ON 
 							t1.SNO = t2.SNO
  						WHERE 
-							t1.SNO > 100
+							t1.SNO >= 100
 							%s %s
 					) sorted_data
 					WHERE ROWNUM <= :1
@@ -171,7 +171,7 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 				ON 
 					t1.SNO = t2.SNO
 				WHERE 
-					t1.SNO > 100
+					t1.SNO >= 100
 					%s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {

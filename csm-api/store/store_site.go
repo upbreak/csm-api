@@ -82,10 +82,24 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 // func: 현장 데이터 리스트
 // @param
 // -
-func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error) {
-	sites := entity.Sites{}
+func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site) (*entity.Sites, error) {
 
-	query := `
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Sno.NullInt64, "t1.SNO")
+	condition = utils.StringWhereConvert(condition, search.SiteNm.NullString, "t1.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.Etc.NullString, "t1.ETC")
+	condition = utils.StringWhereConvert(condition, search.LocName.NullString, "t1.LOC_NAME")
+
+	sites := entity.Sites{}
+	fmt.Printf("condition: %s\n", condition)
+	order := ""
+	if page.Order.Valid {
+		order = page.Order.String
+	} else {
+		order = ""
+	}
+	query := fmt.Sprintf(`
 				SELECT 
 					t1.SNO,
 					t1.SITE_NM,
@@ -95,10 +109,12 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sit
 					t1.REG_DATE,
 					t1.MOD_DATE
 				FROM IRIS_SITE_SET t1
-				WHERE sno > 100`
-	//WHERE t1.IS_USE ='Y'`
+				WHERE (sno > 100
+				OR ( 1=:1 AND sno = 100))
+			  	%s
+				ORDER BY %s t1.SNO DESC`, condition, order)
 
-	if err := db.SelectContext(ctx, &sites, query); err != nil {
+	if err := db.SelectContext(ctx, &sites, query, 0); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteNmList fail: %w", err)
 	}
