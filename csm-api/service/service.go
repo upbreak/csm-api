@@ -21,6 +21,7 @@ type SiteService interface {
 }
 
 type SitePosService interface {
+	GetSitePosList(ctx context.Context) ([]entity.SitePos, error)
 	GetSitePosData(ctx context.Context, sno int64) (*entity.SitePos, error)
 	ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) error
 }

@@ -15,6 +15,14 @@ type ServiceSitePos struct {
 	Store store.SitePosStore
 }
 
+func (s *ServiceSitePos) GetSitePosList(ctx context.Context) ([]entity.SitePos, error) {
+	list, err := s.Store.GetSitePosList(ctx, s.DB)
+	if err != nil {
+		return nil, fmt.Errorf("service;GetSitePosList: %w", err)
+	}
+	return list, nil
+}
+
 // 현장 위치 테이블 조회
 //
 // @param sno: 현장 고유번호
