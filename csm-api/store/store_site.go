@@ -23,55 +23,48 @@ import (
 func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error) {
 	sites := entity.Sites{}
 
-	sql := `SELECT
-				t1.SNO,
-				t1.SITE_NM,
-				t1.WORK_RATE,
-				t1.ETC,
-				t1.LOC_CODE,
-				t1.LOC_NAME,
-				t1.IS_USE,
-				t1.REG_DATE,
-				t1.REG_USER,
-				t1.REG_UNO,
-				t1.MOD_DATE,
-				t1.MOD_USER,
-				t1.MOD_UNO,
-				t2.JNO AS DEFAULT_JNO,
-				t3.JOB_NAME AS DEFAULT_PROJECT_NAME,
-				t3.JOB_NO AS DEFAULT_PROJECT_NO,
-				CASE 
-					WHEN COUNT(CASE WHEN t4.TRANS_TYPE = 'Clock in' THEN 1 END) >= 5 THEN 'Y'
-					ELSE 'C'
-				END AS CURRENT_SITE_STATS
-			FROM
-				IRIS_SITE_SET t1
+	sql := `
+				SELECT
+					t1.SNO,
+					t1.SITE_NM,
+					t1.WORK_RATE,
+					t1.ETC,
+					t1.LOC_CODE,
+					t1.LOC_NAME,
+					t1.IS_USE,
+					t1.REG_DATE,
+					t1.REG_USER,
+					t1.REG_UNO,
+					t1.MOD_DATE,
+					t1.MOD_USER,
+					t1.MOD_UNO,
+					t2.JNO AS DEFAULT_JNO,
+					t3.JOB_NAME AS DEFAULT_PROJECT_NAME,
+					t3.JOB_NO AS DEFAULT_PROJECT_NO,
+					CASE
+						WHEN EXISTS (
+							SELECT 1
+							FROM IRIS_SCH_REST_SET r
+							WHERE r.JNO = t2.JNO
+							  AND TO_DATE(r.REST_YEAR || LPAD(r.REST_MONTH, 2, '0') || LPAD(r.REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(SYSDATE)
+						) THEN 'H'
+						WHEN (
+							SELECT COUNT(*)
+							FROM IRIS_WORKER_DAILY_SET d
+							WHERE d.SNO = t1.SNO
+							  AND TRUNC(d.RECORD_DATE) = TRUNC(SYSDATE)
+							  AND d.WORK_STATE = '01'
+						) >= 5 THEN 'Y'
+						ELSE 'C'
+					END AS CURRENT_SITE_STATS
+				FROM IRIS_SITE_SET t1
 				INNER JOIN IRIS_SITE_JOB t2 ON t1.SNO = t2.SNO AND t2.IS_DEFAULT = 'Y'
 				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO
-				LEFT JOIN IRIS_RECD_SET t4 ON t1.SNO = t4.SNO AND TO_CHAR(t4.RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
-			WHERE t1.SNO > 100
-			AND t1.IS_USE = 'Y'
-			GROUP BY
-				t1.SNO,
-				t2.JNO,
-				t1.SITE_NM,
-				t1.WORK_RATE,
-				t1.ETC,
-				t1.LOC_CODE,
-				t1.LOC_NAME,
-				t1.IS_USE,
-				t1.REG_DATE,
-				t1.REG_USER,
-				t1.REG_UNO,
-				t1.MOD_DATE,
-				t1.MOD_USER,
-				t1.MOD_UNO,
-				t3.JOB_NAME,
-				t3.JOB_NO
-			ORDER BY
-				t1.SNO DESC`
+				WHERE t1.SNO > -1
+				AND t1.IS_USE = 'Y'
+				ORDER BY t1.SNO DESC`
 
-	if err := db.SelectContext(ctx, &sites, sql, targetDate); err != nil {
+	if err := db.SelectContext(ctx, &sites, sql); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteList fail: %w", err)
 	}
@@ -112,23 +105,26 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 	sites := entity.Sites{}
 
 	query := `
-				SELECT 
-					t1.SNO,
-					NVL(t2.CURRENT_SITE_STATS, 'C') CURRENT_SITE_STATS
-				FROM IRIS_RECD_SET t1
+				SELECT DISTINCT 
+					T1.SNO,
+					CASE 
+						WHEN T2.JNO IS NOT NULL THEN 'H'
+						WHEN NVL(T3.WORKER_COUNT, 0) >= 5 THEN 'Y'
+						ELSE 'C'
+					END AS CURRENT_SITE_STATS
+				FROM IRIS_SITE_JOB T1
 				LEFT JOIN (
-					SELECT SNO, 
-						CASE 
-							WHEN COUNT(CASE WHEN TRANS_TYPE = 'Clock in' THEN 1 END) >= 5 THEN 'Y'
-							ELSE 'C'
-						END AS CURRENT_SITE_STATS
-					FROM IRIS_RECD_SET 
-					WHERE SNO > 100 
-					AND TO_CHAR(RECOG_TIME, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
-					GROUP by SNO
-				) t2 ON t1.SNO = t2.SNO
-				WHERE t1.SNO > 100
-				GROUP by t1.SNO, t2.CURRENT_SITE_STATS`
+					SELECT DISTINCT JNO
+					FROM IRIS_SCH_REST_SET
+					WHERE TO_DATE(REST_YEAR || LPAD(REST_MONTH, 2, '0') || LPAD(REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(SYSDATE)
+				) T2 ON T1.JNO = T2.JNO
+				LEFT JOIN (
+					SELECT SNO, COUNT(*) AS WORKER_COUNT
+					FROM IRIS_WORKER_DAILY_SET
+					WHERE TRUNC(RECORD_DATE) = TRUNC(SYSDATE)
+					AND WORK_STATE = '01'
+					GROUP BY SNO
+				) T3 ON T1.SNO = T3.SNO`
 	if err := db.SelectContext(ctx, &sites, query, targetDate); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteStatsList fail: %w", err)

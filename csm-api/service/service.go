@@ -55,7 +55,10 @@ type OrganizationService interface {
 }
 
 type ProjectDailyService interface {
-	GetProjectDailyContentList(ctx context.Context, jno int64, targetDate time.Time) (*entity.ProjectDailys, error)
+	GetDailyJobList(ctx context.Context, jno int64, targetDate string) (entity.ProjectDailys, error)
+	AddDailyJob(ctx context.Context, project entity.ProjectDailys) error
+	ModifyDailyJob(ctx context.Context, project entity.ProjectDaily) error
+	RemoveDailyJob(ctx context.Context, idx int64) error
 }
 
 type UserService interface {

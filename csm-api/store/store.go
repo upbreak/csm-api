@@ -62,6 +62,10 @@ type OrganizationStore interface {
 
 type ProjectDailyStore interface {
 	GetProjectDailyContentList(ctx context.Context, db Queryer, jno int64, targetDate time.Time) (*entity.ProjectDailys, error)
+	GetDailyJobList(ctx context.Context, db Queryer, jno int64, targetDate string) (entity.ProjectDailys, error)
+	AddDailyJob(ctx context.Context, tx Execer, project entity.ProjectDailys) error
+	ModifyDailyJob(ctx context.Context, tx Execer, project entity.ProjectDaily) error
+	RemoveDailyJob(ctx context.Context, tx Execer, idx int64) error
 }
 
 type UserStore interface {
