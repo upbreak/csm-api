@@ -323,12 +323,24 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 			Store:   &r,
 		},
 	}
+	// 작업내용
+	dailyJobHandler := &handler.HandlerProjectDaily{
+		Service: &service.ServiceProjectDaily{
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
+		},
+	}
 	mux.Route("/schedule", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
 		r.Get("/rest", restScheduleHandler.RestList)            // 휴무일 조회
 		r.Post("/rest", restScheduleHandler.RestAdd)            // 휴무일 추가
 		r.Put("/rest", restScheduleHandler.RestModify)          // 휴무일 수정
 		r.Delete("/rest/{cno}", restScheduleHandler.RestRemove) // 휴무일 삭제
+		r.Get("/daily-job", dailyJobHandler.List)               // 작업내용 조회
+		r.Post("/daily-job", dailyJobHandler.Add)               // 작업내용 추가
+		r.Put("/daily-job", dailyJobHandler.Modify)             // 작업내용 수정
+		r.Delete("/daily-job/{cno}", dailyJobHandler.Remove)    // 작업내용 삭제
 	})
 	// End::일정관리
 

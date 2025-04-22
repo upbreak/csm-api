@@ -312,6 +312,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 			WHERE t1.sno > 100
+			AND t1.IS_USE = 'Y'
 			ORDER BY
 				t1.IS_DEFAULT DESC`
 	if err := db.SelectContext(ctx, &projectInfos, sql); err != nil {
@@ -368,6 +369,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 							INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 							INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
 						WHERE t1.SNO > 100
+						AND t1.IS_USE = 'Y'
 						%s
 						ORDER BY %s
 					) sorted_data
@@ -409,6 +411,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 					INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 					INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
 				WHERE t1.SNO > 100
+				AND t1.IS_USE = 'Y'
 				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {

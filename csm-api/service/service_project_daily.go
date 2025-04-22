@@ -5,23 +5,92 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"fmt"
-	"time"
 )
 
 type ServiceProjectDaily struct {
-	SafeDB store.Queryer
-	Store  store.ProjectDailyStore
+	SafeDB  store.Queryer
+	SafeTDB store.Beginner
+	Store   store.ProjectDailyStore
 }
 
-// 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
-//
-// @param jno: 프로젝트 관리번호
-// @param targetDate: 현재 시간
-func (s *ServiceProjectDaily) GetProjectDailyContentList(ctx context.Context, jno int64, targetDate time.Time) (*entity.ProjectDailys, error) {
-	projectDailys, err := s.Store.GetProjectDailyContentList(ctx, s.SafeDB, jno, targetDate)
+// 작업내용 조회
+func (s *ServiceProjectDaily) GetDailyJobList(ctx context.Context, jno int64, targetDate string) (entity.ProjectDailys, error) {
+	list, err := s.Store.GetDailyJobList(ctx, s.SafeDB, jno, targetDate)
 	if err != nil {
-		//TODO: 에러 아카이브
-		return nil, fmt.Errorf("service_project_daily/GetProjectDailyContentList err: %w", err)
+		return nil, fmt.Errorf("service;GetDailyJobList fail: %w", err)
 	}
-	return projectDailys, nil
+	return list, nil
+}
+
+// 작업내용 추가
+func (s *ServiceProjectDaily) AddDailyJob(ctx context.Context, project entity.ProjectDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service;AddDailyJob fail: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service;AddDailyJob rollback fail: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service;AddDailyJob commit fail: %w", commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.AddDailyJob(ctx, tx, project); err != nil {
+		return fmt.Errorf("service;AddDailyJob fail: %w", err)
+	}
+	return
+}
+
+// 작업내용 수정
+func (s *ServiceProjectDaily) ModifyDailyJob(ctx context.Context, project entity.ProjectDaily) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service;ModifyDailyJob fail: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service;ModifyDailyJob rollback fail: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service;ModifyDailyJob commit fail: %w", commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.ModifyDailyJob(ctx, tx, project); err != nil {
+		return fmt.Errorf("service;ModifyDailyJob fail: %w", err)
+	}
+	return
+}
+
+// 작업내용 삭제
+func (s *ServiceProjectDaily) RemoveDailyJob(ctx context.Context, idx int64) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service;RemoveDailyJob fail: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service;RemoveDailyJob rollback fail: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+			}
+		}
+	}()
+	if err = s.Store.RemoveDailyJob(ctx, tx, idx); err != nil {
+		return fmt.Errorf("service;RemoveDailyJob fail: %w", err)
+	}
+	return
 }
