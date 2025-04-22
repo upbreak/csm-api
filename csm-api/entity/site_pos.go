@@ -5,6 +5,7 @@ import (
 )
 
 type SitePos struct {
+	Sno                   null.Int    `json:"sno" db:"SNO"`
 	AddressNameDepth1     null.String `json:"address_name_depth1" db:"ADDRESS_NAME_DEPTH1"`
 	AddressNameDepth2     null.String `json:"address_name_depth2" db:"ADDRESS_NAME_DEPTH2"`
 	AddressNameDepth3     null.String `json:"address_name_depth3" db:"ADDRESS_NAME_DEPTH3"`

@@ -163,6 +163,10 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		Service: &service.ServiceWhether{
 			ApiKey: apiCfg,
 		},
+		SitePosService: &service.ServiceSitePos{
+			DB:    safeDb,
+			Store: &r,
+		},
 	}
 
 	// 기상청 기상특보통보문 조회

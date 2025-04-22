@@ -22,6 +22,7 @@ type SiteStore interface {
 }
 
 type SitePosStore interface {
+	GetSitePosList(ctx context.Context, db Queryer) ([]entity.SitePos, error)
 	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error)
 	ModifySitePosData(ctx context.Context, tx Execer, sno int64, sitePosSql entity.SitePos) error
 	ModifySitePosIsNonUse(ctx context.Context, tx Execer, sno int64) error

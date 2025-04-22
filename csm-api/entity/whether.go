@@ -48,6 +48,12 @@ type WhetherSrtEntity struct {
 }
 type WhetherSrtEntityRes []WhetherSrtEntity
 
+type WhetherSrt struct {
+	Whether WhetherSrtEntityRes `json:"whether"`
+	Sno     int64               `json:"sno"`
+}
+type WhetherSrtRes []WhetherSrt
+
 // func: 풍향 변환 숫자 -> 한글
 // @param
 // - value: 풍향(방위)

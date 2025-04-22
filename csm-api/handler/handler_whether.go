@@ -5,7 +5,6 @@ import (
 	"csm-api/service"
 	"csm-api/utils"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -20,59 +19,43 @@ import (
 
 // struct&func: 초단기 예보 api 호출
 type HandlerWhetherSrtNcst struct {
-	Service service.WhetherApiService
+	Service        service.WhetherApiService
+	SitePosService service.SitePosService
 }
 
 func (h *HandlerWhetherSrtNcst) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// get parameter
-	latStr := r.URL.Query().Get("lat") // 위도
-	lonStr := r.URL.Query().Get("lon") // 경도
-	if latStr == "" || lonStr == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "get parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+	list, err := h.SitePosService.GetSitePosList(ctx)
+	if err != nil {
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	lat, _ := strconv.ParseFloat(latStr, 64)
-	lon, _ := strconv.ParseFloat(lonStr, 64)
-	// Lambert Conformal Conic(LCC) 투영법을 사용해야 함.
-	nx, ny := utils.LatLonToXY(lat, lon)
+	var whetherList entity.WhetherSrtRes
+	for _, item := range list {
+		now := time.Now()
+		baseDate := now.Format("20060102")
+		baseTime := now.Add(time.Minute * -30).Format("1504") // 기상청에서 30분 단위로 발표하기 때문에 30분 전의 데이터 요청
+		nx, ny := utils.LatLonToXY(item.Latitude.Float64, item.Longitude.Float64)
 
-	// 현재날짜, 시간
-	now := time.Now()
-	baseDate := now.Format("20060102")
-	baseTime := now.Format("1504")
+		res, err := h.Service.GetWhetherSrtNcst(baseDate, baseTime, nx, ny)
+		if err != nil {
+			FailResponse(ctx, w, err)
+			return
+		}
 
-	res, err := h.Service.GetWhetherSrtNcst(baseDate, baseTime, nx, ny)
-	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				Details:        CallApiFailed,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
-		return
+		whether := entity.WhetherSrt{}
+		whether.Whether = res
+		whether.Sno = item.Sno.Int64
+		whetherList = append(whetherList, whether)
 	}
 
 	rsp := Response{
 		Result: Success,
 		Values: struct {
-			List entity.WhetherSrtEntityRes `json:"list"`
-		}{List: res},
+			List entity.WhetherSrtRes `json:"list"`
+		}{List: whetherList},
 	}
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
