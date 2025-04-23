@@ -123,9 +123,16 @@ func (s *HandlerSite) SiteNameList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	count, err := s.Service.GetSiteNmCount(ctx, search)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
 	values := struct {
-		List entity.Sites `json:"list"`
-	}{List: *list}
+		List  entity.Sites `json:"list"`
+		Count int          `json:"count"`
+	}{List: *list, Count: count}
 	SuccessValuesResponse(ctx, w, values)
 }
 

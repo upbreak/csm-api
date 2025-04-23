@@ -120,7 +120,7 @@ func (s *ServiceSite) GetSiteNmList(ctx context.Context, page entity.Page, searc
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site/GetSiteNmList OfPageSql err : %w", err)
 	}
-	fmt.Printf("search: %+v\n", search)
+
 	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB, pageSql, search)
 	if err != nil {
 		//TODO: 에러 아카이브
@@ -128,6 +128,20 @@ func (s *ServiceSite) GetSiteNmList(ctx context.Context, page entity.Page, searc
 	}
 
 	return sites, nil
+}
+
+// func: 현장 데이터 리스트 개수 조회
+// @param
+// -
+func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site) (int, error) {
+
+	count, err := s.Store.GetSiteNmCount(ctx, s.SafeDB, search)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return 0, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
+	}
+
+	return count, nil
 }
 
 // func: 현장 상태 조회
