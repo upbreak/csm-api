@@ -61,7 +61,6 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 			condition += fmt.Sprintf(` AND t1.IS_USE = UPPER('%s')`, trimIsUse)
 		}
 	}
-
 	var columns []string
 	columns = append(columns, "t2.SITE_NM")
 	columns = append(columns, "t1.DEVICE_SN")
@@ -98,9 +97,9 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
  						WHERE 
 							t1.SNO >= 100
 							%s %s
+						ORDER BY %s
 					) sorted_data
 					WHERE ROWNUM <= :1
-					ORDER BY %s
 				)
 				WHERE RNUM > :2`, condition, retryCondition, order)
 

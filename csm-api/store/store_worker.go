@@ -60,6 +60,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 					SELECT 
 					    ROWNUM AS RNUM,
 						sorted_data.SNO,
+						sorted_data.SITE_NM,
 						sorted_data.JNO,
 						sorted_data.JOB_NAME,
 						sorted_data.USER_ID, 
@@ -79,6 +80,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 						SELECT 
 						    t1.WNO,
 							t1.SNO,
+							t3.SITE_NM,
 							t1.JNO,
 							t2.JOB_NAME,
 							t1.USER_ID, 
@@ -96,6 +98,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							t1.REG_NO
 						FROM IRIS_WORKER_SET t1
 						LEFT JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+						LEFT JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 						WHERE t1.SNO > 100
 						%s %s
 						ORDER BY %s
