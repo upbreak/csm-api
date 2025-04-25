@@ -102,6 +102,7 @@ func (s *HandlerSite) SiteNameList(w http.ResponseWriter, r *http.Request) {
 	pageNum := r.URL.Query().Get(entity.PageNumKey)
 	rowSize := r.URL.Query().Get(entity.RowSizeKey)
 	order := r.URL.Query().Get(entity.OrderKey)
+	nonSite, _ := strconv.Atoi(r.URL.Query().Get("non_site"))
 
 	if pageNum == "" || rowSize == "" {
 		BadRequestResponse(ctx, w)
@@ -117,13 +118,13 @@ func (s *HandlerSite) SiteNameList(w http.ResponseWriter, r *http.Request) {
 	search.LocName = utils.ParseNullString(r.URL.Query().Get("loc_name"))
 
 	// http get paramter를 저장할 구조체 생성
-	list, err := s.Service.GetSiteNmList(ctx, page, search)
+	list, err := s.Service.GetSiteNmList(ctx, page, search, nonSite)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}
 
-	count, err := s.Service.GetSiteNmCount(ctx, search)
+	count, err := s.Service.GetSiteNmCount(ctx, search, nonSite)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

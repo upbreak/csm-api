@@ -13,8 +13,8 @@ type GetUserValidService interface {
 
 type SiteService interface {
 	GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
-	GetSiteNmList(ctx context.Context, page entity.Page, search entity.Site) (*entity.Sites, error)
-	GetSiteNmCount(ctx context.Context, search entity.Site) (int, error)
+	GetSiteNmList(ctx context.Context, page entity.Page, search entity.Site, nonSite int) (*entity.Sites, error)
+	GetSiteNmCount(ctx context.Context, search entity.Site, nonSite int) (int, error)
 	GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, site entity.Site) error
 	AddSite(ctx context.Context, jno int64, user entity.User) error

@@ -14,8 +14,8 @@ type GetUserValidStore interface {
 
 type SiteStore interface {
 	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
-	GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site) (*entity.Sites, error)
-	GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site) (int, error)
+	GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site, nonSite int) (*entity.Sites, error)
+	GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site, nonSite int) (int, error)
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, tx Execer, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tx Execer, jno int64, user entity.User) error

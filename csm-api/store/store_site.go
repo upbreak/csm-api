@@ -82,7 +82,7 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 // func: 현장 데이터 리스트
 // @param
 // -
-func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site) (*entity.Sites, error) {
+func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site, nonSite int) (*entity.Sites, error) {
 
 	condition := ""
 
@@ -113,15 +113,21 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.
 							t1.MOD_DATE
 						FROM IRIS_SITE_SET t1
 						WHERE (sno > 100
-							OR ( 1= :1 AND sno = 100))
+							OR ( 1=:1 AND sno = 100))
 							%s
-						ORDER BY SNO DESC
 				    ) sorted_data
 					WHERE ROWNUM <= :2
-					ORDER BY %s
+					ORDER BY 
+					    CASE WHEN 
+							SNO = 100 
+							THEN 0 
+							ELSE 1 
+						END,
+					    %s,
+						SNO DESC
 				) WHERE RNUM > :3`, condition, order)
 
-	if err := db.SelectContext(ctx, &sites, query, 0, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &sites, query, nonSite, page.EndNum, page.StartNum); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteNmList fail: %w", err)
 	}
@@ -131,7 +137,7 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.
 // func: 현장 데이터 개수
 // @param
 // -
-func (r *Repository) GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site) (int, error) {
+func (r *Repository) GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site, nonSite int) (int, error) {
 	var count int
 
 	condition := ""
@@ -148,10 +154,9 @@ func (r *Repository) GetSiteNmCount(ctx context.Context, db Queryer, search enti
 						WHERE (sno > 100
 							OR ( 1= :1 AND sno = 100))
 							%s
-						ORDER BY SNO DESC
 				    `, condition)
 
-	if err := db.GetContext(ctx, &count, query, 0); err != nil {
+	if err := db.GetContext(ctx, &count, query, nonSite); err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("getSiteNmList fail: %w", err)
 	}
