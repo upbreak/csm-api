@@ -165,7 +165,7 @@ func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.
 // func: 프로젝트 전체 조회
 // @param
 // -
-func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
+func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int) (*entity.JobInfos, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
@@ -173,7 +173,7 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetAllProjectList(ctx, p.SafeDB, pageSql, search)
+	jobInfos, err := p.Store.GetAllProjectList(ctx, p.SafeDB, pageSql, search, isAll)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
@@ -186,8 +186,11 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 // func: 프로젝트 개수 조회
 // @param
 // -
-func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
+func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int) (int, error) {
 	count, err := p.Store.GetAllProjectCount(ctx, p.SafeDB, search)
+	if isAll == 1 {
+		count += 1
+	}
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)

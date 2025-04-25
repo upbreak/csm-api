@@ -425,7 +425,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 // func: 프로젝트 전체 조회
 // @param
 // -
-func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error) {
+func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int) (*entity.JobInfos, error) {
 	list := entity.JobInfos{}
 
 	condition := "1 = 1"
@@ -446,6 +446,21 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	}
 
 	query := fmt.Sprintf(`
+				SELECT
+					0 AS RNUM,
+				    NULL AS JNO,
+					100 AS SNO,
+					'전체' AS JOB_NAME,
+					'' AS JOB_NO,
+					'-' AS JOB_SD,
+					'-' AS JOB_ED,
+					'-' AS COMP_NAME,
+					'-' AS ORDER_COMP_NAME,
+					'-' AS JOB_PM_NAME,
+					'-' AS CD_NM
+				FROM DUAL
+				WHERE 1=:1
+			UNION
 				SELECT *
 				FROM (
 					SELECT ROWNUM AS RNUM, sorted_data.*
@@ -479,11 +494,11 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 						WHERE %s
 						ORDER BY %s
 					) sorted_data
-					WHERE ROWNUM <= :1
+					WHERE ROWNUM <= :2
 				)
-				WHERE RNUM > :2`, condition, order)
+				WHERE RNUM > :3`, condition, order)
 
-	if err := db.SelectContext(ctx, &list, query, pageSql.EndNum, pageSql.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &list, query, isAll, pageSql.EndNum, pageSql.StartNum); err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetAllProjectList err: %w", err)
 	}

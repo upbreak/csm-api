@@ -137,12 +137,15 @@ func (h *HandlerProject) RegList(w http.ResponseWriter, r *http.Request) {
 
 // func: 프로젝트 전체 조회
 // @param
-// -
+// - all : 프로젝트 선택 시 "전체"도 넣을 것인지 여부
 func (h *HandlerProject) EnterpriseList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	page := entity.Page{}
 	search := entity.JobInfo{}
+
+	// 프로젝트 "전체" 넣을 것인지 여부
+	all := r.URL.Query().Get("all")
 
 	pageNum := r.URL.Query().Get("page_num")
 	rowSize := r.URL.Query().Get("row_size")
@@ -173,13 +176,15 @@ func (h *HandlerProject) EnterpriseList(w http.ResponseWriter, r *http.Request) 
 	search.JobEd = utils.ParseNullString(jobEd)
 	search.CdNm = utils.ParseNullString(cdNm)
 
-	list, err := h.Service.GetAllProjectList(ctx, page, search)
+	isAll, _ := strconv.Atoi(all)
+
+	list, err := h.Service.GetAllProjectList(ctx, page, search, isAll)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}
 
-	count, err := h.Service.GetAllProjectCount(ctx, search)
+	count, err := h.Service.GetAllProjectCount(ctx, search, isAll)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
