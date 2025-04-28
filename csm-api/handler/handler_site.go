@@ -200,16 +200,17 @@ func (h *HandlerSite) Add(w http.ResponseWriter, r *http.Request) {
 func (h *HandlerSite) ModifyNonUse(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	temp := struct {
-		Sno int64 `json:"sno"`
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&temp); err != nil {
+	reqSite := entity.ReqSite{}
+	if err := json.NewDecoder(r.Body).Decode(&reqSite); err != nil {
+		FailResponse(ctx, w, err)
+		return
 	}
-	if temp.Sno == 0 {
+	if reqSite.Sno.Valid == false {
 		BadRequestResponse(ctx, w)
+		return
 	}
 
-	if err := h.Service.ModifySiteIsNonUse(ctx, temp.Sno); err != nil {
+	if err := h.Service.ModifySiteIsNonUse(ctx, reqSite); err != nil {
 		FailResponse(ctx, w, err)
 	}
 
