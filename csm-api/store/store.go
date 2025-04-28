@@ -14,7 +14,8 @@ type GetUserValidStore interface {
 
 type SiteStore interface {
 	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
-	GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error)
+	GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site, nonSite int) (*entity.Sites, error)
+	GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site, nonSite int) (int, error)
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, tx Execer, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tx Execer, jno int64, user entity.User) error
@@ -41,7 +42,7 @@ type ProjectStore interface {
 	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error)
 	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
 	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
-	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
+	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int) (*entity.JobInfos, error)
 	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
 	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error)
@@ -96,6 +97,8 @@ type DeviceStore interface {
 	AddDevice(ctx context.Context, tx Execer, device entity.Device) error
 	ModifyDevice(ctx context.Context, tx Execer, device entity.Device) error
 	RemoveDevice(ctx context.Context, tx Execer, dno sql.NullInt64) error
+	GetDeviceLog(ctx context.Context, db Queryer) (*entity.RecdLogOrigins, error)
+	GetCheckRegistered(ctx context.Context, db Queryer, deviceName string) (int, error)
 }
 
 type WorkerStore interface {

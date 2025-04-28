@@ -75,27 +75,85 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 // func: 현장 데이터 리스트
 // @param
 // -
-func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer) (*entity.Sites, error) {
+func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site, nonSite int) (*entity.Sites, error) {
+
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Sno.NullInt64, "t1.SNO")
+	condition = utils.StringWhereConvert(condition, search.SiteNm.NullString, "t1.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.Etc.NullString, "t1.ETC")
+	condition = utils.StringWhereConvert(condition, search.LocName.NullString, "t1.LOC_NAME")
+
 	sites := entity.Sites{}
 
-	query := `
-				SELECT 
-					t1.SNO,
-					t1.SITE_NM,
-					t1.LOC_CODE,
-					t1.LOC_NAME,
-					t1.ETC,
-					t1.REG_DATE,
-					t1.MOD_DATE
-				FROM IRIS_SITE_SET t1
-				WHERE sno > 100`
-	//WHERE t1.IS_USE ='Y'`
+	order := ""
+	if page.Order.Valid {
+		order = page.Order.String
+	} else {
+		order = "''"
+	}
+	query := fmt.Sprintf(`
+				SELECT * FROM (
+				    SELECT ROWNUM AS RNUM, sorted_data.*
+				    FROM (				        
+						SELECT 
+							t1.SNO,
+							t1.SITE_NM,
+							t1.LOC_CODE,
+							t1.LOC_NAME,
+							t1.ETC,
+							t1.REG_DATE,
+							t1.MOD_DATE
+						FROM IRIS_SITE_SET t1
+						WHERE (sno > 100
+							OR ( 1=:1 AND sno = 100))
+							%s
+				    ) sorted_data
+					WHERE ROWNUM <= :2
+					ORDER BY 
+					    CASE WHEN 
+							SNO = 100 
+							THEN 0 
+							ELSE 1 
+						END,
+					    %s,
+						SNO DESC
+				) WHERE RNUM > :3`, condition, order)
 
-	if err := db.SelectContext(ctx, &sites, query); err != nil {
+	if err := db.SelectContext(ctx, &sites, query, nonSite, page.EndNum, page.StartNum); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteNmList fail: %w", err)
 	}
 	return &sites, nil
+}
+
+// func: 현장 데이터 개수
+// @param
+// -
+func (r *Repository) GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site, nonSite int) (int, error) {
+	var count int
+
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Sno.NullInt64, "t1.SNO")
+	condition = utils.StringWhereConvert(condition, search.SiteNm.NullString, "t1.SITE_NM")
+	condition = utils.StringWhereConvert(condition, search.Etc.NullString, "t1.ETC")
+	condition = utils.StringWhereConvert(condition, search.LocName.NullString, "t1.LOC_NAME")
+
+	query := fmt.Sprintf(`			        
+						SELECT 
+							count(*)
+						FROM IRIS_SITE_SET t1
+						WHERE (sno > 100
+							OR ( 1= :1 AND sno = 100))
+							%s
+				    `, condition)
+
+	if err := db.GetContext(ctx, &count, query, nonSite); err != nil {
+		//TODO: 에러 아카이브
+		return 0, fmt.Errorf("getSiteNmList fail: %w", err)
+	}
+	return count, nil
 }
 
 // func: 현장 상태 조회

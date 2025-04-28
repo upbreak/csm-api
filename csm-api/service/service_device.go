@@ -5,6 +5,7 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 )
 
@@ -148,4 +149,47 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error)
 		return fmt.Errorf("service_device/RemoveDevice err: %w", err)
 	}
 	return
+}
+
+// func: 근태인식기 미등록장치 확인
+// @param
+func (s *ServiceDevice) GetCheckRegisteredDevices(ctx context.Context) ([]string, error) {
+
+	// 당일 iris_recd_log 가져오기
+	devices, err := s.Store.GetDeviceLog(ctx, s.SafeDB)
+	if err != nil {
+		return nil, fmt.Errorf("service_device/GetDeviceList err: %v\n", err)
+	}
+
+	var log entity.RecdLog
+	deviceList := make(map[string]int)
+	// iris_recd_log 테이블의 iris_data값인 json에 들어온 deviceName을 파싱해서 deviceList 얻기
+	for _, device := range *devices {
+		if err = json.Unmarshal([]byte(device.IrisData.String), &log); err != nil {
+			//TODO: 에러 아카이브 처리
+			return nil, fmt.Errorf("GetDeviceList JSON parse err: %v\n", err)
+		}
+
+		// 중복 제거
+		_, ok := deviceList[log.DeviceName.String]
+		if !ok {
+			deviceList[log.DeviceName.String] = 1
+		}
+	}
+
+	// 미등록 확인.
+	var respond []string
+	var check int
+	for deviceName, _ := range deviceList {
+		check, err = s.Store.GetCheckRegistered(ctx, s.SafeDB, deviceName)
+		if err != nil {
+			//TODO: 에러 아카이브
+			return nil, fmt.Errorf("service_device/GetCheckRegisteredDevices err: %v\n", err)
+		}
+		if check == 0 {
+			respond = append(respond, deviceName)
+		}
+	}
+
+	return respond, nil
 }

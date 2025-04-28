@@ -238,10 +238,11 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	}
 	mux.Route("/device", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Get("/", deviceHandler.List)          // 조회
-		r.Post("/", deviceHandler.Add)          // 추가
-		r.Put("/", deviceHandler.Modify)        // 수정
-		r.Delete("/{id}", deviceHandler.Remove) // 삭제
+		r.Get("/", deviceHandler.List)                            // 조회
+		r.Post("/", deviceHandler.Add)                            // 추가
+		r.Put("/", deviceHandler.Modify)                          // 수정
+		r.Delete("/{id}", deviceHandler.Remove)                   // 삭제
+		r.Get("/check-registered", deviceHandler.CheckRegistered) // 장치 등록 확인
 	})
 	// End::근태인식기
 

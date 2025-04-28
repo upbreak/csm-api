@@ -113,14 +113,35 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 // func: 현장 데이터 리스트 조회
 // @param
 // -
-func (s *ServiceSite) GetSiteNmList(ctx context.Context) (*entity.Sites, error) {
-	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB)
+func (s *ServiceSite) GetSiteNmList(ctx context.Context, page entity.Page, search entity.Site, nonSite int) (*entity.Sites, error) {
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return nil, fmt.Errorf("service_site/GetSiteNmList OfPageSql err : %w", err)
+	}
+
+	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB, pageSql, search, nonSite)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
 	}
 
 	return sites, nil
+}
+
+// func: 현장 데이터 리스트 개수 조회
+// @param
+// -
+func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site, nonSite int) (int, error) {
+
+	count, err := s.Store.GetSiteNmCount(ctx, s.SafeDB, search, nonSite)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return 0, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
+	}
+
+	return count, nil
 }
 
 // func: 현장 상태 조회

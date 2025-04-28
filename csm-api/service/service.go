@@ -13,7 +13,8 @@ type GetUserValidService interface {
 
 type SiteService interface {
 	GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
-	GetSiteNmList(ctx context.Context) (*entity.Sites, error)
+	GetSiteNmList(ctx context.Context, page entity.Page, search entity.Site, nonSite int) (*entity.Sites, error)
+	GetSiteNmCount(ctx context.Context, search entity.Site, nonSite int) (int, error)
 	GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
 	ModifySite(ctx context.Context, site entity.Site) error
 	AddSite(ctx context.Context, jno int64, user entity.User) error
@@ -37,8 +38,8 @@ type ProjectService interface {
 	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
 	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error)
 	GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
-	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error)
-	GetAllProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
+	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int) (*entity.JobInfos, error)
+	GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int) (int, error)
 	GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error)
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
@@ -89,6 +90,7 @@ type DeviceService interface {
 	AddDevice(ctx context.Context, device entity.Device) error
 	ModifyDevice(ctx context.Context, device entity.Device) error
 	RemoveDevice(ctx context.Context, dno int64) error
+	GetCheckRegisteredDevices(ctx context.Context) ([]string, error)
 }
 
 type WorkerService interface {

@@ -213,15 +213,10 @@ func (r *Repository) AddNotice(ctx context.Context, tx Execer, notice entity.Not
 					:7,
 					:8,
 					SYSDATE,
---					C.CODE,
 					:9,
-					:10,
---					ADD_MONTHS(SYSDATE, C.UDF_VAL_03) + C.UDF_VAL_04,
+					TRUNC(:10) + 0.99999,
 					(SELECT U.DUTY_NAME FROM S_SYS_USER_SET U WHERE U.UNO = :11)
-				)
---				FROM IRIS_CODE_SET C
---				WHERE C.P_CODE = 'NOTICE_PERIOD' AND C.CODE = :9
-		`
+				)`
 
 	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
 
@@ -250,7 +245,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, tx Execer, notice entity.
 					MOD_USER = :8,
 					MOD_DATE = SYSDATE,
 					POSTING_START_DATE = :9,
-					POSTING_END_DATE = :10
+					POSTING_END_DATE = TRUNC(:10) + 0.99999
 				WHERE 
 					IDX = :11
 			`

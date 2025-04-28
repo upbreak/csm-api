@@ -25,6 +25,7 @@ type Point struct {
 }
 
 type Site struct {
+	RowNum             null.Int    `json:"rnum" db:"RNUM"`
 	Sno                null.Int    `json:"sno" db:"SNO"`
 	SiteNm             null.String `json:"site_nm" db:"SITE_NM"`
 	WorkRate           null.Int    `json:"work_rate" db:"WORK_RATE"`

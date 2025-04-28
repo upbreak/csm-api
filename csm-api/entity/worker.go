@@ -7,6 +7,7 @@ import (
 type Worker struct {
 	RowNum      null.Int    `json:"rnum" db:"RNUM"`
 	Sno         null.Int    `json:"sno" db:"SNO"` //현장 고유번호
+	SiteNm      null.String `json:"site_nm" db:"SITE_NM"`
 	Jno         null.Int    `json:"jno" db:"JNO"` //프로젝트 고유번호
 	JobName     null.String `json:"job_name" db:"JOB_NAME"`
 	UserId      null.String `json:"user_id" db:"USER_ID"` //근로자 아이디
