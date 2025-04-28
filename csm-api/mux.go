@@ -9,6 +9,7 @@ import (
 	"csm-api/service"
 	"csm-api/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 	"github.com/rs/cors"
 	"net/http"
 )
@@ -26,7 +27,7 @@ import (
 // @param
 // - cfg *config.DBConfigs: db 접속 정보
 // chi패키지를 이용하여 http method에 따른 여러 요청을 라우팅 할 수 있음 함수 구현
-func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(), error) {
+func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Handler, error) {
 	mux := chi.NewRouter()
 
 	// CORS 미들웨어 설정
@@ -36,34 +37,18 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},       // 허용할 메서드
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},                 // 허용할 헤더
 	})
-
-	// db연결 설정
-	var cleanup []func()
-	// safe 스키마 연결
-	safeDb, safeCleanup, err := store.New(ctx, cfg.Safe)
-	cleanup = append(cleanup, func() { safeCleanup() })
-	if err != nil {
-		return nil, cleanup, err
-	}
-	// timesheet 스키마 연결
-	timesheetDb, timeSheetCleanup, err := store.New(ctx, cfg.TimeSheet)
-	cleanup = append(cleanup, func() { timeSheetCleanup() })
-	if err != nil {
-		return nil, cleanup, err
-	}
-
 	r := store.Repository{Clocker: clock.RealClock{}}
 
 	// jwt struct 생성
 	jwt, err := auth.JwtNew(clock.RealClock{})
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	}
 
 	// api config 생성
 	apiCfg, err := config.GetApiConfig()
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	}
 
 	// 라우팅:: begin
@@ -353,5 +338,5 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 
 	handlerMux := c.Handler(mux)
 
-	return handlerMux, cleanup, nil
+	return handlerMux, nil
 }

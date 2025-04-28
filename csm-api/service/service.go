@@ -105,6 +105,7 @@ type WorkerService interface {
 	MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error
+	ModifyWorkerDeadlineInit(ctx context.Context) error
 }
 
 type CompanyService interface {

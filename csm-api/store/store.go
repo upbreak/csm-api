@@ -114,6 +114,7 @@ type WorkerStore interface {
 	MergeSiteBaseWorker(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerDeadline(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) error
 }
 
 type CompanyStore interface {
