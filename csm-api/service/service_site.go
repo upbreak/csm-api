@@ -6,6 +6,7 @@ import (
 	"csm-api/store"
 	"csm-api/utils"
 	"fmt"
+	"github.com/guregu/null"
 	"strings"
 	"time"
 )
@@ -47,6 +48,8 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 
 	for _, site := range *sites {
 		sno := site.Sno.Int64
+		var projectCnt int64 = 0
+		var sumWorkRate int64 = 0
 
 		// 프로젝트 리스트 조회
 		projectInfos, err := s.ProjectService.GetProjectList(ctx, sno, targetDate)
@@ -57,7 +60,12 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		site.ProjectList = projectInfos
 
 		for _, projectInfo := range *site.ProjectList {
+			// 공정률 더하기
+			projectCnt++
+			sumWorkRate += projectInfo.WorkRate.Int64
+
 			if &projectInfo.Jno != nil {
+				// 작업내용
 				projectDailyList, err := s.ProjectDailyStore.GetProjectDailyContentList(ctx, s.SafeDB, projectInfo.Jno.Int64, targetDate)
 				if err != nil {
 					//TODO: 에러 아카이브
@@ -66,6 +74,9 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 				projectInfo.DailyContentList = projectDailyList
 			}
 		}
+
+		// 공정률
+		site.WorkRate = null.NewFloat(float64(sumWorkRate)/float64(projectCnt), true)
 
 		// 현장 위치 조회
 		sitePos, err := s.SitePosStore.GetSitePosData(ctx, s.SafeDB, sno)
@@ -188,7 +199,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		return fmt.Errorf("service_site/ModifySite err: %w", err)
 	}
 
-	// 기본 프로젝트 수정
+	// 기본 프로젝트 변경
 	project := entity.ReqProject{
 		Jno: site.DefaultJno,
 		Sno: site.Sno,
@@ -200,6 +211,21 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 	if err = s.ProjectStore.ModifyDefaultProject(ctx, tx, project); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site/ModifyDefaultProject err: %w", err)
+	}
+
+	// 프로젝트 정보 수정
+	for _, prj := range *site.ProjectList {
+		newPrj := entity.ReqProject{
+			Jno:      prj.Jno,
+			WorkRate: prj.WorkRate,
+			Base: entity.Base{
+				ModUno:  prj.ModUno,
+				ModUser: prj.ModUser,
+			},
+		}
+		if err = s.ProjectStore.ModifyProject(ctx, tx, newPrj); err != nil {
+			return fmt.Errorf("service_site/ModifyProject err: %w", err)
+		}
 	}
 
 	// 날짜 수정 정보가 있는 경우만 실행
@@ -271,7 +297,7 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 // func: 현장 사용안함 변경
 // @param
 // -
-func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, sno int64) (err error) {
+func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSite) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
@@ -290,22 +316,22 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, sno int64) (err er
 	}()
 
 	// 현장
-	if err = s.Store.ModifySiteIsNonUse(ctx, tx, sno); err != nil {
+	if err = s.Store.ModifySiteIsNonUse(ctx, tx, site); err != nil {
 		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
 	}
 
 	// 프로젝트
-	if err = s.ProjectStore.ModifyProjectIsNonUse(ctx, tx, sno); err != nil {
+	if err = s.ProjectStore.ModifyProjectIsNonUse(ctx, tx, site); err != nil {
 		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
 	}
 
 	// 위치
-	if err = s.SitePosStore.ModifySitePosIsNonUse(ctx, tx, sno); err != nil {
+	if err = s.SitePosStore.ModifySitePosIsNonUse(ctx, tx, site); err != nil {
 		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
 	}
 
 	// 날짜
-	if err = s.SiteDateStore.ModifySiteDateIsNonUse(ctx, tx, sno); err != nil {
+	if err = s.SiteDateStore.ModifySiteDateIsNonUse(ctx, tx, site); err != nil {
 		return fmt.Errorf("service_site/ModifySiteDateIsNonUse err: %w", err)
 	}
 

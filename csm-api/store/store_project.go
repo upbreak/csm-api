@@ -94,6 +94,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				t1.MOD_DATE,
 				t1.MOD_USER,
 				t1.MOD_UNO,
+				t1.WORK_RATE,
 				t2.JOB_TYPE AS PROJECT_TYPE,
 				t6.CD_NM AS PROJECT_TYPE_NM,
 				t2.JOB_NO AS PROJECT_NO,
@@ -305,7 +306,8 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 	sql := `SELECT
     			t1.SNO,
 				t1.JNO,
-				t2.JOB_NAME as PROJECT_NM
+				t2.JOB_NAME as PROJECT_NM,
+				t1.WORK_RATE
 			FROM
 				IRIS_SITE_JOB t1
 				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
@@ -898,13 +900,40 @@ func (r *Repository) RemoveProject(ctx context.Context, tx Execer, sno int64, jn
 // func: 현장 프로젝트 사용안함 변경
 // @param
 // -
-func (r *Repository) ModifyProjectIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+func (r *Repository) ModifyProjectIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error {
+	agent := utils.GetAgent()
+
 	query := `
 			UPDATE IRIS_SITE_JOB
-			SET IS_USE = 'N'
-			WHERE SNO = :1`
-	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+			SET IS_USE = 'N',
+			MOD_AGENT = :1,
+		    MOD_USER = :2,
+		    MOD_UNO = :3,
+		    MOD_DATE = SYSDATE
+			WHERE SNO = :4`
+	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
 		return fmt.Errorf("ModifyProjectIsNonUse. Failed to modify default project: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 프로젝트 수정
+// @param
+// -
+func (r *Repository) ModifyProject(ctx context.Context, tx Execer, project entity.ReqProject) error {
+	agent := utils.GetAgent()
+	query := `
+			UPDATE IRIS_SITE_JOB
+			SET 
+				MOD_AGENT = :1,
+				MOD_USER = :2,
+				MOD_UNO = :3,
+				MOD_DATE = SYSDATE,
+				WORK_RATE = :4
+			WHERE JNO = :5`
+	if _, err := tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.WorkRate, project.Jno); err != nil {
+		return fmt.Errorf("ModifyProject. Failed to modify default project: %w", err)
 	}
 
 	return nil

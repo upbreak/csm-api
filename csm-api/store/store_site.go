@@ -27,7 +27,6 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				SELECT
 					t1.SNO,
 					t1.SITE_NM,
-					t1.WORK_RATE,
 					t1.ETC,
 					t1.LOC_CODE,
 					t1.LOC_NAME,
@@ -200,16 +199,15 @@ func (r *Repository) ModifySite(ctx context.Context, tx Execer, site entity.Site
 			UPDATE IRIS_SITE_SET 
 			SET
 			    SITE_NM = :1,
-			    WORK_RATE = :2,
-			    ETC = :3,
-				MOD_UNO = :4,
-				MOD_USER = :5,
-				MOD_AGENT = :6,
+			    ETC = :2,
+				MOD_UNO = :3,
+				MOD_USER = :4,
+				MOD_AGENT = :5,
 				MOD_DATE = SYSDATE
 			WHERE
-			    SNO = :7
+			    SNO = :6
 			`
-	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.WorkRate, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
+	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site. ModifySite fail: %v", err)
 	}
@@ -281,12 +279,19 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tx Execer, jno int
 // func: 현장 사용안함 변경
 // @param
 // -
-func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, sno int64) error {
+func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error {
+	agent := utils.GetAgent()
+
 	query := `
 			UPDATE IRIS_SITE_SET
-			SET IS_USE = 'N'
-			WHERE SNO = :1`
-	if _, err := tx.ExecContext(ctx, query, sno); err != nil {
+			SET 
+			    IS_USE = 'N',
+				MOD_AGENT = :1,
+				MOD_USER = :2,
+				MOD_UNO = :3,
+				MOD_DATE = SYSDATE
+			WHERE SNO = :4`
+	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
 		return fmt.Errorf("store/site. ModifySiteIsNonUse fail: %w", err)
 	}
 

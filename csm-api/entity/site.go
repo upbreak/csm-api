@@ -28,7 +28,7 @@ type Site struct {
 	RowNum             null.Int    `json:"rnum" db:"RNUM"`
 	Sno                null.Int    `json:"sno" db:"SNO"`
 	SiteNm             null.String `json:"site_nm" db:"SITE_NM"`
-	WorkRate           null.Int    `json:"work_rate" db:"WORK_RATE"`
+	WorkRate           null.Float  `json:"work_rate" db:"WORK_RATE"`
 	Etc                null.String `json:"etc" db:"ETC"`
 	LocCode            null.String `json:"loc_code" db:"LOC_CODE"`
 	LocName            null.String `json:"loc_name" db:"LOC_NAME"`
@@ -47,3 +47,8 @@ type Site struct {
 
 // struct: 현장 데이터 json 배열 구조체
 type Sites []*Site
+
+type ReqSite struct {
+	Sno null.Int `json:"sno" db:"SNO"`
+	Base
+}

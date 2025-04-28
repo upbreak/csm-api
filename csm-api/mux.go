@@ -191,7 +191,7 @@ func newMux(ctx context.Context, cfg *config.DBConfigs) (http.Handler, []func(),
 	})
 	// End:: api 호출
 
-	// Begin::프로젝트 조회
+	// Begin::프로젝트
 	projectHandler := &handler.HandlerProject{
 		Service: &service.ServiceProject{
 			SafeDB:  safeDb,
