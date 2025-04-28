@@ -541,3 +541,28 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, tx Execer, workers
 
 	return nil
 }
+
+// func: 현장 근로자 일일 마감처리
+// @param
+// -
+func (r *Repository) ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) error {
+	agent := utils.GetAgent()
+
+	query := `
+			UPDATE IRIS_WORKER_DAILY_SET 
+			SET 
+				IS_DEADLINE = 'Y',
+				MOD_DATE = SYSDATE,
+				MOD_AGENT = :1,
+				MOD_USER = 'Scheduled'
+			WHERE TRUNC(RECORD_DATE) >= TRUNC(SYSDATE) - 7
+			AND TRUNC(RECORD_DATE) < TRUNC(SYSDATE)
+			AND WORK_STATE = '02'
+			AND IS_DEADLINE = 'N'`
+
+	if _, err := tx.ExecContext(ctx, query, agent); err != nil {
+		return fmt.Errorf("ModifyWorkerDeadlineInit fail: %w", err)
+	}
+
+	return nil
+}

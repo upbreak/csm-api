@@ -17,6 +17,7 @@ require (
 	github.com/godror/knownpb v0.2.0 // indirect
 	github.com/guregu/null v4.0.0+incompatible // indirect
 	github.com/planetscale/vtprotobuf v0.6.0 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
 	google.golang.org/protobuf v1.36.2 // indirect
 )

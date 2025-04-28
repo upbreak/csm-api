@@ -269,3 +269,30 @@ func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.
 	}
 	return
 }
+
+// func: 현장 근로자 일일 마감처리
+// @param
+// -
+func (s *ServiceWorker) ModifyWorkerDeadlineInit(ctx context.Context) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;ModifyWorkerDeadlineInit err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	if err = s.Store.ModifyWorkerDeadlineInit(ctx, tx); err != nil {
+		return fmt.Errorf("service_worker/ModifyWorkerDeadlineInit err: %v", err)
+	}
+	return
+}
