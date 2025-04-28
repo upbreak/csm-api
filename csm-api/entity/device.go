@@ -15,3 +15,21 @@ type Device struct {
 }
 
 type Devices []*Device
+
+type RecdLog struct {
+	TransactionID null.Int    `json:"transactionID" db:"TRANS_ID"`
+	DeviceName    null.String `json:"deviceName" db:"DEVICE_NAME"`
+	DeviceSN      null.String `json:"deviceSN" db:"DEVICE_SN"`
+	Guid          null.String `json:"guid" db:"GUID"`
+	UserID        null.String `json:"userID" db:"USER_ID"`
+	FirstName     null.String `json:"firstName" db:"FIRST_NAME"`
+	LastName      null.String `json:"lastName" db:"LAST_NAME"`
+	Role          null.String `json:"role" db:"ROLE"`
+	Department    null.String `json:"department" db:"DEPARTMENT"`
+}
+
+type RecdLogOrigin struct {
+	IrisData null.String `json:"irisData" db:"IRIS_DATA"`
+}
+
+type RecdLogOrigins []*RecdLogOrigin

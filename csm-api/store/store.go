@@ -92,6 +92,8 @@ type DeviceStore interface {
 	AddDevice(ctx context.Context, tx Execer, device entity.Device) error
 	ModifyDevice(ctx context.Context, tx Execer, device entity.Device) error
 	RemoveDevice(ctx context.Context, tx Execer, dno sql.NullInt64) error
+	GetDeviceLog(ctx context.Context, db Queryer) (*entity.RecdLogOrigins, error)
+	GetCheckRegistered(ctx context.Context, db Queryer, deviceName string) (int, error)
 }
 
 type WorkerStore interface {

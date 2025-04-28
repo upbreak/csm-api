@@ -86,6 +86,7 @@ type DeviceService interface {
 	AddDevice(ctx context.Context, device entity.Device) error
 	ModifyDevice(ctx context.Context, device entity.Device) error
 	RemoveDevice(ctx context.Context, dno int64) error
+	GetCheckRegisteredDevices(ctx context.Context) ([]string, error)
 }
 
 type WorkerService interface {

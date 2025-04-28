@@ -212,6 +212,7 @@ func (r *Repository) AddDevice(ctx context.Context, tx Execer, device entity.Dev
 				    :7    
 				)`
 	if _, err := tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, agent, device.RegUser); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("AddDevice err: %v", err)
 	}
 
@@ -238,6 +239,7 @@ func (r *Repository) ModifyDevice(ctx context.Context, tx Execer, device entity.
 				WHERE DNO = :8`
 
 	if _, err := tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, device.ModUser, agent, device.Dno); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyDevice fail: %v", err)
 	}
 	return nil
@@ -250,8 +252,49 @@ func (r *Repository) RemoveDevice(ctx context.Context, tx Execer, dno sql.NullIn
 	query := `DELETE FROM IRIS_DEVICE_SET WHERE DNO = :1`
 
 	if _, err := tx.ExecContext(ctx, query, dno); err != nil {
+		//TODO: 에러 아카이브
 		return fmt.Errorf("RemoveDevice fail: %v", err)
 	}
 
 	return nil
+}
+
+// func: 근태인식기 당일 들어온 로그 확인
+// @param
+func (r *Repository) GetDeviceLog(ctx context.Context, db Queryer) (*entity.RecdLogOrigins, error) {
+	recodes := entity.RecdLogOrigins{}
+
+	query := `
+		SELECT IRIS_DATA FROM IRIS_RECD_LOG WHERE to_date(REG_DATE) = TRUNC(SYSDATE) `
+
+	if err := db.SelectContext(ctx, &recodes, query); err != nil {
+		//TODO: 에러 아카이브
+		return nil, fmt.Errorf("GetDeviceLog fail: %v", err)
+	}
+
+	return &recodes, nil
+}
+
+// func: 근태인식기 미등록장치 확인
+// @param
+func (r *Repository) GetCheckRegistered(ctx context.Context, db Queryer, deviceName string) (int, error) {
+	var count int
+
+	query := `
+			SELECT 
+				COUNT(*)
+			FROM
+			    IRIS_DEVICE_SET
+			WHERE
+			    IS_USE = 'Y' 
+				AND DEVICE_NM = :1
+			`
+
+	if err := db.GetContext(ctx, &count, query, deviceName); err != nil {
+		//TODO: 에러 아카이브
+		return -1, fmt.Errorf("GetDeviceListCount fail: %v", err)
+	}
+
+	return count, nil
+
 }

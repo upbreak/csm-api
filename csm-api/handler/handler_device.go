@@ -146,3 +146,22 @@ func (d *DeviceHandler) Remove(w http.ResponseWriter, r *http.Request) {
 	// 성공 응답
 	SuccessResponse(ctx, w)
 }
+
+// func: 근태인식기 미등록장치 확인
+// @param
+func (d *DeviceHandler) CheckRegistered(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	devices, err := d.Service.GetCheckRegisteredDevices(ctx)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	values := struct {
+		Devices []string `json:"list"`
+	}{Devices: devices}
+
+	SuccessValuesResponse(ctx, w, values)
+
+}
