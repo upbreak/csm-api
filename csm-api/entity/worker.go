@@ -39,6 +39,7 @@ type WorkerDaily struct {
 	OutRecogTime    null.Time   `json:"out_recog_time" db:"OUT_RECOG_TIME"` //퇴근시간
 	WorkState       null.String `json:"work_state" db:"WORK_STATE"`
 	IsDeadline      null.String `json:"is_deadline" db:"IS_DEADLINE"`
+	IsOvertime      null.String `json:"is_overtime" db:"IS_OVERTIME"`
 	SearchStartTime null.String `json:"search_start_time" db:"SEARCH_START_TIME"`
 	SearchEndTime   null.String `json:"search_end_time" db:"SEARCH_END_TIME"`
 	AfterJno        null.Int    `json:"after_jno" db:"AFTER_JNO"`
