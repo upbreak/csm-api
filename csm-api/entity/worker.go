@@ -14,6 +14,7 @@ type Worker struct {
 	AfterUserId null.String `json:"after_user_id" db:"AFTER_USER_ID"`
 	UserNm      null.String `json:"user_nm" db:"USER_NM"`       //근로자명
 	Department  null.String `json:"department" db:"DEPARTMENT"` //부서or조직
+	DiscName    null.String `json:"disc_name" db:"DISC_NAME"`   // 공종명
 	Phone       null.String `json:"phone" db:"PHONE"`
 	WorkerType  null.String `json:"worker_type" db:"WORKER_TYPE"`
 	IsUse       null.String `json:"is_use" db:"IS_USE"`

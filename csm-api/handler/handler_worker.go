@@ -42,6 +42,7 @@ func (h *HandlerWorker) TotalList(w http.ResponseWriter, r *http.Request) {
 	department := r.URL.Query().Get("department")
 	phone := r.URL.Query().Get("phone")
 	workerType := r.URL.Query().Get("worker_type")
+	discName := r.URL.Query().Get("disc_name")
 
 	retrySearch := r.URL.Query().Get("retry_search")
 
@@ -60,6 +61,7 @@ func (h *HandlerWorker) TotalList(w http.ResponseWriter, r *http.Request) {
 	search.Department = utils.ParseNullString(department)
 	search.Phone = utils.ParseNullString(phone)
 	search.WorkerType = utils.ParseNullString(workerType)
+	search.DiscName = utils.ParseNullString(discName)
 
 	// 조회
 	list, err := h.Service.GetWorkerTotalList(ctx, page, search, retrySearch)

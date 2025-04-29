@@ -33,7 +33,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t1.DEPARTMENT")
 	condition = utils.StringWhereConvert(condition, search.Phone.NullString, "t1.PHONE")
 	condition = utils.StringWhereConvert(condition, search.WorkerType.NullString, "t1.WORKER_TYPE")
-
+	condition = utils.StringWhereConvert(condition, search.DiscName.NullString, "t1.DISC_NAME")
 	var columns []string
 	columns = append(columns, "t2.JOB_NAME")
 	columns = append(columns, "t1.USER_NM")
@@ -66,6 +66,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 						sorted_data.USER_ID, 
 						sorted_data.USER_NM,
 						sorted_data.DEPARTMENT,
+						sorted_data.DISC_NAME,
 						sorted_data.PHONE, 
 						sorted_data.WORKER_TYPE,
 						sorted_data.IS_RETIRE,
@@ -86,6 +87,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							t1.USER_ID, 
 							t1.USER_NM,
 							t1.DEPARTMENT,
+							t1.DISC_NAME,
 							t1.PHONE, 
 							t1.WORKER_TYPE,
 							t1.IS_RETIRE,
@@ -241,18 +243,18 @@ func (r *Repository) AddWorker(ctx context.Context, tx Execer, worker entity.Wor
 	insertQuery := `
 		INSERT INTO IRIS_WORKER_SET(
 			SNO, JNO, USER_ID, USER_NM, DEPARTMENT, 
-			PHONE, WORKER_TYPE, IS_RETIRE, REG_DATE, REG_AGENT, 
-			REG_USER, REG_UNO, REG_NO
+			DISC_NAME, PHONE, WORKER_TYPE, IS_RETIRE, REG_DATE, 
+			REG_AGENT, REG_USER, REG_UNO, REG_NO
 		) VALUES (
 			:1, :2, :3, :4, :5, 
-			:6, :7, :8, SYSDATE, :9, 
-			:10, :11, :12
+			:6, :7, :8, :9, SYSDATE, 
+			:10, :11, :12, :13
 		)`
 
 	_, err := tx.ExecContext(ctx, insertQuery,
 		worker.Sno, worker.Jno, worker.UserId, worker.UserNm, worker.Department,
-		worker.Phone, worker.WorkerType, worker.IsRetire /*, SYSDATE*/, agent,
-		worker.RegUser, worker.RegUno, worker.RegNo,
+		worker.DiscName, worker.Phone, worker.WorkerType, worker.IsRetire, /*, SYSDATE*/
+		agent, worker.RegUser, worker.RegUno, worker.RegNo,
 	)
 	if err != nil {
 		//TODO: 에러 아카이브
@@ -273,13 +275,13 @@ func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.
 				SET 
 					USER_NM = :1, DEPARTMENT = :2, PHONE = :3, WORKER_TYPE = :4, IS_RETIRE = :5,
 					RETIRE_DATE = :6, MOD_DATE = SYSDATE, MOD_AGENT = :7, MOD_USER = :8, MOD_UNO = :9, TRG_EDITABLE_YN = 'N',
-					REG_NO = :10, IS_MANAGE = :11
-				WHERE SNO = :12 AND JNO = :13 AND USER_ID = :14`
+					REG_NO = :10, IS_MANAGE = :11, DISC_NAME=:12
+				WHERE SNO = :13 AND JNO = :14 AND USER_ID = :15`
 
 	result, err := tx.ExecContext(ctx, query,
 		worker.UserNm, worker.Department, worker.Phone, worker.WorkerType, worker.IsRetire,
 		worker.RetireDate /*, SYSDATE*/, agent, worker.ModUser, worker.ModUno,
-		worker.RegNo, worker.IsManage,
+		worker.RegNo, worker.IsManage, worker.DiscName,
 		worker.Sno, worker.Jno, worker.UserId,
 	)
 
