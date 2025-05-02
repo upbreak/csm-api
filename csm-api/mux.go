@@ -334,6 +334,14 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 	})
 	// End::일정관리
 
+	// Begin::엑셀
+	excelHandler := &handler.HandlerExcel{}
+	mux.Route("/excel", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwt))
+		r.Post("/daily-deduction", excelHandler.DailyDeduction) // 일별퇴직공제
+	})
+	// End::엑셀
+
 	// 라우팅:: end
 
 	handlerMux := c.Handler(mux)

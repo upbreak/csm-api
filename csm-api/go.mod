@@ -16,8 +16,17 @@ require (
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/godror/knownpb v0.2.0 // indirect
 	github.com/guregu/null v4.0.0+incompatible // indirect
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/planetscale/vtprotobuf v0.6.0 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
+	github.com/richardlehane/mscfb v1.0.4 // indirect
+	github.com/richardlehane/msoleps v1.0.4 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // 스케줄 작성시 cron 방식으로 사용할 수 있도록 도와주는 라이브러리
+	github.com/xuri/efp v0.0.0-20240408161823-9ad904a10d6d // indirect
+	github.com/xuri/excelize/v2 v2.9.0 // 엑셀생성 라이브러리
+	github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7 // indirect
+	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 	google.golang.org/protobuf v1.36.2 // indirect
 )
