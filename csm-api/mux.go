@@ -335,10 +335,13 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 	// End::일정관리
 
 	// Begin::엑셀
-	excelHandler := &handler.HandlerExcel{}
+	excelHandler := &handler.HandlerExcel{
+		Service: &service.ServiceExcel{},
+	}
 	mux.Route("/excel", func(r chi.Router) {
 		r.Use(handler.AuthMiddleware(jwt))
-		r.Post("/daily-deduction", excelHandler.DailyDeduction) // 일별퇴직공제
+		r.Post("/export/daily-deduction", excelHandler.ExportDailyDeduction) // 일별퇴직공제 export
+		r.Post("/import/deduction", excelHandler.ImportDeduction)            // 퇴직공제 import
 	})
 	// End::엑셀
 

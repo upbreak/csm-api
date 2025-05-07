@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"github.com/guregu/null"
+	"github.com/xuri/excelize/v2"
 	"time"
 )
 
@@ -140,4 +141,9 @@ type ScheduleService interface {
 	AddRestSchedule(ctx context.Context, schedule entity.RestSchedules) error
 	ModifyRestSchedule(ctx context.Context, schedule entity.RestSchedule) error
 	RemoveRestSchedule(ctx context.Context, cno int64) error
+}
+
+type ExcelService interface {
+	ExportDailyDeduction(rows []entity.DailyDeduction) (*excelize.File, error)
+	ImportDeduction(path string) error
 }
