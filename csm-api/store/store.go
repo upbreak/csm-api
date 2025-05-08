@@ -115,6 +115,9 @@ type WorkerStore interface {
 	ModifyWorkerDeadline(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) error
+	GetWorkerOverTime(ctx context.Context, db Queryer) (*entity.WorkerOverTimes, error)
+	ModifyWorkerOverTime(ctx context.Context, tx Execer, workerOverTime entity.WorkerOverTime) error
+	DeleteWorkerOverTime(ctx context.Context, tx Execer, cno null.Int) error
 }
 
 type CompanyStore interface {

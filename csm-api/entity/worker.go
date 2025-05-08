@@ -46,3 +46,10 @@ type WorkerDaily struct {
 	Base
 }
 type WorkerDailys []*WorkerDaily
+
+type WorkerOverTime struct {
+	BeforeCno    null.Int  `json:"before_cno" db:"BEFORE_CNO"`         // 출근한 날 CNO
+	AfterCno     null.Int  `json:"after_cno" db:"AFTER_CNO"`           // 퇴근한 날 CNO
+	OutRecogTime null.Time `json:"out_recog_time" db:"OUT_RECOG_TIME"` // 퇴근시간
+}
+type WorkerOverTimes []*WorkerOverTime
