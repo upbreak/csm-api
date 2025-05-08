@@ -57,8 +57,25 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
 	}
 
-	// ... 추가 job 등록
+	// 1분마다 실행
+	// 철야 확인 작업
+	_, err = s.cron.AddFunc("0 0/1 * * * *", func() {
+		log.Println("[Scheduler] Running ModifyWorkerOverTimeSchedule")
 
+		if err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
+			log.Printf("[Scheduler] ModifyWorkerOverTime fail: %+v", err)
+		} else {
+			log.Println("[Scheduler] ModifyWorkerOverTime completed")
+		}
+
+	})
+	if err != nil {
+		// TODO: 에러아카이브
+		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+	}
+
+	// ... 추가 job 등록
+	
 	s.cron.Start()
 
 	log.Println("[Scheduler] Cron started")

@@ -296,3 +296,51 @@ func (s *ServiceWorker) ModifyWorkerDeadlineInit(ctx context.Context) (err error
 	}
 	return
 }
+
+// func: 현장 근로자 철야 처리
+// @param
+// -
+func (s *ServiceWorker) ModifyWorkerOverTime(ctx context.Context) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("service_worker;ModifyWorkerOverTime err: %v", err)
+	}
+
+	// 철야 근로자 존재 여부 확인
+	workerOverTimes := &entity.WorkerOverTimes{}
+	workerOverTimes, err = s.Store.GetWorkerOverTime(ctx, s.SafeDB)
+	if err != nil {
+
+		// TODO: 에러 아카이브
+		return fmt.Errorf("service_worker;GetWorkerOverTime err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorker err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	for _, workerOverTime := range *workerOverTimes {
+
+		// 철야 근로자 철야 표시 및 퇴근시간 합치기.
+		if err = s.Store.ModifyWorkerOverTime(ctx, tx, *workerOverTime); err != nil {
+			// TODO: 에러 아카이브
+			return fmt.Errorf("service_worker/ModifyWorkerOverTime err: %v", err)
+		}
+
+		// 다음날 퇴근 표시 삭제
+		if err = s.Store.DeleteWorkerOverTime(ctx, tx, (*workerOverTime).AfterCno); err != nil {
+			// TODO: 에러 아카이브
+			return fmt.Errorf("service_worker;DeleteWorkerOverTime err: %v", err)
+		}
+	}
+	return
+}

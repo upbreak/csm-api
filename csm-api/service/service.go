@@ -106,6 +106,7 @@ type WorkerService interface {
 	ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyWorkerDeadlineInit(ctx context.Context) error
+	ModifyWorkerOverTime(ctx context.Context) error
 }
 
 type CompanyService interface {
