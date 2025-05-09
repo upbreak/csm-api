@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
@@ -23,7 +22,6 @@ import (
 type HandlerSite struct {
 	Service     service.SiteService
 	CodeService service.CodeService
-	Jwt         *auth.JWTUtils
 }
 
 // func: 현장 관리 리스트
