@@ -132,7 +132,7 @@ func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectI
 // func: 공사관리시스템 등록 프로젝트 전체 조회
 // @param
 // -
-func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
+func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, retry string) (*entity.JobInfos, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
@@ -140,7 +140,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.SafeDB, pageSql, search)
+	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.SafeDB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
@@ -152,8 +152,8 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 // func: 프로젝트 전체 조회 개수
 // @param
 // -
-func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
-	count, err := p.Store.GetUsedProjectCount(ctx, p.SafeDB, search)
+func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string) (int, error) {
+	count, err := p.Store.GetUsedProjectCount(ctx, p.SafeDB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetUsedProjectCount error: %w", err)
