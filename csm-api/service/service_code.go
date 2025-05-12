@@ -26,17 +26,21 @@ func (s *ServiceCode) GetCodeList(ctx context.Context, pCode string) (*entity.Co
 // func: 코드트리 조회
 // @param
 // -
-func (s *ServiceCode) GetCodeTree(ctx context.Context) (*entity.CodeTrees, error) {
+func (s *ServiceCode) GetCodeTree(ctx context.Context, pCode string) (*entity.CodeTrees, error) {
 
+	if pCode == "root" {
+		pCode = ""
+	}
 	// 코드리스트 조회
-	codes, err := s.Store.GetCodeTree(ctx, s.SafeDB)
+	codes, err := s.Store.GetCodeTree(ctx, s.SafeDB, pCode)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_code/GetCodeSetList err: %w", err)
 	}
 
 	// 트리구조로 반환
-	trees, err := entity.ConvertCodesToCodeTree(*codes, "")
+
+	trees, err := entity.ConvertCodesToCodeTree(*codes, pCode)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_code/ConvertCodesToCodeTree err: %w", err)
