@@ -147,7 +147,7 @@ func (h *HandlerProject) EnterpriseList(w http.ResponseWriter, r *http.Request) 
 
 	// 프로젝트 "전체" 넣을 것인지 여부
 	all := r.URL.Query().Get("all")
-
+	retrySearch := r.URL.Query().Get("retry_search")
 	pageNum := r.URL.Query().Get("page_num")
 	rowSize := r.URL.Query().Get("row_size")
 	order := r.URL.Query().Get("order")
@@ -179,13 +179,13 @@ func (h *HandlerProject) EnterpriseList(w http.ResponseWriter, r *http.Request) 
 
 	isAll, _ := strconv.Atoi(all)
 
-	list, err := h.Service.GetAllProjectList(ctx, page, search, isAll)
+	list, err := h.Service.GetAllProjectList(ctx, page, search, isAll, retrySearch)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}
 
-	count, err := h.Service.GetAllProjectCount(ctx, search, isAll)
+	count, err := h.Service.GetAllProjectCount(ctx, search, isAll, retrySearch)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

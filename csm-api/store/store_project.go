@@ -442,7 +442,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 // func: 프로젝트 전체 조회
 // @param
 // -
-func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int) (*entity.JobInfos, error) {
+func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error) {
 	list := entity.JobInfos{}
 
 	condition := "1 = 1"
@@ -454,6 +454,12 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "J.JOB_SD")
 	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "J.JOB_ED")
 	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "SC.CD_NM")
+
+	var columns []string
+	columns = append(columns, "J.JOB_NAME")
+	columns = append(columns, "J.JOB_NO")
+	columns = append(columns, "J.JOB_PM_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var order string
 	if pageSql.Order.Valid {
@@ -508,12 +514,12 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 						ON 
 							J.job_state = SC.minor_cd 
 							AND SC.MAJOR_CD = 'JOB_STATE' 
-						WHERE %s
+						WHERE %s %s
 						ORDER BY %s
 					) sorted_data
 					WHERE ROWNUM <= :2
 				)
-				WHERE RNUM > :3`, condition, order)
+				WHERE RNUM > :3`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &list, query, isAll, pageSql.EndNum, pageSql.StartNum); err != nil {
 		//TODO: 에러 아카이브
@@ -526,7 +532,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 // func: 프로젝트 개수 조회 개수
 // @param
 // -
-func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error) {
+func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string) (int, error) {
 	var count int
 
 	condition := "1 = 1"
@@ -538,6 +544,13 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "J.JOB_SD")
 	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "J.JOB_ED")
 	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "SC.CD_NM")
+
+	var columns []string
+	columns = append(columns, "J.JOB_NAME")
+	columns = append(columns, "J.JOB_NO")
+	columns = append(columns, "J.JOB_PM_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
 	query := fmt.Sprintf(`
 				SELECT 
 					count(*)
@@ -552,7 +565,7 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 				ON 
 					J.job_state = SC.minor_cd 
 					AND SC.MAJOR_CD = 'JOB_STATE' 
-				WHERE %s`, condition)
+				WHERE %s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		//TODO: 에러 아카이브
