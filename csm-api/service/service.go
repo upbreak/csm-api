@@ -65,7 +65,7 @@ type ProjectDailyService interface {
 }
 
 type UserService interface {
-	GetUserInfoPmPeList(ctx context.Context, unoList []int) (*entity.UserPmPeInfos, error)
+	GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error)
 }
 
 type CodeService interface {

@@ -23,8 +23,3 @@ type SitePos struct {
 	BuildingName          null.String `json:"building_name" db:"BUILDING_NAME"`
 	Base
 }
-
-type MapPoint struct {
-	X string `json:"x"`
-	Y string `json:"y"`
-}

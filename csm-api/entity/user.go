@@ -21,10 +21,10 @@ func (u User) SetUser(uno int64, userName string) User {
 	return u
 }
 
-type UserPmPeInfo struct {
+type UserPeInfo struct {
 	Uno    null.Int    `json:"uno" db:"UNO"`
 	UserId null.String `json:"user_id" db:"USER_ID"`
 	Name   null.String `json:"name" db:"USER_NAME"`
 }
 
-type UserPmPeInfos []*UserPmPeInfo
+type UserPeInfos []*UserPeInfo

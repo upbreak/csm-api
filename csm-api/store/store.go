@@ -72,7 +72,7 @@ type ProjectDailyStore interface {
 }
 
 type UserStore interface {
-	GetUserInfoPmPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPmPeInfos, error)
+	GetUserInfoPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPeInfos, error)
 }
 
 type CodeStore interface {
