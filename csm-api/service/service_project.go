@@ -38,15 +38,6 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
 	for _, projectInfo := range *projectInfos {
 		var unoList []int
-		// pm uno 조회
-		if &projectInfo.JobPm != nil && projectInfo.JobPm.String != "" {
-			uno, err := strconv.Atoi(projectInfo.JobPm.String)
-			if err != nil {
-				//TODO: 에러 아카이브
-				return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(projectInfo.JobPm) parse err")
-			}
-			unoList = append(unoList, uno)
-		}
 
 		// pe uno 조회
 		if &projectInfo.JobPe != nil && projectInfo.JobPe.String != "" {
@@ -61,13 +52,13 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 			}
 		}
 
-		// pm, pe 정보 일괄 조회
-		userPmPeList, err := p.UserStore.GetUserInfoPmPeList(ctx, p.SafeDB, unoList)
+		// pe 정보 일괄 조회
+		userPeList, err := p.UserStore.GetUserInfoPeList(ctx, p.SafeDB, unoList)
 		if err != nil {
 			//TODO: 에러 아카이브
-			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
+			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPeList error: %w", err)
 		}
-		projectInfo.ProjectPeList = userPmPeList
+		projectInfo.ProjectPeList = userPeList
 
 		// 안전, 공사 근로자 수
 		for _, safe := range *safeInfos {
