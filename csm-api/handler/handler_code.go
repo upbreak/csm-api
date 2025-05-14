@@ -53,7 +53,9 @@ func (h *HandlerCode) ListByPCode(w http.ResponseWriter, r *http.Request) {
 func (h *HandlerCode) ListCodeTree(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	codeTrees, err := h.Service.GetCodeTree(ctx)
+	pCode := r.URL.Query().Get("p_code")
+
+	codeTrees, err := h.Service.GetCodeTree(ctx, pCode)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

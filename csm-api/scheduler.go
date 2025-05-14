@@ -60,14 +60,12 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	// 1분마다 실행
 	// 철야 확인 작업
 	_, err = s.cron.AddFunc("0 0/1 * * * *", func() {
-		log.Println("[Scheduler] Running ModifyWorkerOverTimeSchedule")
-
-		if err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
+		var count int
+		if count, err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
 			log.Printf("[Scheduler] ModifyWorkerOverTime fail: %+v", err)
-		} else {
+		} else if count != 0 {
 			log.Println("[Scheduler] ModifyWorkerOverTime completed")
 		}
-
 	})
 	if err != nil {
 		// TODO: 에러아카이브
@@ -75,7 +73,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	}
 
 	// ... 추가 job 등록
-	
+
 	s.cron.Start()
 
 	log.Println("[Scheduler] Cron started")

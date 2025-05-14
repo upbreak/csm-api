@@ -70,6 +70,7 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 		router.Mount("/schedule", route.ScheduleRoute(safeDb, &r))             // 일정관리
 		router.Mount("/notice", route.NoticeRoute(safeDb, &r))                 // 공지사항
 		router.Mount("/code", route.CodeRoute(safeDb, &r))                     // 코드
+
 	})
 
 	return c.Handler(mux), nil

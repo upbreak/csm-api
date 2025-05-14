@@ -52,6 +52,9 @@ func ConvertCodesToCodeTree(codes Codes, pCode string) (codeTrees CodeTrees, err
 			err = fmt.Errorf("entity/ConvertCodesToCodeTree: %v", r)
 		}
 	}()
+	if len(codes) == 0 {
+		return CodeTrees{}, nil
+	}
 
 	for i := 0; i < len(codes); i++ {
 

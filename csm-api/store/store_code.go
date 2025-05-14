@@ -29,10 +29,15 @@ func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) 
 }
 
 // 코드트리 조회
-func (r *Repository) GetCodeTree(ctx context.Context, db Queryer) (*entity.Codes, error) {
+func (r *Repository) GetCodeTree(ctx context.Context, db Queryer, pCode string) (*entity.Codes, error) {
 	codes := entity.Codes{}
 
-	query := `
+	if pCode == "" {
+		pCode = "P_CODE IS NULL"
+	} else {
+		pCode = "P_CODE = '" + pCode + "'"
+	}
+	query := fmt.Sprintf(`
 			SELECT 
 			    LEVEL, 
 			    C.IDX, 
@@ -50,20 +55,22 @@ func (r *Repository) GetCodeTree(ctx context.Context, db Queryer) (*entity.Codes
 			    C.ETC			    
 			FROM IRIS_CODE_SET C
 			WHERE DEL_YN = 'N'
-			START WITH P_CODE IS NULL
+			START WITH %s
 			CONNECT BY PRIOR CODE = P_CODE
 			ORDER SIBLINGS BY "ORDER" ASC
-		`
+		`, pCode)
 
 	if err := db.SelectContext(ctx, &codes, query); err != nil {
 		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetCodeTrees err: %w", err)
 	}
+
 	return &codes, nil
 }
 
 // func: 코드트리 수정 및 저장
 func (r *Repository) MergeCode(ctx context.Context, tx Execer, code entity.Code) error {
+
 	query := `
 			MERGE INTO IRIS_CODE_SET C1
 			USING (
