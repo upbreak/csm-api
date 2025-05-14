@@ -40,10 +40,10 @@ type ProjectStore interface {
 	GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCounts, error)
 	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error)
-	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo) (*entity.JobInfos, error)
-	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
-	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int) (*entity.JobInfos, error)
-	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo) (int, error)
+	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, retry string) (*entity.JobInfos, error)
+	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string) (int, error)
+	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error)
+	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string) (int, error)
 	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error)
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
@@ -72,7 +72,7 @@ type ProjectDailyStore interface {
 }
 
 type UserStore interface {
-	GetUserInfoPmPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPmPeInfos, error)
+	GetUserInfoPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPeInfos, error)
 }
 
 type CodeStore interface {

@@ -49,7 +49,7 @@ type ProjectInfo struct {
 	WorkRate              null.Int    `json:"work_rate" db:"WORK_RATE"`
 	Base
 
-	ProjectPeList    *UserPmPeInfos `json:"project_pe_list"`
+	ProjectPeList    *UserPeInfos   `json:"project_pe_list"`
 	DailyContentList *ProjectDailys `json:"daily_content_list"`
 }
 

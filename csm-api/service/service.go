@@ -37,10 +37,10 @@ type ProjectService interface {
 	GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
-	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error)
-	GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error)
-	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int) (*entity.JobInfos, error)
-	GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int) (int, error)
+	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, retry string) (*entity.JobInfos, error)
+	GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string) (int, error)
+	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error)
+	GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int, retry string) (int, error)
 	GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error)
 	GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error)
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
@@ -65,7 +65,7 @@ type ProjectDailyService interface {
 }
 
 type UserService interface {
-	GetUserInfoPmPeList(ctx context.Context, unoList []int) (*entity.UserPmPeInfos, error)
+	GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error)
 }
 
 type CodeService interface {

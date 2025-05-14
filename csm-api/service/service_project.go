@@ -38,15 +38,6 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
 	for _, projectInfo := range *projectInfos {
 		var unoList []int
-		// pm uno 조회
-		if &projectInfo.JobPm != nil && projectInfo.JobPm.String != "" {
-			uno, err := strconv.Atoi(projectInfo.JobPm.String)
-			if err != nil {
-				//TODO: 에러 아카이브
-				return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(projectInfo.JobPm) parse err")
-			}
-			unoList = append(unoList, uno)
-		}
 
 		// pe uno 조회
 		if &projectInfo.JobPe != nil && projectInfo.JobPe.String != "" {
@@ -61,13 +52,13 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 			}
 		}
 
-		// pm, pe 정보 일괄 조회
-		userPmPeList, err := p.UserStore.GetUserInfoPmPeList(ctx, p.SafeDB, unoList)
+		// pe 정보 일괄 조회
+		userPeList, err := p.UserStore.GetUserInfoPeList(ctx, p.SafeDB, unoList)
 		if err != nil {
 			//TODO: 에러 아카이브
-			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPmPeList error: %w", err)
+			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPeList error: %w", err)
 		}
-		projectInfo.ProjectPeList = userPmPeList
+		projectInfo.ProjectPeList = userPeList
 
 		// 안전, 공사 근로자 수
 		for _, safe := range *safeInfos {
@@ -132,7 +123,7 @@ func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectI
 // func: 공사관리시스템 등록 프로젝트 전체 조회
 // @param
 // -
-func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo) (*entity.JobInfos, error) {
+func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, retry string) (*entity.JobInfos, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
@@ -140,7 +131,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.SafeDB, pageSql, search)
+	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.SafeDB, pageSql, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
@@ -152,8 +143,8 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 // func: 프로젝트 전체 조회 개수
 // @param
 // -
-func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo) (int, error) {
-	count, err := p.Store.GetUsedProjectCount(ctx, p.SafeDB, search)
+func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string) (int, error) {
+	count, err := p.Store.GetUsedProjectCount(ctx, p.SafeDB, search, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_project/GetUsedProjectCount error: %w", err)
@@ -165,7 +156,7 @@ func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.
 // func: 프로젝트 전체 조회
 // @param
 // -
-func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int) (*entity.JobInfos, error) {
+func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error) {
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
@@ -173,7 +164,7 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
 	}
 
-	jobInfos, err := p.Store.GetAllProjectList(ctx, p.SafeDB, pageSql, search, isAll)
+	jobInfos, err := p.Store.GetAllProjectList(ctx, p.SafeDB, pageSql, search, isAll, retry)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
@@ -186,8 +177,8 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 // func: 프로젝트 개수 조회
 // @param
 // -
-func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int) (int, error) {
-	count, err := p.Store.GetAllProjectCount(ctx, p.SafeDB, search)
+func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int, retry string) (int, error) {
+	count, err := p.Store.GetAllProjectCount(ctx, p.SafeDB, search, retry)
 	if isAll == 1 {
 		count += 1
 	}

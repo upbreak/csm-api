@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"csm-api/entity"
 	"csm-api/service"
 	"net/http"
 )
@@ -17,39 +16,15 @@ func (s *HandlerRoadAddress) AddressPoint(w http.ResponseWriter, r *http.Request
 	roadAddress := r.URL.Query().Get("roadAddress")
 
 	if roadAddress == "" {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        "roadAddress parameter is missing",
-				Details:        NotFoundParam,
-				HttpStatusCode: http.StatusBadRequest,
-			},
-			http.StatusOK)
+		BadRequestResponse(ctx, w)
 		return
 	}
 
 	mapPoint, err := s.Service.GetAPISiteMapPoint(roadAddress)
 	if err != nil {
-		RespondJSON(
-			ctx,
-			w,
-			&ErrResponse{
-				Result:         Failure,
-				Message:        err.Error(),
-				HttpStatusCode: http.StatusInternalServerError,
-			},
-			http.StatusOK)
+		FailResponse(ctx, w, err)
 		return
 	}
 
-	rsp := Response{
-		Result: Success,
-		Values: struct {
-			MapPoint entity.MapPoint `json:"point"`
-		}{MapPoint: *mapPoint},
-	}
-
-	RespondJSON(ctx, w, &rsp, http.StatusOK)
+	SuccessValuesResponse(ctx, w, mapPoint)
 }
