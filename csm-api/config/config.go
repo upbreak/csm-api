@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	Env  string `env:"ENV" envDefault:"local"`
-	Port int    `env:"PORT" envDefault:"8082"`
+	Env    string `env:"ENV" envDefault:"local"`
+	Port   int    `env:"PORT" envDefault:"8082"`
+	Domain string `env:"DOMAIN" envDefault:"localhost"`
 }
 
 // caarlos0/env 패키지를 사용하여 struct의 envDefault값을 환경변수로 넘겨준다.
