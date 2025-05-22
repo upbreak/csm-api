@@ -57,13 +57,20 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 	mux.Mount("/jwt-validation", route.JwtVaildRout(jwt))  // jwt 유효성 검사
 	// 인증 라우팅
 	mux.Group(func(router chi.Router) {
-		router.Use(handler.AuthMiddleware(jwt))                                // jwt 인증
+		router.Use(handler.AuthMiddleware(jwt)) // jwt 인증
+		//router.Use(func(next http.Handler) http.Handler {
+		//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//		fmt.Printf("요청 도착: %s %s\n", r.Method, r.URL.Path)
+		//		next.ServeHTTP(w, r)
+		//	})
+		//})
 		router.Mount("/api", route.ApiRoute(apiCfg, safeDb, &r))               // api
-		router.Mount("/excel", route.ExcelRoute())                             // 엑셀
+		router.Mount("/excel", route.ExcelRoute(safeDb, &r))                   // 엑셀
 		router.Mount("/project", route.ProjectRoute(safeDb, &r))               // 프로젝트
 		router.Mount("/organization", route.OrganiztionRoute(timesheetDb, &r)) // 조직도
 		router.Mount("/site", route.SiteRoute(safeDb, &r, apiCfg))             // 현장
 		router.Mount("/worker", route.WorkerRoute(safeDb, &r))                 // 근로자
+		router.Mount("/deadline", route.DeadlineRoute(safeDb, &r))             // 일일마감
 		router.Mount("/equip", route.EquipRoute(safeDb, &r))                   // 장비 (임시)
 		router.Mount("/device", route.DeviceRoute(safeDb, &r))                 // 근태인식기
 		router.Mount("/company", route.CompanyRoute(safeDb, timesheetDb, &r))  // 협력업체

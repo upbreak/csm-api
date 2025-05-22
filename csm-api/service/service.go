@@ -147,4 +147,11 @@ type ScheduleService interface {
 type ExcelService interface {
 	ExportDailyDeduction(rows []entity.DailyDeduction) (*excelize.File, error)
 	ImportDeduction(path string) error
+	ImportWorkLetter(path string) (int64, error)
+}
+
+type UploadFileService interface {
+	GetUploadFileList(ctx context.Context, file entity.UploadFile) ([]entity.UploadFile, error)
+	GetUploadFile(ctx context.Context, file entity.UploadFile) (entity.UploadFile, error)
+	AddUploadFile(ctx context.Context, file entity.UploadFile) error
 }

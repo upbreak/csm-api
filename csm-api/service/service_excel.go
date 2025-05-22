@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/xuri/excelize/v2"
 	"strconv"
+	"strings"
 )
 
 type ServiceExcel struct{}
@@ -270,4 +271,58 @@ func (s *ServiceExcel) ImportDeduction(path string) error {
 	}
 
 	return nil
+}
+
+// 작업허가서 import
+func (s *ServiceExcel) ImportWorkLetter(path string) (int64, error) {
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		return 0, fmt.Errorf("failed to open Excel file: %w", err)
+	}
+
+	sheetName := f.GetSheetName(0)
+
+	// '근로자' 열 찾기
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read sheet rows: %w", err)
+	}
+
+	if len(rows) < 4 {
+		return 0, fmt.Errorf("row 4 does not exist in the sheet")
+	}
+
+	var targetCol string
+	for colIdx, cell := range rows[3] {
+		if cell == "근로자" {
+			colLetter, _ := excelize.ColumnNumberToName(colIdx + 1)
+			targetCol = colLetter
+			break
+		}
+	}
+	if targetCol == "" {
+		return 0, fmt.Errorf("could not find column labeled '근로자' in row 4")
+	}
+
+	// 근로자열의 마지막 행 값 가져오기(총 근로자 수)
+	rowNum := 5 // 마지막행을 찾기 위해 리스트 부분인 5행부터 시작
+	var lastValue string
+	for {
+		cellRef := fmt.Sprintf("%s%d", targetCol, rowNum)
+		val, err := f.GetCellValue(sheetName, cellRef)
+		if err != nil {
+			return 0, fmt.Errorf("failed to read cell %s: %w", cellRef, err)
+		}
+		if strings.TrimSpace(val) == "" {
+			break
+		}
+		lastValue = val
+		rowNum++
+	}
+
+	result, err := strconv.ParseInt(lastValue, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse value '%s' as int64: %w", lastValue, err)
+	}
+	return result, nil
 }
