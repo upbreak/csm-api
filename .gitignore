@@ -7,3 +7,5 @@ jenkins-credentials
 
 csm-api.exe
 csm-api/.idea
+csm-api/excel_deduction
+csm-api/uploads

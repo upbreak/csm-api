@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/guregu/null"
 	"strconv"
+	"time"
 )
 
 func ParseNullString(s string) null.String {
@@ -34,4 +35,17 @@ func ParseNullFloat(s string) null.Float {
 		return null.NewFloat(0, false)
 	}
 	return null.NewFloat(f, true)
+}
+
+func ParseNullTime(s string) null.Time {
+	if s == "" {
+		return null.NewTime(time.Time{}, false)
+	}
+
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return null.NewTime(time.Time{}, false)
+	}
+
+	return null.NewTime(t, true)
 }

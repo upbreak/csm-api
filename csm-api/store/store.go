@@ -141,3 +141,10 @@ type ScheduleStore interface {
 	ModifyRestSchedule(ctx context.Context, tx Execer, schedule entity.RestSchedule) error
 	RemoveRestSchedule(ctx context.Context, tx Execer, cno int64) error
 }
+
+type UploadFileStore interface {
+	GetUploadRound(ctx context.Context, db Queryer, file entity.UploadFile) (int, error)
+	GetUploadFileList(ctx context.Context, db Queryer, file entity.UploadFile) ([]entity.UploadFile, error)
+	GetUploadFile(ctx context.Context, db Queryer, file entity.UploadFile) (entity.UploadFile, error)
+	AddUploadFile(ctx context.Context, tx Execer, file entity.UploadFile) error
+}
