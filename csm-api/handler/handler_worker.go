@@ -126,6 +126,23 @@ func (h *HandlerWorker) AbsentList(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
+// 프로젝트에 참여한 회사명 리스트
+func (h *HandlerWorker) DepartList(w http.ResponseWriter, r *http.Request) {
+	jnoString := r.URL.Query().Get("jno")
+	if jnoString == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	jno, _ := strconv.ParseInt(jnoString, 10, 64)
+	list, err := h.Service.GetWorkerDepartList(r.Context(), jno)
+	if err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessValuesResponse(r.Context(), w, list)
+}
+
 // func: 근로자 추가
 // @param
 // - http method: post

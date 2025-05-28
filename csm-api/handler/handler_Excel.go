@@ -4,7 +4,6 @@ import (
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -13,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 /**
@@ -28,94 +26,8 @@ type HandlerExcel struct {
 	FileService service.UploadFileService
 }
 
-// TODO: 임시작성
-// func: 일간 퇴직공제 export
-// @param
-// -
-func (h *HandlerExcel) ExportDailyDeduction(w http.ResponseWriter, r *http.Request) {
-	var rows []entity.DailyDeduction
-
-	if err := json.NewDecoder(r.Body).Decode(&rows); err != nil {
-		FailResponse(r.Context(), w, err)
-		return
-	}
-
-	f, err := h.Service.ExportDailyDeduction(rows)
-	if err != nil {
-		FailResponse(r.Context(), w, err)
-		return
-	}
-
-	// 파일 스트림 전송 (성공한 경우)
-	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=retirement_deduction_%s.xlsx", time.Now().Format("20060102")))
-	w.Header().Set("File-Name", fmt.Sprintf("retirement_deduction_%s.xlsx", time.Now().Format("20060102")))
-	w.Header().Set("Content-Transfer-Encoding", "binary")
-	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition, File-Name")
-
-	if err = f.Write(w); err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("엑셀 파일 전송 실패: %v", err))
-		return
-	}
-}
-
-// TODO: 임시작성
-// func: 퇴직공제 엑셀 import
-// @param
-// -
-func (h *HandlerExcel) ImportDeduction(w http.ResponseWriter, r *http.Request) {
-	// 파일 받기
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to receive the file: %v", err))
-		return
-	}
-	defer func(file multipart.File) {
-		err = file.Close()
-		if err != nil {
-			FailResponse(r.Context(), w, fmt.Errorf("failed to file Close: %v", err))
-			return
-		}
-	}(file)
-
-	// 엑셀 파일 확장자 검사
-	if !(len(header.Filename) > 5 && (header.Filename[len(header.Filename)-5:] == ".xlsx" || header.Filename[len(header.Filename)-4:] == ".xls")) {
-		FailResponse(r.Context(), w, fmt.Errorf("only Excel files (.xlsx, .xls) are allowed"))
-		return
-	}
-
-	// 임시 파일로 저장
-	tempFilePath := "./excel_deduction/temp_" + header.Filename
-	outFile, err := os.Create(tempFilePath)
-	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to create a temporary file: %v", err))
-		return
-	}
-	defer func(outFile *os.File) {
-		err = outFile.Close()
-		if err != nil {
-			FailResponse(r.Context(), w, fmt.Errorf("failed to outFile Close: %v", err))
-			return
-		}
-	}(outFile)
-
-	_, err = io.Copy(outFile, file)
-	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to save the uploaded file: %v", err))
-		return
-	}
-
-	err = h.Service.ImportDeduction(tempFilePath)
-	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to parse Excel file: %v", err))
-		return
-	}
-
-	SuccessResponse(r.Context(), w)
-}
-
 // excel 자료 import
-// type: WORK_LETTER (작업허가서), TBM (TBM 문서), DEDUCTION (퇴직공제), REPORT (작업일보)
+// fileType: WORK_LETTER (작업허가서), TBM (TBM 문서), DEDUCTION (퇴직공제), REPORT (작업일보)
 func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20) // 최대 10MB
 	if err != nil {
@@ -147,6 +59,8 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	workDate := r.FormValue("work_date")
 	// 프로젝트
 	jnoString := r.FormValue("jno")
+	// 회사
+	department := r.FormValue("department")
 	// 종류
 	fileType := r.FormValue("file_type")
 	// 추가 파일 경로
@@ -215,12 +129,22 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 엑셀 분석
-	//value, err := h.Service.ImportWorkLetter(tempFilePath)
-	//if err != nil {
-	//	FailResponse(r.Context(), w, fmt.Errorf("failed to parse Excel file: %v", err))
-	//	return
-	//}
+	// 엑셀 파싱 및 db 저장
+	if fileType == "TBM" {
+		tbm := entity.Tbm{
+			Jno:        utils.ParseNullInt(jnoString),
+			Department: utils.ParseNullString(department),
+			TbmDate:    utils.ParseNullTime(workDate),
+			Base: entity.Base{
+				RegUser: utils.ParseNullString(regUser),
+				RegUno:  utils.ParseNullInt(regUno),
+			},
+		}
+		if err = h.Service.ImportTbm(r.Context(), tempFilePath, tbm); err != nil {
+			FailResponse(r.Context(), w, err)
+			return
+		}
+	}
 
 	SuccessResponse(r.Context(), w)
 }

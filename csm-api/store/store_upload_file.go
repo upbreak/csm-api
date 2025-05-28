@@ -48,12 +48,13 @@ func (r *Repository) GetUploadFileList(ctx context.Context, db Queryer, file ent
 		JOIN (
 			SELECT 
 				FILE_TYPE,
+				FILE_PATH,
 				MAX(UPLOAD_ROUND) AS UPLOAD_ROUND
 			FROM IRIS_UPLOADED_FILES
 			WHERE JNO = :2
 			AND TRUNC(WORK_DATE) = TRUNC(:3)
 			GROUP BY FILE_TYPE, FILE_PATH
-		) T2 ON T1.FILE_TYPE = T2.FILE_TYPE AND T1.UPLOAD_ROUND = T2.UPLOAD_ROUND`
+		) T2 ON T1.FILE_TYPE = T2.FILE_TYPE AND T1.FILE_PATH = T2.FILE_PATH AND T1.UPLOAD_ROUND = T2.UPLOAD_ROUND`
 
 	if err := db.SelectContext(ctx, &uploadFileList, query, file.Jno, file.WorkDate); err != nil {
 		return nil, fmt.Errorf("GetUploadFileList: %w", err)

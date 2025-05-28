@@ -107,6 +107,7 @@ type WorkerStore interface {
 	GetWorkerTotalCount(ctx context.Context, db Queryer, search entity.Worker, retry string) (int, error)
 	GetAbsentWorkerList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error)
 	GetAbsentWorkerCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
+	GetWorkerDepartList(ctx context.Context, db Queryer, jno int64) ([]string, error)
 	AddWorker(ctx context.Context, tx Execer, worker entity.Worker) error
 	ModifyWorker(ctx context.Context, tx Execer, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
@@ -147,4 +148,17 @@ type UploadFileStore interface {
 	GetUploadFileList(ctx context.Context, db Queryer, file entity.UploadFile) ([]entity.UploadFile, error)
 	GetUploadFile(ctx context.Context, db Queryer, file entity.UploadFile) (entity.UploadFile, error)
 	AddUploadFile(ctx context.Context, tx Execer, file entity.UploadFile) error
+}
+
+type CompareStore interface {
+	GetDailyWorkerList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) (entity.WorkerDailys, error)
+	GetTbmList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) ([]entity.Tbm, error)
+	GetDeductionList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) ([]entity.Deduction, error)
+	ModifyWorkerCompareState(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	AddCompareLog(ctx context.Context, tx Execer, logs entity.WorkerDailys) error
+}
+
+type ExcelStore interface {
+	AddTbmExcel(ctx context.Context, tx Execer, tbm []entity.Tbm) error
+	ModifyTbmExcel(ctx context.Context, tx Execer, tbm entity.Tbm) error
 }
