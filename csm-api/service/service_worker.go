@@ -93,6 +93,15 @@ func (s *ServiceWorker) GetAbsentWorkerCount(ctx context.Context, search entity.
 	return count, nil
 }
 
+// 프로젝트에 참여한 회사명 리스트
+func (s *ServiceWorker) GetWorkerDepartList(ctx context.Context, jno int64) ([]string, error) {
+	list, err := s.Store.GetWorkerDepartList(ctx, s.SafeDB, jno)
+	if err != nil {
+		return nil, fmt.Errorf("service_worker;ByUserId/GetWorkerDepartList err: %v", err)
+	}
+	return list, nil
+}
+
 // func: 근로자 추가
 // @param
 // -

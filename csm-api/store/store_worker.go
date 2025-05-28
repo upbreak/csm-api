@@ -234,6 +234,26 @@ func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, searc
 	return count, nil
 }
 
+// 프로젝트에 참여한 회사명 리스트
+func (r *Repository) GetWorkerDepartList(ctx context.Context, db Queryer, jno int64) ([]string, error) {
+	var list []string
+
+	query := `
+		SELECT DISTINCT
+		  CASE
+			WHEN INSTR(DEPARTMENT, ' ', -1) > 0 THEN SUBSTR(DEPARTMENT, 1, INSTR(DEPARTMENT, ' ', -1) - 1)
+			ELSE DEPARTMENT
+		  END AS COMPANY_NAME
+		FROM IRIS_WORKER_SET
+		WHERE JNO = :1
+		  AND DEPARTMENT IS NOT NULL`
+
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
+		return nil, fmt.Errorf("GetWorkerDepartList fail: %w", err)
+	}
+	return list, nil
+}
+
 // func: 근로자 추가
 // @param
 // -
@@ -362,6 +382,7 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 							FROM IRIS_WORKER_DAILY_SET t1
 							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID AND t1.sno = t2.sno AND t1.jno = t2.jno
 							WHERE t1.SNO > 100
+							AND t1.COMPARE_STATE = 'S'
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
 							%s %s
@@ -404,6 +425,7 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 							FROM IRIS_WORKER_DAILY_SET t1
 							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO  = t2.JNO AND t1.USER_ID = t2.USER_ID 
 							WHERE t1.SNO > 100
+							AND t1.COMPARE_STATE = 'S'
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
 							%s %s`, condition, retryCondition)
@@ -464,8 +486,8 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 					AND t1.USER_ID = t2.USER_ID
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				WHEN NOT MATCHED THEN
-					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
-					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
+					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
+					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'S', SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
 
 	for _, worker := range workers {
 		_, err := tx.ExecContext(ctx, query,
@@ -564,7 +586,8 @@ func (r *Repository) ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) er
 			WHERE TRUNC(RECORD_DATE) >= TRUNC(SYSDATE) - 7
 			AND TRUNC(RECORD_DATE) < TRUNC(SYSDATE)
 			AND WORK_STATE = '02'
-			AND IS_DEADLINE = 'N'`
+			AND IS_DEADLINE = 'N'
+			AND COMPARE_STATE = 'S'`
 
 	if _, err := tx.ExecContext(ctx, query, agent); err != nil {
 		//TODO: 에러 아카이브
@@ -588,7 +611,13 @@ func (r *Repository) GetWorkerOverTime(ctx context.Context, db Queryer) (*entity
 			FROM iris_worker_daily_set w1 
 			INNER JOIN iris_worker_daily_set w2 
 			ON w1.user_id = w2.user_id AND w1.jno = w2.jno 
-			WHERE to_date(w2.record_date) = TRUNC(SYSDATE) AND w2.IN_RECOG_TIME IS NULL AND w2.OUT_RECOG_TIME IS NOT NULL AND TO_DATE(w1.RECORD_DATE) = TRUNC(SYSDATE - 1) AND w1.IN_RECOG_TIME IS NOT NULL AND w1.OUT_RECOG_TIME IS NULL
+			WHERE to_date(w2.record_date) = TRUNC(SYSDATE) 
+			  AND w2.IN_RECOG_TIME IS NULL 
+			  AND w2.OUT_RECOG_TIME IS NOT NULL 
+			  AND TO_DATE(w1.RECORD_DATE) = TRUNC(SYSDATE - 1) 
+			  AND w1.IN_RECOG_TIME IS NOT NULL 
+			  AND w1.OUT_RECOG_TIME IS NULL
+			  AND W2.COMPARE_STATE = 'S'
 		`
 
 	if err := db.SelectContext(ctx, &workerOverTimes, query); err != nil {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"csm-api/entity"
 	"github.com/guregu/null"
-	"github.com/xuri/excelize/v2"
 	"time"
 )
 
@@ -99,6 +98,7 @@ type WorkerService interface {
 	GetWorkerTotalCount(ctx context.Context, search entity.Worker, retry string) (int, error)
 	GetAbsentWorkerList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.Workers, error)
 	GetAbsentWorkerCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error)
+	GetWorkerDepartList(ctx context.Context, jno int64) ([]string, error)
 	AddWorker(ctx context.Context, worker entity.Worker) error
 	ModifyWorker(ctx context.Context, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
@@ -145,13 +145,17 @@ type ScheduleService interface {
 }
 
 type ExcelService interface {
-	ExportDailyDeduction(rows []entity.DailyDeduction) (*excelize.File, error)
-	ImportDeduction(path string) error
-	ImportWorkLetter(path string) (int64, error)
+	ImportTbm(ctx context.Context, path string, tbm entity.Tbm) error
+	ImportDeduction(ctx context.Context, path string, deduction entity.Deduction) error
 }
 
 type UploadFileService interface {
 	GetUploadFileList(ctx context.Context, file entity.UploadFile) ([]entity.UploadFile, error)
 	GetUploadFile(ctx context.Context, file entity.UploadFile) (entity.UploadFile, error)
 	AddUploadFile(ctx context.Context, file entity.UploadFile) error
+}
+
+type CompareService interface {
+	GetCompareList(ctx context.Context, jno int64, startDate null.Time, retry string, order string) ([]entity.Compare, error)
+	ModifyWorkerCompareState(ctx context.Context, workers entity.WorkerDailys) error
 }

@@ -34,15 +34,21 @@ type WorkerDaily struct {
 	UserId          null.String `json:"user_id" db:"USER_ID"` //근로자 아이디
 	UserNm          null.String `json:"user_nm" db:"USER_NM"`
 	Department      null.String `json:"department" db:"DEPARTMENT"`
+	DiscName        null.String `json:"disc_name" db:"DISC_NAME"` // 공종명
+	RegNo           null.String `json:"reg_no" db:"REG_NO"`
 	RecordDate      null.Time   `json:"record_date" db:"RECORD_DATE"`
 	InRecogTime     null.Time   `json:"in_recog_time" db:"IN_RECOG_TIME"`   //출근시간
 	OutRecogTime    null.Time   `json:"out_recog_time" db:"OUT_RECOG_TIME"` //퇴근시간
 	WorkState       null.String `json:"work_state" db:"WORK_STATE"`
 	IsDeadline      null.String `json:"is_deadline" db:"IS_DEADLINE"`
 	IsOvertime      null.String `json:"is_overtime" db:"IS_OVERTIME"`
+	CompareState    null.String `json:"compare_state" db:"COMPARE_STATE"`
+	WorkHours       null.Float  `json:"work_hours" db:"WORK_HOURS"`
 	SearchStartTime null.String `json:"search_start_time" db:"SEARCH_START_TIME"`
 	SearchEndTime   null.String `json:"search_end_time" db:"SEARCH_END_TIME"`
 	AfterJno        null.Int    `json:"after_jno" db:"AFTER_JNO"`
+	BeforeState     null.String `json:"before_state" db:"BEFORE_STATE"`
+	AfterState      null.String `json:"after_state" db:"AFTER_STATE"`
 	Base
 }
 type WorkerDailys []*WorkerDaily
