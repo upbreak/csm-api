@@ -203,11 +203,10 @@ func (r *Repository) ModifyWorkerCompareApply(ctx context.Context, tx Execer, wo
 			MOD_UNO = :3,
 			MOD_AGENT = :4
 		WHERE SNO = :5
-		AND USER_ID = :6
-		AND TRUNC(RECORD_DATE) = TRUNC(:7)`
+		AND USER_ID = :6`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId); err != nil {
 			return fmt.Errorf("ModifyWorkerCompareState: %v", err)
 		}
 	}
@@ -233,7 +232,7 @@ func (r *Repository) ModifyDailyWorkerCompareApply(ctx context.Context, tx Exece
 		AND TRUNC(RECORD_DATE) = TRUNC(:8)`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.CompareState, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.AfterState, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
 			return fmt.Errorf("ModifyDailyWorkerCompareState: %v", err)
 		}
 	}
