@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"csm-api/ctxutil"
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -24,6 +26,7 @@ import (
 type HandlerExcel struct {
 	Service     service.ExcelService
 	FileService service.UploadFileService
+	DB          *sqlx.DB
 }
 
 // excel 자료 import
@@ -57,6 +60,8 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 
 	// 날짜 (2000-01-01)
 	workDate := r.FormValue("work_date")
+	// 현장
+	snoString := r.FormValue("sno")
 	// 프로젝트
 	jnoString := r.FormValue("jno")
 	// 회사
@@ -112,6 +117,14 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// context 안에 트랜잭션 저장
+	ctx, err := ctxutil.WithTx(r.Context(), h.DB)
+	if err != nil {
+		FailResponse(r.Context(), w, fmt.Errorf("failed to begin transaction: %v", err))
+		return
+	}
+	defer ctxutil.DeferTx(ctx, "ImportExcel", &err)()
+
 	// 파일 정보 저장
 	uploadFile := entity.UploadFile{
 		FileType: utils.ParseNullString(fileType),
@@ -124,15 +137,15 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 			RegUno:  utils.ParseNullInt(regUno),
 		},
 	}
-	if err = h.FileService.AddUploadFile(r.Context(), uploadFile); err != nil {
-		FailResponse(r.Context(), w, err)
+	if err = h.FileService.AddUploadFile(ctx, uploadFile); err != nil {
+		FailResponse(ctx, w, err)
 		return
 	}
 
 	// 엑셀 파싱 및 db 저장
 	if fileType == "TBM" {
 		tbm := entity.Tbm{
-			Jno:        utils.ParseNullInt(jnoString),
+			Sno:        utils.ParseNullInt(snoString),
 			Department: utils.ParseNullString(department),
 			TbmDate:    utils.ParseNullTime(workDate),
 			Base: entity.Base{
@@ -140,8 +153,21 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 				RegUno:  utils.ParseNullInt(regUno),
 			},
 		}
-		if err = h.Service.ImportTbm(r.Context(), tempFilePath, tbm); err != nil {
-			FailResponse(r.Context(), w, err)
+		if err = h.Service.ImportTbm(ctx, tempFilePath, tbm); err != nil {
+			FailResponse(ctx, w, err)
+			return
+		}
+	} else if fileType == "DEDUCTION" {
+		deduction := entity.Deduction{
+			Sno:        utils.ParseNullInt(snoString),
+			RecordDate: utils.ParseNullTime(workDate),
+			Base: entity.Base{
+				RegUser: utils.ParseNullString(regUser),
+				RegUno:  utils.ParseNullInt(regUno),
+			},
+		}
+		if err = h.Service.ImportDeduction(ctx, tempFilePath, deduction); err != nil {
+			FailResponse(ctx, w, err)
 			return
 		}
 	}

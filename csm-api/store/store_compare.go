@@ -5,11 +5,10 @@ import (
 	"csm-api/entity"
 	"csm-api/utils"
 	"fmt"
-	"github.com/guregu/null"
 )
 
 // 일일 근로자 비교 - 근로자 리스트
-func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) (entity.WorkerDailys, error) {
+func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare entity.Compare, retry string, order string) (entity.WorkerDailys, error) {
 	var list entity.WorkerDailys
 
 	var columns []string
@@ -48,32 +47,36 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, jno int
 				WHEN INSTR(T2.DEPARTMENT, ' ', -1) > 0 THEN SUBSTR(T2.DEPARTMENT, 1, INSTR(T2.DEPARTMENT, ' ', -1) - 1)
 				ELSE T2.DEPARTMENT
 			END AS DEPARTMENT,
-		    T2.DISC_NAME,
+			T2.DISC_NAME,
 			T1.IN_RECOG_TIME,
 			T1.OUT_RECOG_TIME,
 			TRUNC(T1.RECORD_DATE) AS RECORD_DATE,
 			T1.COMPARE_STATE,
 			T1.IS_DEADLINE
 		FROM IRIS_WORKER_DAILY_SET T1
-		LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.JNO = T2.JNO AND T1.USER_ID = T2.USER_ID
-		WHERE T1.JNO = :1
-		AND TRUNC(T1.RECORD_DATE) = TRUNC(:2)
+		LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
+		WHERE TRUNC(T1.RECORD_DATE) = TRUNC(:1)
+		AND T1.SNO = :2
+		AND (
+			T1.JNO = :3 
+			OR (T1.JNO != :4 AND T1.COMPARE_STATE NOT IN ('S', 'X'))
+		)
 		%s
 		%s`, retryCondition, orderBy)
 
-	if err := db.SelectContext(ctx, &list, query, jno, startDate); err != nil {
+	if err := db.SelectContext(ctx, &list, query, compare.RecordDate, compare.Sno, compare.Jno, compare.Jno); err != nil {
 		return list, fmt.Errorf("GetDailyWorkerList: %w", err)
 	}
 	return list, nil
 }
 
 // 일일 근로자 비교 - TBM 리스트
-func (r *Repository) GetTbmList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) ([]entity.Tbm, error) {
+func (r *Repository) GetTbmList(ctx context.Context, db Queryer, compare entity.Compare, retry string, order string) ([]entity.Tbm, error) {
 	var list []entity.Tbm
 
 	var columns []string
-	columns = append(columns, "USER_NM")
-	columns = append(columns, "DEPARTMENT")
+	columns = append(columns, "A.USER_NM")
+	columns = append(columns, "A.DEPARTMENT")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var orderBy string
@@ -97,33 +100,36 @@ func (r *Repository) GetTbmList(ctx context.Context, db Queryer, jno int64, star
 			SELECT 
 				SNO, JNO, DEPARTMENT, USER_NM, MAX(TBM_ORDER) AS MAX_ORDER
 			FROM IRIS_TBM_SET
-			WHERE JNO = :1
+			WHERE SNO = :1
 			  AND TRUNC(TBM_DATE) = TRUNC(:2)
 			GROUP BY SNO, JNO, DEPARTMENT, USER_NM
 		) B
 		  ON A.SNO = B.SNO
-		 AND A.JNO = B.JNO
 		 AND A.DEPARTMENT = B.DEPARTMENT
 		 AND A.USER_NM = B.USER_NM
 		 AND A.TBM_ORDER = B.MAX_ORDER
-		WHERE A.JNO = :3
-		 AND TRUNC(A.TBM_DATE) = TRUNC(:4)
+		WHERE A.SNO = :3
+		AND TRUNC(A.TBM_DATE) = TRUNC(:4)
+		AND (
+			A.JNO IS NULL 
+			OR A.JNO = :5
+		)
 		%s
 		%s`, retryCondition, orderBy)
 
-	if err := db.SelectContext(ctx, &list, query, jno, startDate, jno, startDate); err != nil {
+	if err := db.SelectContext(ctx, &list, query, compare.Sno, compare.RecordDate, compare.Sno, compare.RecordDate, compare.Jno); err != nil {
 		return list, fmt.Errorf("GetTbmList: %w", err)
 	}
 	return list, nil
 }
 
 // 일일 근로자 비교 - 퇴직공제 리스트
-func (r *Repository) GetDeductionList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) ([]entity.Deduction, error) {
+func (r *Repository) GetDeductionList(ctx context.Context, db Queryer, compare entity.Compare, retry string, order string) ([]entity.Deduction, error) {
 	var list []entity.Deduction
 
 	var columns []string
-	columns = append(columns, "USER_NM")
-	columns = append(columns, "DEPARTMENT")
+	columns = append(columns, "A.USER_NM")
+	columns = append(columns, "A.DEPARTMENT")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var orderBy string
@@ -146,6 +152,7 @@ func (r *Repository) GetDeductionList(ctx context.Context, db Queryer, jno int64
 			A.JNO,
 			A.USER_NM,
 			A.GENDER,
+			A.PHONE,
 			A.REG_NO,
 			A.DEPARTMENT,
 			A.IN_RECOG_TIME,
@@ -157,47 +164,145 @@ func (r *Repository) GetDeductionList(ctx context.Context, db Queryer, jno int64
 			SELECT 
 				SNO, JNO, USER_NM, REG_NO, DEPARTMENT, GENDER, MAX(DEDUCT_ORDER) AS MAX_ORDER
 			FROM IRIS_DEDUCTION_SET
-			WHERE JNO = :1
+			WHERE SNO = :1
 			  AND TRUNC(RECORD_DATE) = TRUNC(:2)
 			GROUP BY SNO, JNO, USER_NM, REG_NO, DEPARTMENT, GENDER
 		) B
 		  ON A.SNO = B.SNO
-		 AND A.JNO = B.JNO
 		 AND A.USER_NM = B.USER_NM
 		 AND A.REG_NO = B.REG_NO
 		 AND A.DEPARTMENT = B.DEPARTMENT
 		 AND A.GENDER = B.GENDER
 		 AND A.DEDUCT_ORDER = B.MAX_ORDER
-		WHERE A.JNO = :3
-		  AND TRUNC(A.RECORD_DATE) = TRUNC(:4)
+		WHERE A.SNO = :3
+		 AND TRUNC(A.RECORD_DATE) = TRUNC(:4)
+		 AND (
+			A.JNO IS NULL
+			OR A.JNO = :5
+		 )
 		%s
 		%s`, retryCondition, orderBy)
 
-	if err := db.SelectContext(ctx, &list, query, jno, startDate, jno, startDate); err != nil {
+	if err := db.SelectContext(ctx, &list, query, compare.Sno, compare.RecordDate, compare.Sno, compare.RecordDate, compare.Jno); err != nil {
 		return list, fmt.Errorf("GetDeductionList: %w", err)
 	}
 	return list, nil
 }
 
-// 근로자 비교 반영/취소
-func (r *Repository) ModifyWorkerCompareState(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+// 근로자 비교 반영 - 근로자 정보: IRIS_WORKER_SET
+// 선택한 프로젝트로 수정
+func (r *Repository) ModifyWorkerCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_WORKER_SET
+		SET
+			JNO = :1,
+			MOD_DATE = SYSDATE,
+			MOD_USER = :2,
+			MOD_UNO = :3,
+			MOD_AGENT = :4
+		WHERE SNO = :5
+		AND USER_ID = :6
+		AND TRUNC(RECORD_DATE) = TRUNC(:7)`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyWorkerCompareState: %v", err)
+		}
+	}
+	return nil
+}
+
+// 근로자 비교 반영 - 근로자 일일 정보: IRIS_WORKER_DAILY_SET
+// 반영상태, 선택한 프로젝트로 수정
+func (r *Repository) ModifyDailyWorkerCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
 	agent := utils.GetAgent()
 
 	query := `
 		UPDATE IRIS_WORKER_DAILY_SET
 		SET
-			COMPARE_STATE = :1,
+			JNO = :1,
+			COMPARE_STATE = :2,
+			MOD_DATE = SYSDATE,
+			MOD_USER = :3,
+			MOD_UNO = :4,
+			MOD_AGENT = :5
+		WHERE SNO = :6
+		AND USER_ID = :7
+		AND TRUNC(RECORD_DATE) = TRUNC(:8)`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.CompareState, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyDailyWorkerCompareState: %v", err)
+		}
+	}
+	return nil
+}
+
+// 근로자 비교 반영 - TBM 등록 정보: IRIS_TBM_SET
+// 선택한 프로젝트로 수정
+func (r *Repository) ModifyTbmCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_TBM_SET
+		SET
+			JNO = :1,
 			MOD_DATE = SYSDATE,
 			MOD_USER = :2,
 			MOD_UNO = :3,
 			MOD_AGENT = :4
-		WHERE JNO = :5
-		AND USER_ID = :6
-		AND TRUNC(RECORD_DATE) = TRUNC(:7)`
+		WHERE ROWID = (
+			SELECT ROWID FROM (
+				SELECT ROWID
+				FROM IRIS_TBM_SET
+				WHERE SNO = :5
+				AND USER_NM = :6
+				AND DEPARTMENT = :7
+				AND TRUNC(TBM_DATE) = TRUNC(:8)
+				ORDER BY TBM_ORDER DESC
+			)
+			WHERE ROWNUM = 1
+		)`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.AfterState, worker.RegUser, worker.RegUno, agent, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
-			return fmt.Errorf("ModifyWorkerCompareState: %v", err)
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegNo, agent, worker.Sno, worker.UserNm, worker.Department, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyTbmCompareState: %v", err)
+		}
+	}
+	return nil
+}
+
+// 근로자 비교 반영 - 퇴직공제 등록 정보: IRIS_DEDUCTION_SET
+// 선택한 프로젝트로 수정
+func (r *Repository) ModifyDeductionCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_DEDUCTION_SET
+		SET
+			JNO = :1,
+			MOD_DATE = SYSDATE,
+			MOD_USER = :2,
+			MOD_UNO = :3,
+			MOD_AGENT = :4
+		WHERE ROWID = (
+			SELECT ROWID FROM (
+				SELECT ROWID
+				FROM IRIS_DEDUCTION_SET
+				WHERE SNO = :5
+				AND USER_NM = :6
+				AND DEPARTMENT = :7
+				AND REG_NO = :8
+				AND TRUNC(RECORD_DATE) = TRUNC(:9)
+				ORDER BY DEDUCT_ORDER DESC
+			)
+			WHERE ROWNUM = 1
+		)`
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserNm, worker.Department, worker.RegNo, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyDeductionCompareState: %v", err)
 		}
 	}
 	return nil
@@ -208,11 +313,11 @@ func (r *Repository) AddCompareLog(ctx context.Context, tx Execer, logs entity.W
 	agent := utils.GetAgent()
 
 	query := `
-		INSERT INTO IRIS_COMPARE_LOG(JNO, USER_ID, USER_NM, BEFORE_STATE, AFTER_STATE, RECORD_DATE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
-		VALUES(:1, :2, :3, :4, :5, :6, SYSDATE, :7, :8, :9)`
+		INSERT INTO IRIS_COMPARE_LOG(SNO, JNO, USER_ID, USER_NM, BEFORE_STATE, AFTER_STATE, RECORD_DATE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES(:1, :2, :3, :4, :5, :6, :7, SYSDATE, :8, :9, :10)`
 
 	for _, log := range logs {
-		if _, err := tx.ExecContext(ctx, query, log.Jno, log.UserId, log.UserNm, log.BeforeState, log.AfterState, log.RecordDate, log.RegUser, log.RegUno, agent); err != nil {
+		if _, err := tx.ExecContext(ctx, query, log.Sno, log.Jno, log.UserId, log.UserNm, log.BeforeState, log.AfterState, log.RecordDate, log.RegUser, log.RegUno, agent); err != nil {
 			return fmt.Errorf("AddCompareLog: %w", err)
 		}
 	}

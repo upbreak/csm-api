@@ -301,6 +301,15 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 	return count, nil
 }
 
+// 현장별 프로젝트 조회
+func (s *ServiceProject) GetProjectBySite(ctx context.Context, sno int64) (entity.ProjectInfos, error) {
+	projectInfos, err := s.Store.GetProjectBySite(ctx, s.SafeDB, sno)
+	if err != nil {
+		return entity.ProjectInfos{}, fmt.Errorf("service_project/GetProjectBySite error: %w", err)
+	}
+	return projectInfos, nil
+}
+
 // func: 현장 프로젝트 추가
 // @param
 // -

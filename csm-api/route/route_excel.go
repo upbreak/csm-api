@@ -22,6 +22,7 @@ func ExcelRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 			TDB:   safeDB,
 			Store: r,
 		},
+		DB: safeDB,
 	}
 
 	router.Post("/import", excelHandler.ImportExcel) // excel import

@@ -20,7 +20,7 @@ func CompareRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	}
 
 	router.Get("/", compareHandler.List)         // 일일근로자비교 리스트
-	router.Put("/", compareHandler.CompareState) // 일일근로자비교 반영/취소
+	router.Put("/", compareHandler.CompareState) // 일일근로자비교 반영
 
 	return router
 }

@@ -49,3 +49,18 @@ func ParseNullTime(s string) null.Time {
 
 	return null.NewTime(t, true)
 }
+
+func ParseNullDateTime(dateStr, timeStr string) null.Time {
+	if dateStr == "" || timeStr == "" {
+		return null.NewTime(time.Time{}, false)
+	}
+
+	combined := dateStr + " " + timeStr
+	loc := time.Now().Location()
+	t, err := time.ParseInLocation("2006-01-02 15:04:05", combined, loc)
+	if err != nil {
+		return null.NewTime(time.Time{}, false)
+	}
+
+	return null.NewTime(t, true)
+}
