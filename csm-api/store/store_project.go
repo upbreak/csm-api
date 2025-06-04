@@ -827,6 +827,25 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 	return count, nil
 }
 
+// 현장별 프로젝트 조회
+func (r *Repository) GetProjectBySite(ctx context.Context, db Queryer, sno int64) (entity.ProjectInfos, error) {
+	var list entity.ProjectInfos
+
+	query := `
+		SELECT 
+			T1.SNO,
+			T1.JNO,
+			T2.JOB_NAME	AS PROJECT_NM
+		FROM IRIS_SITE_JOB T1
+		LEFT JOIN SYS_JOB_INFO T2 ON T1.JNO = T2.JNO
+		WHERE T1.SNO = :1`
+
+	if err := db.SelectContext(ctx, &list, query, sno); err != nil {
+		return nil, fmt.Errorf("GetProjectBySite fail: %v", err)
+	}
+	return list, nil
+}
+
 // func: 현장 프로젝트 추가
 // @param
 // -

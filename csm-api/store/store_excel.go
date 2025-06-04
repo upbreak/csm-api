@@ -4,43 +4,107 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/utils"
+	"database/sql"
+	"errors"
 	"fmt"
+	"strconv"
 )
+
+// TBM 엑셀 차수 조회
+func (r *Repository) GetTbmOrder(ctx context.Context, db Queryer, tbm entity.Tbm) (string, error) {
+	var order sql.NullInt64
+
+	query := `
+		SELECT 
+			MAX(TBM_ORDER) 
+		FROM IRIS_TBM_SET
+		WHERE SNO = :1
+		AND DEPARTMENT = :2
+		AND TRUNC(TBM_DATE) = TRUNC(:3)`
+
+	if err := db.GetContext(ctx, &order, query, tbm.Sno, tbm.Department, tbm.TbmDate); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "0", nil
+		}
+		return "0", fmt.Errorf("GetTbmOrder: %w", err)
+	}
+
+	if !order.Valid {
+		return "0", nil
+	}
+
+	return strconv.FormatInt(order.Int64+1, 10), nil
+}
 
 // TBM 엑셀 정보 저장
 func (r *Repository) AddTbmExcel(ctx context.Context, tx Execer, tbms []entity.Tbm) error {
 	agent := utils.GetAgent()
 
 	query := `
-		INSERT INTO IRIS_TBM_SET(JNO, DEPARTMENT, DISC_NAME, USER_NM, TBM_DATE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
-		VALUES(:1, :2, :3, :4, :5, SYSDATE, :7, :8, :9)`
+		INSERT INTO IRIS_TBM_SET(SNO, DEPARTMENT, DISC_NAME, USER_NM, TBM_DATE, TBM_ORDER, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES(:1, :2, :3, :4, :5, :6, SYSDATE, :7, :8, :9)`
 
 	for _, tbm := range tbms {
-		if _, err := tx.ExecContext(ctx, query, tbm.Jno, tbm.Department, tbm.DiscName, tbm.UserNm, tbm.TbmDate, tbm.RegUser, tbm.RegUno, agent); err != nil {
+		if _, err := tx.ExecContext(ctx, query, tbm.Sno, tbm.Department, tbm.DiscName, tbm.UserNm, tbm.TbmDate, tbm.TbmOrder, tbm.RegUser, tbm.RegUno, agent); err != nil {
 			return fmt.Errorf("AddTbmExcel: %w", err)
 		}
 	}
 	return nil
 }
 
-// TBM 엑셀 정보 사용 안함
-func (r *Repository) ModifyTbmExcel(ctx context.Context, tx Execer, tbm entity.Tbm) error {
+// 퇴직공제 현장명 조회
+func (r *Repository) GetDeductionSiteNameBySno(ctx context.Context, db Queryer, sno int64) (string, error) {
+	var name sql.NullString
+
+	query := `SELECT SITE_NM FROM IRIS_SITE_SET WHERE SNO = :1`
+
+	if err := db.GetContext(ctx, &name, query, sno); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", fmt.Errorf("GetDeductionSiteNameBySno: %w", err)
+	}
+	if !name.Valid {
+		return "", nil
+	}
+	return name.String, nil
+}
+
+// 퇴직공제 차수 조회
+func (r *Repository) GetDeductionOrder(ctx context.Context, db Queryer, tbm entity.Deduction) (string, error) {
+	var order sql.NullInt64
+
+	query := `
+		SELECT 
+			MAX(DEDUCT_ORDER) 
+		FROM IRIS_DEDUCTION_SET
+		WHERE SNO = :1
+		AND TRUNC(RECORD_DATE) = TRUNC(:2)`
+
+	if err := db.GetContext(ctx, &order, query, tbm.Sno, tbm.RecordDate); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "0", nil
+		}
+		return "0", fmt.Errorf("GetDeductionOrder: %w", err)
+	}
+	if !order.Valid {
+		return "0", nil
+	}
+	return strconv.FormatInt(order.Int64+1, 10), nil
+}
+
+// 퇴직공제 엑셀 정보 저장
+func (r *Repository) AddDeductionExcel(ctx context.Context, tx Execer, tbms []entity.Deduction) error {
 	agent := utils.GetAgent()
 
 	query := `
-		UPDATE IRIS_TBM_SET
-		SET
-		    IS_USE = 'N',
-			MOD_DATE = SYSDATE,
-			MOD_USER = :1,
-			MOD_UNO = :2,
-			MOD_AGENT = :3
-		WHERE JNO = :4 
-		AND TRUNC(TBM_DATE) = TRUNC(:5)
-		AND DEPARTMENT = :6`
+		INSERT INTO IRIS_DEDUCTION_SET(SNO, USER_NM, DEPARTMENT, GENDER, REG_NO, PHONE, IN_RECOG_TIME, OUT_RECOG_TIME, RECORD_DATE, DEDUCT_ORDER, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES(:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, SYSDATE, :11, :12, :13)`
 
-	if _, err := tx.ExecContext(ctx, query, tbm.RegUser, tbm.RegUno, agent, tbm.Jno, tbm.TbmDate, tbm.Department); err != nil {
-		return fmt.Errorf("ModifyTbmExcel: %w", err)
+	for _, tbm := range tbms {
+		if _, err := tx.ExecContext(ctx, query, tbm.Sno, tbm.UserNm, tbm.Department, tbm.Gender, tbm.RegNo, tbm.Phone, tbm.InRecogTime, tbm.OutRecogTime, tbm.RecordDate, tbm.DeductOrder, tbm.RegUser, tbm.RegUno, agent); err != nil {
+			return fmt.Errorf("AddDeductionExcel: %w", err)
+		}
 	}
 	return nil
 }
