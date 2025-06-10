@@ -21,8 +21,9 @@ import (
  */
 
 type Scheduler struct {
-	WorkerService service.WorkerService
-	cron          *cron.Cron
+	WorkerService  service.WorkerService
+	ProjectService service.ProjectService
+	cron           *cron.Cron
 }
 
 func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
@@ -35,6 +36,12 @@ func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
 			SafeTDB: safeDb,
 			Store:   &r,
 		},
+		ProjectService: &service.ServiceProject{
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
+		},
+
 		cron: c,
 	}
 
@@ -72,8 +79,22 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
 	}
 
-	// ... 추가 job 등록
+	// 6시간 마다 실행
+	// 프로젝트 정보 업데이트
+	_, err = s.cron.AddFunc("0 0 0/6 * * *", func() {
+		var count int
+		if count, err = s.ProjectService.CheckProjectSetting(ctx); err != nil {
+			log.Printf("[Scheduler] CheckProjectSettings fail: %+v", err)
+		} else if count != 0 {
+			log.Println("[Scheduler] CheckProjectSettings completed")
+		}
+	})
+	if err != nil {
+		// TODO: 에러아카이브
+		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+	}
 
+	// ... 추가 job 등록
 	s.cron.Start()
 
 	log.Println("[Scheduler] Cron started")

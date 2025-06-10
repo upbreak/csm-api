@@ -49,6 +49,8 @@ type ProjectService interface {
 	ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, project entity.ReqProject) error
 	RemoveProject(ctx context.Context, sno int64, jno int64) error
+	ModifyProjectSetting(ctx context.Context, project entity.ProjectSetting) error
+	CheckProjectSetting(ctx context.Context) (count int, err error)
 }
 
 type OrganizationService interface {

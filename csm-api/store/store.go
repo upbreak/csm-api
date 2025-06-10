@@ -55,6 +55,8 @@ type ProjectStore interface {
 	RemoveProject(ctx context.Context, tx Execer, sno int64, jno int64) error
 	ModifyProjectIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
 	ModifyProject(ctx context.Context, tx Execer, project entity.ReqProject) error
+	MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) error
+	GetCheckProjectSetting(ctx context.Context, db Queryer) (*entity.ProjectSettings, error)
 }
 
 type OrganizationStore interface {

@@ -4,8 +4,10 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"database/sql"
 	"fmt"
+	"github.com/guregu/null"
 	"strconv"
 	"strings"
 	"time"
@@ -414,5 +416,64 @@ func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_project/RemoveProject error: %w", err)
 	}
+	return
+}
+
+// func: 프로젝트 설정 정보
+// @param: ProjectSetting
+// -
+func (s *ServiceProject) ModifyProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_project/ModifyProjectSetting BeginTx error: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_project/ModifyProjectSetting Rollback error: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_project/ModifyProjectSetting Commit error: %w", commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.MergeProjectSetting(ctx, tx, project)
+	if err != nil {
+		return fmt.Errorf("service_project/ModifyProjectSetting error: %w", err)
+	}
+	return
+
+}
+
+// func: 프로젝트 미설정 정보 업데이트 확인
+// @param
+// -
+func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, err error) {
+
+	projects := &entity.ProjectSettings{}
+	if projects, err = s.Store.GetCheckProjectSetting(ctx, s.SafeDB); err != nil {
+		return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
+	}
+
+	for _, project := range *projects {
+		setting := &entity.ProjectSetting{}
+
+		// 프로젝트 기본값으로 설정하기
+		setting.Jno = project.Jno
+		loc, _ := time.LoadLocation("Asia/Seoul")
+		setting.InTime = null.NewTime(time.Date(9999, 12, 31, 8, 0, 0, 0, loc), true)
+		setting.OutTime = null.NewTime(time.Date(9999, 12, 31, 17, 0, 0, 0, loc), true)
+		setting.RespiteTime = utils.ParseNullInt("30")
+		setting.CancelCode = utils.ParseNullString("NO_DAY")
+
+		if err = s.ModifyProjectSetting(ctx, *setting); err != nil {
+			return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
+		}
+	}
+
+	count = len(*projects)
 	return
 }
