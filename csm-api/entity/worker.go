@@ -49,6 +49,7 @@ type WorkerDaily struct {
 	AfterJno        null.Int    `json:"after_jno" db:"AFTER_JNO"`
 	BeforeState     null.String `json:"before_state" db:"BEFORE_STATE"`
 	AfterState      null.String `json:"after_state" db:"AFTER_STATE"`
+	Message         null.String `json:"message" db:"MESSAGE"`
 	Base
 }
 type WorkerDailys []*WorkerDaily

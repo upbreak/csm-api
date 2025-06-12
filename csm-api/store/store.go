@@ -114,8 +114,10 @@ type WorkerStore interface {
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
 	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
 	MergeSiteBaseWorker(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	MergeSiteBaseWorkerLog(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerDeadline(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyWorkerDefaultProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) error
 	GetWorkerOverTime(ctx context.Context, db Queryer) (*entity.WorkerOverTimes, error)
 	ModifyWorkerOverTime(ctx context.Context, tx Execer, workerOverTime entity.WorkerOverTime) error

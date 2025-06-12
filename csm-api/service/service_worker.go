@@ -215,8 +215,15 @@ func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.
 			}
 		}
 	}()
+
+	// 추가/수정
 	if err = s.Store.MergeSiteBaseWorker(ctx, tx, workers); err != nil {
 		//TODO: 에러 아카이브
+		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
+	}
+
+	// 변경사항 로그 저장
+	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
 		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
 	}
 
@@ -271,11 +278,22 @@ func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.
 			}
 		}
 	}()
+	// 전체 근로자 프로젝트 변경
+	if err = s.Store.ModifyWorkerDefaultProject(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker/ModifyWorkerDefaultProject err: %v", err)
+	}
 
+	// 현장 근로자 프로젝트 변경
 	if err = s.Store.ModifyWorkerProject(ctx, tx, workers); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorkerProject err: %v", err)
 	}
+
+	// 현장근로자 로그 저장
+	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
+	}
+
 	return
 }
 
