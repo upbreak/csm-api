@@ -89,7 +89,6 @@ type ReqProject struct {
 
 type ProjectSetting struct {
 	Jno         null.Int    `json:"jno" db:"JNO"`
-	Mhno        null.Int    `json:"mhno" db:"MHNO"`                 // 공수기준 번호
 	InTime      null.Time   `json:"in_time" db:"IN_TIME"`           // 출근시간
 	OutTime     null.Time   `json:"out_time" db:"OUT_TIME"`         // 퇴근시간
 	RespiteTime null.Int    `json:"respite_time" db:"RESPITE_TIME"` // 출/퇴근 유예시간(분)

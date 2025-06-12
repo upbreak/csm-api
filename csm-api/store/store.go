@@ -58,7 +58,9 @@ type ProjectStore interface {
 	MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) error
 	GetCheckProjectSetting(ctx context.Context, db Queryer) (*entity.ProjectSettings, error)
 }
-
+type ManHourStore interface {
+	MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) error
+}
 type OrganizationStore interface {
 	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
 	GetOrganizationClientList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.OrganizationSqls, error)

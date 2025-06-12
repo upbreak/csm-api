@@ -14,10 +14,11 @@ import (
 )
 
 type ServiceProject struct {
-	SafeDB    store.Queryer
-	SafeTDB   store.Beginner
-	Store     store.ProjectStore
-	UserStore store.UserStore
+	SafeDB         store.Queryer
+	SafeTDB        store.Beginner
+	Store          store.ProjectStore
+	UserStore      store.UserStore
+	ManHourService ManHourService
 }
 
 // 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
@@ -459,9 +460,10 @@ func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, er
 	}
 
 	for _, project := range *projects {
-		setting := &entity.ProjectSetting{}
 
 		// 프로젝트 기본값으로 설정하기
+		setting := &entity.ProjectSetting{}
+
 		setting.Jno = project.Jno
 		loc, _ := time.LoadLocation("Asia/Seoul")
 		setting.InTime = null.NewTime(time.Date(9999, 12, 31, 8, 0, 0, 0, loc), true)
@@ -472,6 +474,19 @@ func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, er
 		if err = s.ModifyProjectSetting(ctx, *setting); err != nil {
 			return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
 		}
+
+		// 기본 공수 추가하기
+		manHour := &entity.ManHour{}
+
+		manHour.WorkHour = utils.ParseNullInt("8")
+		manHour.ManHour = utils.ParseNullFloat("1.00")
+		manHour.Jno = project.Jno
+
+		if err = s.ManHourService.MergeManHour(ctx, *manHour); err != nil {
+			// TODO: 에러 아카이브
+			return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
+		}
+
 	}
 
 	count = len(*projects)

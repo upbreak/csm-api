@@ -40,6 +40,11 @@ func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
 			SafeDB:  safeDb,
 			SafeTDB: safeDb,
 			Store:   &r,
+			ManHourService: &service.ServiceManHour{
+				SafeDB:  safeDb,
+				SafeTDB: safeDb,
+				Store:   &r,
+			},
 		},
 
 		cron: c,
@@ -79,9 +84,9 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
 	}
 
-	// 6시간 마다 실행
-	// 프로젝트 정보 업데이트
-	_, err = s.cron.AddFunc("0 0 0/6 * * *", func() {
+	// 5분 마다 실행
+	// 프로젝트 정보 업데이트(초기 세팅)
+	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
 		var count int
 		if count, err = s.ProjectService.CheckProjectSetting(ctx); err != nil {
 			log.Printf("[Scheduler] CheckProjectSettings fail: %+v", err)

@@ -53,6 +53,10 @@ type ProjectService interface {
 	CheckProjectSetting(ctx context.Context) (count int, err error)
 }
 
+type ManHourService interface {
+	MergeManHour(ctx context.Context, manHour entity.ManHour) error
+}
+
 type OrganizationService interface {
 	GetOrganizationClientList(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)
 	GetOrganizationHtencList(ctx context.Context, jno int64) (*entity.OrganizationPartitions, error)

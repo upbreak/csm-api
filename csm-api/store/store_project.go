@@ -974,21 +974,19 @@ func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project
 				MERGE INTO IRIS_JOB_SET J1
 				USING (
 					SELECT 
-						:1 AS JNO, 
-						:2 AS MHNO,
-						:3 AS IN_TIME,
-						:4 AS OUT_TIME,
-						:5 AS RESPITE_TIME,
-						:6 AS CANCEL_CODE,
-						:7 AS UNO,	
-						:8 AS USER_NAME
+						:1 AS JNO,
+						:2 AS IN_TIME,
+						:3 AS OUT_TIME,
+						:4 AS RESPITE_TIME,
+						:5 AS CANCEL_CODE,
+						:6 AS UNO,	
+						:7 AS USER_NAME
 					FROM DUAL
 				) J2
 				ON (
 					J1.JNO = J2.JNO
 				) WHEN MATCHED THEN
 					UPDATE SET
-						J1.MHNO = J2.MHNO,
 						J1.IN_TIME = J2.IN_TIME,
 						J1.OUT_TIME = J2.OUT_TIME,
 						J1.RESPITE_TIME = J2.RESPITE_TIME,
@@ -997,12 +995,9 @@ func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project
 						J1.MOD_USER = J2.USER_NAME,
 						J1.MOD_DATE = SYSDATE
 				WHEN NOT MATCHED THEN
-					INSERT ( JNO, MHNO, IN_TIME, OUT_TIME, RESPITE_TIME, CANCEL_CODE, REG_UNO, REG_USER, REG_DATE )
+					INSERT ( JNO, IN_TIME, OUT_TIME, RESPITE_TIME, CANCEL_CODE, REG_UNO, REG_USER, REG_DATE )
 					VALUES (
 						J2.JNO,
-						NVL( 
-							(SELECT MAX(MHNO) FROM IRIS_JOB_SET WHERE MHNO IS NOT NULL) + 1
-							, 1),
 						J2.IN_TIME,
 						J2.OUT_TIME,
 						J2.RESPITE_TIME,
@@ -1011,13 +1006,14 @@ func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project
 						J2.USER_NAME,
 						SYSDATE		
 			)`
-	if _, err := tx.ExecContext(ctx, query, project.Jno, project.Mhno, project.InTime, project.OutTime, project.RespiteTime, project.CancelCode, project.RegUno, project.RegUser); err != nil {
+	if _, err := tx.ExecContext(ctx, query, project.Jno, project.InTime, project.OutTime, project.RespiteTime, project.CancelCode, project.RegUno, project.RegUser); err != nil {
 		return fmt.Errorf("MergeProject. Failed to modify project setting: %w", err)
 	}
 
 	return nil
 }
 
+// 프로젝트
 func (r *Repository) GetCheckProjectSetting(ctx context.Context, db Queryer) (projects *entity.ProjectSettings, err error) {
 	projects = &entity.ProjectSettings{}
 
