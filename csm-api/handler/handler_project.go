@@ -21,7 +21,8 @@ import (
  */
 
 type HandlerProject struct {
-	Service service.ProjectService
+	Service        service.ProjectService
+	ManHourService service.ManHourService
 }
 
 // func: 프로젝트별 근로자 수 조회
@@ -453,4 +454,53 @@ func (h *HandlerProject) Remove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(ctx, w)
+}
+
+// func: 프로젝트 기본 설정 정보 확인
+// @param
+// - jno: 프로젝트pk
+func (h *HandlerProject) JobSetting(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	jnoString := r.PathValue("jno")
+	if jnoString == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+	jno, _ := strconv.ParseInt(jnoString, 10, 64)
+
+	setting, err := h.Service.GetProjectSetting(ctx, jno)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	values := struct {
+		Project entity.ProjectSettings `json:"project"`
+	}{Project: *setting}
+
+	SuccessValuesResponse(ctx, w, values)
+
+}
+
+// func: 프로젝트 기본 설정 추가 및 수정
+// @param
+// - projectSetting
+func (h *HandlerProject) MergeJobSetting(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	setting := entity.ProjectSetting{}
+
+	if err := json.NewDecoder(r.Body).Decode(&setting); err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	err := h.Service.MergeProjectSetting(ctx, setting)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	SuccessResponse(ctx, w)
+
 }

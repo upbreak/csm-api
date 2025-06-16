@@ -28,9 +28,6 @@ func (s *ServiceCode) GetCodeList(ctx context.Context, pCode string) (*entity.Co
 // -
 func (s *ServiceCode) GetCodeTree(ctx context.Context, pCode string) (*entity.CodeTrees, error) {
 
-	if pCode == "root" {
-		pCode = ""
-	}
 	// 코드리스트 조회
 	codes, err := s.Store.GetCodeTree(ctx, s.SafeDB, pCode)
 	if err != nil {
@@ -39,7 +36,6 @@ func (s *ServiceCode) GetCodeTree(ctx context.Context, pCode string) (*entity.Co
 	}
 
 	// 트리구조로 반환
-
 	trees, err := entity.ConvertCodesToCodeTree(*codes, pCode)
 	if err != nil {
 		//TODO: 에러 아카이브
