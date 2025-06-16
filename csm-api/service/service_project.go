@@ -420,10 +420,10 @@ func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64
 	return
 }
 
-// func: 프로젝트 설정 정보
+// func: 프로젝트 설정 정보 추가 및 수정
 // @param: ProjectSetting
 // -
-func (s *ServiceProject) ModifyProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
+func (s *ServiceProject) MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("service_project/ModifyProjectSetting BeginTx error: %w", err)
@@ -445,11 +445,19 @@ func (s *ServiceProject) ModifyProjectSetting(ctx context.Context, project entit
 	if err != nil {
 		return fmt.Errorf("service_project/ModifyProjectSetting error: %w", err)
 	}
-	return
 
+	// 공수 수정
+	for _, manHour := range *(project.ManHours) {
+
+		if err = s.ManHourService.MergeManHour(ctx, *manHour); err != nil {
+			return fmt.Errorf("service_project/service_ManHours error: %w", err)
+		}
+
+	}
+	return
 }
 
-// func: 프로젝트 미설정 정보 업데이트 확인
+// func: 프로젝트 미설정 정보 업데이트 확인(스케줄러)
 // @param
 // -
 func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, err error) {
@@ -471,19 +479,16 @@ func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, er
 		setting.RespiteTime = utils.ParseNullInt("30")
 		setting.CancelCode = utils.ParseNullString("NO_DAY")
 
-		if err = s.ModifyProjectSetting(ctx, *setting); err != nil {
-			return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
-		}
-
 		// 기본 공수 추가하기
 		manHour := &entity.ManHour{}
 
 		manHour.WorkHour = utils.ParseNullInt("8")
 		manHour.ManHour = utils.ParseNullFloat("1.00")
 		manHour.Jno = project.Jno
+		manHours := &entity.ManHours{manHour}
+		setting.ManHours = manHours
 
-		if err = s.ManHourService.MergeManHour(ctx, *manHour); err != nil {
-			// TODO: 에러 아카이브
+		if err = s.MergeProjectSetting(ctx, *setting); err != nil {
 			return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
 		}
 
@@ -491,4 +496,29 @@ func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, er
 
 	count = len(*projects)
 	return
+}
+
+// func: 프로젝트 설정 정보 가져오기
+// @param
+// - jno: 프로젝트PK
+func (s *ServiceProject) GetProjectSetting(ctx context.Context, jno int64) (*entity.ProjectSettings, error) {
+
+	setting, err := s.Store.GetProjectSetting(ctx, s.SafeDB, jno)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return &entity.ProjectSettings{}, fmt.Errorf("service_project/GetProjectSetting: %w", err)
+	}
+
+	manHours, err := s.ManHourService.GetManHourList(ctx, jno)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return &entity.ProjectSettings{}, fmt.Errorf("service_project/GetProjectSetting: %w", err)
+	}
+
+	if len(*setting) > 0 {
+		(*setting)[0].ManHours = manHours
+	}
+
+	return setting, nil
+
 }

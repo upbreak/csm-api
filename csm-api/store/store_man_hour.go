@@ -6,6 +6,36 @@ import (
 	"fmt"
 )
 
+// func: 프로젝트에 설정된 공수 조회
+// @param
+// - jno: 프로젝트pk
+func (r *Repository) GetManHourList(ctx context.Context, db Queryer, jno int64) (*entity.ManHours, error) {
+	manHours := entity.ManHours{}
+
+	query := `
+			SELECT
+			    MHNO,
+			    WORK_HOUR,
+			    MAN_HOUR,
+			    JNO
+			FROM 
+			    IRIS_MAN_HOUR MH
+			WHERE
+				MH.JNO = :1
+			ORDER BY
+			    WORK_HOUR ASC
+		`
+
+	if err := db.SelectContext(ctx, &manHours, query, jno); err != nil {
+		return nil, fmt.Errorf("GetManHourList err:%v", err)
+	}
+
+	return &manHours, nil
+}
+
+// func: 공수 수정 및 추가
+// @param
+// - manHour: 공수 정보
 func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) (err error) {
 	query := `
 		MERGE INTO SAFE.IRIS_MAN_HOUR J1

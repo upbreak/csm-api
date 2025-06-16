@@ -49,6 +49,7 @@ type ProjectStore interface {
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
+	GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error)
 	AddProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, tx Execer, project entity.ReqProject) error
@@ -59,6 +60,7 @@ type ProjectStore interface {
 	GetCheckProjectSetting(ctx context.Context, db Queryer) (*entity.ProjectSettings, error)
 }
 type ManHourStore interface {
+	GetManHourList(ctx context.Context, db Queryer, jno int64) (*entity.ManHours, error)
 	MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) error
 }
 type OrganizationStore interface {

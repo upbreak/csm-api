@@ -827,6 +827,38 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 	return count, nil
 }
 
+// func: 프로젝트 기본 설정 정보 조회
+// @param
+// - jno
+func (r *Repository) GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error) {
+	setting := entity.ProjectSettings{}
+	query := fmt.Sprintf(`
+			SELECT 
+				J.JNO,
+				J.IN_TIME,
+				J.OUT_TIME,
+				J.RESPITE_TIME,
+				J.CANCEL_CODE,
+				J.REG_DATE,
+				J.REG_UNO,
+				J.REG_USER,
+				J.MOD_DATE,
+				J.MOD_UNO,
+				J.MOD_USER
+			FROM IRIS_JOB_SET J
+			WHERE
+				J.JNO = :1
+			`)
+
+	if err := db.SelectContext(ctx, &setting, query, jno); err != nil {
+		//TODO: 에러 아카이브
+		return &setting, fmt.Errorf("GetProjectSetting fail: %v", err)
+	}
+
+	return &setting, nil
+
+}
+
 // func: 현장 프로젝트 추가
 // @param
 // -
