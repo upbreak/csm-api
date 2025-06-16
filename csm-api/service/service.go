@@ -45,11 +45,19 @@ type ProjectService interface {
 	GetProjectNmUnoList(ctx context.Context, uno int64, role string) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error)
+	GetProjectSetting(ctx context.Context, jno int64) (*entity.ProjectSettings, error)
 	GetProjectBySite(ctx context.Context, sno int64) (entity.ProjectInfos, error)
 	AddProject(ctx context.Context, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, project entity.ReqProject) error
 	RemoveProject(ctx context.Context, sno int64, jno int64) error
+	MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) error
+	CheckProjectSetting(ctx context.Context) (count int, err error)
+}
+
+type ManHourService interface {
+	GetManHourList(ctx context.Context, jno int64) (*entity.ManHours, error)
+	MergeManHour(ctx context.Context, manHour entity.ManHour) error
 }
 
 type OrganizationService interface {

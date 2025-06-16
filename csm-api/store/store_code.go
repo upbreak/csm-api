@@ -31,12 +31,7 @@ func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) 
 // 코드트리 조회
 func (r *Repository) GetCodeTree(ctx context.Context, db Queryer, pCode string) (*entity.Codes, error) {
 	codes := entity.Codes{}
-
-	if pCode == "" {
-		pCode = "P_CODE IS NULL"
-	} else {
-		pCode = "P_CODE = '" + pCode + "'"
-	}
+	
 	query := fmt.Sprintf(`
 			SELECT 
 			    LEVEL, 
@@ -55,7 +50,7 @@ func (r *Repository) GetCodeTree(ctx context.Context, db Queryer, pCode string) 
 			    C.ETC			    
 			FROM IRIS_CODE_SET C
 			WHERE DEL_YN = 'N'
-			START WITH %s
+			START WITH P_CODE = '%s'
 			CONNECT BY PRIOR CODE = P_CODE
 			ORDER SIBLINGS BY "ORDER" ASC
 		`, pCode)

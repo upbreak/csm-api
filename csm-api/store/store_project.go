@@ -827,6 +827,37 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 	return count, nil
 }
 
+
+// func: 프로젝트 기본 설정 정보 조회
+// @param
+// - jno
+func (r *Repository) GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error) {
+	setting := entity.ProjectSettings{}
+	query := fmt.Sprintf(`
+			SELECT 
+				J.JNO,
+				J.IN_TIME,
+				J.OUT_TIME,
+				J.RESPITE_TIME,
+				J.CANCEL_CODE,
+				J.REG_DATE,
+				J.REG_UNO,
+				J.REG_USER,
+				J.MOD_DATE,
+				J.MOD_UNO,
+				J.MOD_USER
+			FROM IRIS_JOB_SET J
+			WHERE
+				J.JNO = :1
+			`)
+
+	if err := db.SelectContext(ctx, &setting, query, jno); err != nil {
+		//TODO: 에러 아카이브
+		return &setting, fmt.Errorf("GetProjectSetting fail: %v", err)
+	}
+
+	return &setting, nil
+
 // 현장별 프로젝트 조회
 func (r *Repository) GetProjectBySite(ctx context.Context, db Queryer, sno int64) (entity.ProjectInfos, error) {
 	var list entity.ProjectInfos
@@ -981,4 +1012,73 @@ func (r *Repository) ModifyProject(ctx context.Context, tx Execer, project entit
 	}
 
 	return nil
+}
+
+// func: 프로젝트 설정 정보
+// @param: ProjectSetting
+// -
+func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) error {
+	//agent := utils.GetAgent()
+
+	query := `
+				MERGE INTO IRIS_JOB_SET J1
+				USING (
+					SELECT 
+						:1 AS JNO,
+						:2 AS IN_TIME,
+						:3 AS OUT_TIME,
+						:4 AS RESPITE_TIME,
+						:5 AS CANCEL_CODE,
+						:6 AS UNO,	
+						:7 AS USER_NAME
+					FROM DUAL
+				) J2
+				ON (
+					J1.JNO = J2.JNO
+				) WHEN MATCHED THEN
+					UPDATE SET
+						J1.IN_TIME = J2.IN_TIME,
+						J1.OUT_TIME = J2.OUT_TIME,
+						J1.RESPITE_TIME = J2.RESPITE_TIME,
+						J1.CANCEL_CODE = J2.CANCEL_CODE,
+						J1.MOD_UNO = J2.UNO,	
+						J1.MOD_USER = J2.USER_NAME,
+						J1.MOD_DATE = SYSDATE
+				WHEN NOT MATCHED THEN
+					INSERT ( JNO, IN_TIME, OUT_TIME, RESPITE_TIME, CANCEL_CODE, REG_UNO, REG_USER, REG_DATE )
+					VALUES (
+						J2.JNO,
+						J2.IN_TIME,
+						J2.OUT_TIME,
+						J2.RESPITE_TIME,
+						J2.CANCEL_CODE,
+						J2.UNO,	
+						J2.USER_NAME,
+						SYSDATE		
+			)`
+	if _, err := tx.ExecContext(ctx, query, project.Jno, project.InTime, project.OutTime, project.RespiteTime, project.CancelCode, project.RegUno, project.RegUser); err != nil {
+		return fmt.Errorf("MergeProject. Failed to modify project setting: %w", err)
+	}
+
+	return nil
+}
+
+// 프로젝트
+func (r *Repository) GetCheckProjectSetting(ctx context.Context, db Queryer) (projects *entity.ProjectSettings, err error) {
+	projects = &entity.ProjectSettings{}
+
+	query := `
+				SELECT 
+				    DISTINCT(JNO) 
+				FROM 
+				    IRIS_SITE_JOB 
+				WHERE 
+				    JNO NOT IN (SELECT JNO FROM IRIS_JOB_SET)`
+
+	if err = db.SelectContext(ctx, projects, query); err != nil {
+		//TODO: 에러 아카이브
+		return nil, fmt.Errorf("GetCheckProjectSetting err: %w", err)
+	}
+
+	return
 }
