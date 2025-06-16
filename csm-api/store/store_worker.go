@@ -378,11 +378,12 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								t1.REG_DATE AS REG_DATE,
 								t1.MOD_USER AS MOD_USER,
 								t1.MOD_DATE AS MOD_DATE,
-								t1.WORK_STATE AS WORK_STATE
+								t1.WORK_STATE AS WORK_STATE,
+								t1.COMPARE_STATE AS COMPARE_STATE
 							FROM IRIS_WORKER_DAILY_SET t1
-							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID AND t1.sno = t2.sno AND t1.jno = t2.jno
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID AND t1.sno = t2.sno
 							WHERE t1.SNO > 100
-							AND t1.COMPARE_STATE = 'S'
+							AND t1.COMPARE_STATE in ('S', 'X')
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
 							%s %s
@@ -423,9 +424,9 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 							SELECT 
 								count(*)
 							FROM IRIS_WORKER_DAILY_SET t1
-							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO  = t2.JNO AND t1.USER_ID = t2.USER_ID 
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.USER_ID = t2.USER_ID 
 							WHERE t1.SNO > 100
-							AND t1.COMPARE_STATE = 'S'
+							AND t1.COMPARE_STATE in ('S', 'X')
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
 							%s %s`, condition, retryCondition)
@@ -487,7 +488,7 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				WHEN NOT MATCHED THEN
 					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
-					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'S', SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
+					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'X', SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
 
 	for _, worker := range workers {
 		_, err := tx.ExecContext(ctx, query,
@@ -501,6 +502,22 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 		}
 	}
 
+	return nil
+}
+
+// 현장 근로자 변경사항 로그 저장
+func (r *Repository) MergeSiteBaseWorkerLog(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+		INSERT INTO IRIS_WORKER_DAILY_LOG(SNO, JNO, USER_ID, RECOG_TIME, TRANS_TYPE, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES(:1, :2, :3, :4, :5, :6, SYSDATE, :7, :8, :9)`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.WorkState, worker.Message, worker.ModUser, worker.ModUno, agent); err != nil {
+			return fmt.Errorf("MergeSiteBaseWorkerLog fail: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -567,6 +584,34 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, tx Execer, workers
 		}
 	}
 
+	return nil
+}
+
+// 현장 근로자 프로젝트 변경시 같은 현장내 프로젝트일 경우 전체 근로자 프로젝트 변경
+func (r *Repository) ModifyWorkerDefaultProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+			UPDATE IRIS_WORKER_SET
+			SET 
+				JNO = :1,
+				MOD_DATE = SYSDATE,
+				MOD_USER = :2,
+				MOD_UNO = :3,
+				MOD_AGENT = :4
+			WHERE SNO = :5
+			AND USER_ID = :6
+			AND EXISTS (
+				SELECT 1
+				FROM IRIS_SITE_JOB
+				WHERE SNO = :7 AND JNO = :8
+			)`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.AfterJno, worker.ModUser, worker.ModUno, agent, worker.Sno, worker.UserId, worker.Sno, worker.Jno); err != nil {
+			return fmt.Errorf("ModifyWorkerDefaultProject fail: %w", err)
+		}
+	}
 	return nil
 }
 

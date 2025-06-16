@@ -50,6 +50,7 @@ type ProjectStore interface {
 	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
 	GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error)
+	GetProjectBySite(ctx context.Context, db Queryer, sno int64) (entity.ProjectInfos, error)
 	AddProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, tx Execer, project entity.ReqProject) error
@@ -119,8 +120,10 @@ type WorkerStore interface {
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
 	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
 	MergeSiteBaseWorker(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	MergeSiteBaseWorkerLog(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerDeadline(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyWorkerDefaultProject(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) error
 	GetWorkerOverTime(ctx context.Context, db Queryer) (*entity.WorkerOverTimes, error)
 	ModifyWorkerOverTime(ctx context.Context, tx Execer, workerOverTime entity.WorkerOverTime) error
@@ -157,14 +160,20 @@ type UploadFileStore interface {
 }
 
 type CompareStore interface {
-	GetDailyWorkerList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) (entity.WorkerDailys, error)
-	GetTbmList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) ([]entity.Tbm, error)
-	GetDeductionList(ctx context.Context, db Queryer, jno int64, startDate null.Time, retry string, order string) ([]entity.Deduction, error)
-	ModifyWorkerCompareState(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	GetDailyWorkerList(ctx context.Context, db Queryer, compare entity.Compare, retry string, order string) (entity.WorkerDailys, error)
+	GetTbmList(ctx context.Context, db Queryer, compare entity.Compare, retry string, order string) ([]entity.Tbm, error)
+	GetDeductionList(ctx context.Context, db Queryer, compare entity.Compare, retry string, order string) ([]entity.Deduction, error)
+	ModifyWorkerCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyDailyWorkerCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyTbmCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyDeductionCompareApply(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	AddCompareLog(ctx context.Context, tx Execer, logs entity.WorkerDailys) error
 }
 
 type ExcelStore interface {
+	GetTbmOrder(ctx context.Context, db Queryer, tbm entity.Tbm) (string, error)
 	AddTbmExcel(ctx context.Context, tx Execer, tbm []entity.Tbm) error
-	ModifyTbmExcel(ctx context.Context, tx Execer, tbm entity.Tbm) error
+	GetDeductionSiteNameBySno(ctx context.Context, db Queryer, sno int64) (string, error)
+	GetDeductionOrder(ctx context.Context, db Queryer, tbm entity.Deduction) (string, error)
+	AddDeductionExcel(ctx context.Context, tx Execer, tbm []entity.Deduction) error
 }

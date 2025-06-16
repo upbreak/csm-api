@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"csm-api/ctxutil"
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
@@ -35,22 +36,25 @@ func (s *ServiceUploadFile) GetUploadFile(ctx context.Context, file entity.Uploa
 
 // 업로드 파일 정보 저장
 func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.UploadFile) (err error) {
-	tx, err := s.TDB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
-	}
-
-	defer func() {
+	tx, ok := ctxutil.GetTx(ctx)
+	if !ok || tx == nil {
+		tx, err = s.TDB.BeginTxx(ctx, nil)
 		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("serviceUploadFile.AddUploadFile rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("serviceUploadFile.AddUploadFile commit error: %w", commitErr)
-			}
+			return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
 		}
-	}()
+
+		defer func() {
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					err = fmt.Errorf("serviceUploadFile.AddUploadFile rollback error: %w", rollbackErr)
+				}
+			} else {
+				if commitErr := tx.Commit(); commitErr != nil {
+					err = fmt.Errorf("serviceUploadFile.AddUploadFile commit error: %w", commitErr)
+				}
+			}
+		}()
+	}
 
 	// 차수
 	uploadRound, err := s.Store.GetUploadRound(ctx, s.DB, file)
@@ -64,5 +68,5 @@ func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.Uploa
 		return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
 	}
 
-	return nil
+	return
 }

@@ -46,6 +46,7 @@ type ProjectService interface {
 	GetNonUsedProjectList(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, search entity.NonUsedProject, retry string) (int, error)
 	GetProjectSetting(ctx context.Context, jno int64) (*entity.ProjectSettings, error)
+	GetProjectBySite(ctx context.Context, sno int64) (entity.ProjectInfos, error)
 	AddProject(ctx context.Context, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, project entity.ReqProject) error
 	ModifyUseProject(ctx context.Context, project entity.ReqProject) error
@@ -164,6 +165,6 @@ type UploadFileService interface {
 }
 
 type CompareService interface {
-	GetCompareList(ctx context.Context, jno int64, startDate null.Time, retry string, order string) ([]entity.Compare, error)
-	ModifyWorkerCompareState(ctx context.Context, workers entity.WorkerDailys) error
+	GetCompareList(ctx context.Context, compare entity.Compare, retry string, order string) ([]entity.Compare, error)
+	ModifyWorkerCompareApply(ctx context.Context, workers entity.WorkerDailys) error
 }

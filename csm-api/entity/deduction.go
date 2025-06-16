@@ -21,6 +21,7 @@ type Deduction struct {
 }
 
 type DeductionKey struct {
+	Sno        int64
 	Jno        int64
 	UserNm     string
 	Department string
@@ -28,7 +29,9 @@ type DeductionKey struct {
 }
 
 type DeductionRegKey struct {
+	Sno        int64
 	Jno        int64
+	Phone      string
 	RegNo      string // ' ', '-' 제거 주민번호
 	RecordDate time.Time
 }

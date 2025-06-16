@@ -5,10 +5,8 @@ import (
 	"csm-api/clock"
 	"csm-api/service"
 	"csm-api/store"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/sync/errgroup"
-	"log"
 )
 
 /**
@@ -17,7 +15,6 @@ import (
  * @modified 최종 수정일:
  * @modifiedBy 최종 수정자:
  * @description: 서버 실행시 초기화를 위한 설정
- * - 현장 근로자 마감처리 (당일 이전 날짜 중에서 퇴근을 한 근로자들만 마감처리)
  */
 type Init struct {
 	WorkerService service.WorkerService
@@ -41,10 +38,12 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		if err = i.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
-			return fmt.Errorf("[init] RunInitializations fail: %w", err)
-		}
-		log.Println("[init] ModifyWorkerDeadlineInit completed")
+		// 현장 근로자 마감처리 (당일 이전 날짜 중에서 퇴근을 한 근로자들만 마감처리)
+		// 필요시 주석 제거
+		//if err = i.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
+		//	return fmt.Errorf("[init] RunInitializations fail: %w", err)
+		//}
+		//log.Println("[init] ModifyWorkerDeadlineInit completed")
 		return nil
 	})
 

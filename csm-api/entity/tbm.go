@@ -17,6 +17,7 @@ type Tbm struct {
 }
 
 type TbmKey struct {
+	Sno        int64
 	Jno        int64
 	UserNm     string
 	Department string

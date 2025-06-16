@@ -6,7 +6,6 @@ import (
 	"csm-api/utils"
 	"encoding/json"
 	"net/http"
-	"strconv"
 )
 
 type HandlerCompare struct {
@@ -15,20 +14,24 @@ type HandlerCompare struct {
 
 // 일일근로자비교 리스트
 func (h *HandlerCompare) List(w http.ResponseWriter, r *http.Request) {
+	snoString := r.URL.Query().Get("sno")
 	jnoString := r.URL.Query().Get("jno")
 	startDateString := r.URL.Query().Get("start_date")
 	order := r.URL.Query().Get("order")
 	retrySearch := r.URL.Query().Get("retry_search")
 
-	if jnoString == "" || startDateString == "" {
+	if snoString == "" || jnoString == "" || startDateString == "" {
 		BadRequestResponse(r.Context(), w)
 		return
 	}
 
-	jno, _ := strconv.ParseInt(jnoString, 10, 64)
-	startDate := utils.ParseNullTime(startDateString)
+	compare := entity.Compare{
+		Sno:        utils.ParseNullInt(snoString),
+		Jno:        utils.ParseNullInt(jnoString),
+		RecordDate: utils.ParseNullTime(startDateString),
+	}
 
-	list, err := h.Service.GetCompareList(r.Context(), jno, startDate, retrySearch, order)
+	list, err := h.Service.GetCompareList(r.Context(), compare, retrySearch, order)
 	if err != nil {
 		FailResponse(r.Context(), w, err)
 		return
@@ -37,7 +40,7 @@ func (h *HandlerCompare) List(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(r.Context(), w, list)
 }
 
-// 일일근로자 비교 반영/취소
+// 일일근로자 비교 반영
 func (h *HandlerCompare) CompareState(w http.ResponseWriter, r *http.Request) {
 	var workers entity.WorkerDailys
 
@@ -46,7 +49,7 @@ func (h *HandlerCompare) CompareState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.ModifyWorkerCompareState(r.Context(), workers); err != nil {
+	if err := h.Service.ModifyWorkerCompareApply(r.Context(), workers); err != nil {
 		FailResponse(r.Context(), w, err)
 		return
 	}

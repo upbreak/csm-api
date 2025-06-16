@@ -6,7 +6,7 @@ import (
 	"csm-api/store"
 	"csm-api/utils"
 	"fmt"
-	"github.com/guregu/null"
+	"strconv"
 	"strings"
 )
 
@@ -17,32 +17,88 @@ type ServiceCompare struct {
 }
 
 // 일일 근로자 비교 리스트
-func (s *ServiceCompare) GetCompareList(ctx context.Context, jno int64, startDate null.Time, retry string, order string) ([]entity.Compare, error) {
-	workerlist, err := s.Store.GetDailyWorkerList(ctx, s.SafeDB, jno, startDate, retry, order)
+func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Compare, retry string, order string) ([]entity.Compare, error) {
+	workerlist, err := s.Store.GetDailyWorkerList(ctx, s.SafeDB, compare, retry, order)
 	if err != nil {
 		return nil, fmt.Errorf("ServiceCompare.GetCompareList GetDailyWorkerList :%w", err)
 	}
 
-	tbmList, err := s.Store.GetTbmList(ctx, s.SafeDB, jno, startDate, retry, order)
+	tbmList, err := s.Store.GetTbmList(ctx, s.SafeDB, compare, retry, order)
 	if err != nil {
 		return nil, fmt.Errorf("ServiceCompare.GetCompareList GetTbmList :%w", err)
 	}
 
-	deductionList, err := s.Store.GetDeductionList(ctx, s.SafeDB, jno, startDate, retry, order)
+	deductionList, err := s.Store.GetDeductionList(ctx, s.SafeDB, compare, retry, order)
 	if err != nil {
 		return nil, fmt.Errorf("ServiceCompare.GetCompareList GetDeductionList :%w", err)
 	}
 
-	// 주민번호 " ", "-" 제거
+	// " ", "-" 제거
 	replacer := strings.NewReplacer(" ", "", "-", "")
+	// 주민번호 앞자리+뒷자리첫번째만 반환 ex) 000101-1234567 -> 0001011
 	cleanRegNo := func(reg string) string {
-		return replacer.Replace(reg)
+		cleaned := replacer.Replace(reg)
+		var birth string
+
+		// 주민번호 앞 6자리
+		if len(cleaned) >= 6 {
+			birth = cleaned[:6]
+		}
+
+		// 주민번호가 7자리가 안될 경우 그대로 리턴
+		if len(cleaned) < 7 {
+			return birth
+		}
+
+		// 7번째 값 숫자로 변환 숫자로 변환이 안될시 그대로 리턴
+		ch := cleaned[6]
+		digit, err := strconv.Atoi(string(ch))
+		if err != nil {
+			return birth
+		}
+
+		// 0, 2, 4, 6, 8 = 여자, 1, 3, 5, 7, 9 = 남자
+		if digit%2 == 0 {
+			return birth + "2"
+		}
+		return birth + "1"
+	}
+	// 성별: 주민번호
+	getBirthToRegNo := func(reg string) string {
+		cleaned := replacer.Replace(reg)
+
+		if len(cleaned) < 7 {
+			return ""
+		}
+
+		ch := cleaned[6]
+		digit, err := strconv.Atoi(string(ch))
+		if err != nil {
+			return ""
+		}
+
+		if digit%2 == 0 {
+			return "여"
+		}
+		return "남"
+	}
+	// 생년월일 + 성별을 주민번호 앞자리+뒷자리첫번째 형태로 반환 ex) 00-01-01, 남 ->  0001011
+	cleanBirthRegNo := func(reg string, gender string) string {
+		cleaned := replacer.Replace(reg)
+
+		// 성별에 따라 1 or 2
+		if gender == "남" {
+			return cleaned + "1"
+		} else if gender == "여" {
+			return cleaned + "2"
+		}
+		return cleaned
 	}
 
 	// TBM map: 동명이인 고려한 slice map
 	tbmMap := make(map[entity.TbmKey][]entity.Tbm)
 	for _, tbm := range tbmList {
-		key := entity.TbmKey{tbm.Jno.Int64, tbm.UserNm.String, tbm.Department.String, tbm.TbmDate.Time}
+		key := entity.TbmKey{tbm.Sno.Int64, tbm.Jno.Int64, tbm.UserNm.String, tbm.Department.String, tbm.TbmDate.Time}
 		tbmMap[key] = append(tbmMap[key], tbm)
 	}
 
@@ -51,31 +107,33 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, jno int64, startDat
 	deductionMap := make(map[entity.DeductionKey][]entity.Deduction)
 	for _, d := range deductionList {
 		regKey := entity.DeductionRegKey{
-			Jno:        d.Jno.Int64,
-			RegNo:      cleanRegNo(d.RegNo.String),
-			RecordDate: d.RecordDate.Time,
+			d.Sno.Int64,
+			d.Jno.Int64,
+			replacer.Replace(d.Phone.String),
+			cleanBirthRegNo(d.RegNo.String, d.Gender.String),
+			d.RecordDate.Time,
 		}
 		deductionRegMap[regKey] = d
-
 		key := entity.DeductionKey{
-			Jno:        d.Jno.Int64,
-			UserNm:     d.UserNm.String,
-			Department: d.Department.String,
-			RecordDate: d.RecordDate.Time,
+			d.Sno.Int64,
+			d.Jno.Int64,
+			d.UserNm.String,
+			d.Department.String,
+			d.RecordDate.Time,
 		}
 		deductionMap[key] = append(deductionMap[key], d)
 	}
-
 	var compareList []entity.Compare
 
 	// 근태 기준 비교
 	for _, worker := range workerlist {
-		compare := entity.Compare{
+		compareTemp := entity.Compare{
 			Jno:           worker.Jno,
 			UserId:        worker.UserId,
 			UserNm:        worker.UserNm,
 			Department:    worker.Department,
 			DiscName:      worker.DiscName,
+			Gender:        utils.ParseNullString(getBirthToRegNo(worker.RegNo.String)),
 			IsTbm:         utils.ParseNullString("N"),
 			RecordDate:    worker.RecordDate,
 			WorkerInTime:  worker.InRecogTime,
@@ -85,24 +143,44 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, jno int64, startDat
 		}
 
 		// TBM 비교
-		tbmKey := entity.TbmKey{worker.Jno.Int64, worker.UserNm.String, worker.Department.String, worker.RecordDate.Time}
+		tbmKey := entity.TbmKey{
+			worker.Sno.Int64,
+			0,
+			worker.UserNm.String,
+			worker.Department.String,
+			worker.RecordDate.Time,
+		}
+		if worker.CompareState.String == "S" || worker.CompareState.String == "X" {
+			tbmKey.Jno = worker.Jno.Int64
+		}
 		if tbms, ok := tbmMap[tbmKey]; ok && len(tbms) > 0 {
-			compare.IsTbm = utils.ParseNullString("Y")
-			compare.DiscName = tbms[0].DiscName
+			compareTemp.IsTbm = utils.ParseNullString("Y")
+			compareTemp.DiscName = tbms[0].DiscName
 			tbmMap[tbmKey] = tbms[1:] // 하나만 소비
 			if len(tbmMap[tbmKey]) == 0 {
 				delete(tbmMap, tbmKey)
 			}
 		}
 
-		// 공제 비교 RegNo 기준
-		deductKey := entity.DeductionRegKey{Jno: worker.Jno.Int64, RegNo: cleanRegNo(worker.RegNo.String), RecordDate: worker.RecordDate.Time}
+		// 공제 비교 (RegNo 기준)
+		deductKey := entity.DeductionRegKey{
+			worker.Sno.Int64,
+			0,
+			replacer.Replace(worker.UserId.String),
+			cleanRegNo(worker.RegNo.String),
+			worker.RecordDate.Time,
+		}
+		if worker.CompareState.String == "S" || worker.CompareState.String == "X" {
+			deductKey.Jno = worker.Jno.Int64
+		}
+
 		if deduction, ok := deductionRegMap[deductKey]; ok {
-			compare.DeductionInTime = deduction.InRecogTime
-			compare.DeductionOutTime = deduction.OutRecogTime
+			compareTemp.DeductionInTime = deduction.InRecogTime
+			compareTemp.DeductionOutTime = deduction.OutRecogTime
+			compareTemp.DeductionBirth = deduction.RegNo
 			delete(deductionRegMap, deductKey)
 
-			dk := entity.DeductionKey{Jno: deduction.Jno.Int64, UserNm: deduction.UserNm.String, Department: deduction.Department.String, RecordDate: deduction.RecordDate.Time}
+			dk := entity.DeductionKey{deduction.Sno.Int64, deduction.Jno.Int64, deduction.UserNm.String, deduction.Department.String, deduction.RecordDate.Time}
 			if list := deductionMap[dk]; len(list) > 0 {
 				deductionMap[dk] = list[1:]
 				if len(deductionMap[dk]) == 0 {
@@ -111,13 +189,13 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, jno int64, startDat
 			}
 		}
 
-		compareList = append(compareList, compare)
+		compareList = append(compareList, compareTemp)
 	}
 
 	// 근태x 남은 TBM-공제 비교
 	for _, tbmSlice := range tbmMap {
 		for _, tbm := range tbmSlice {
-			compare := entity.Compare{
+			compareTemp := entity.Compare{
 				Jno:          tbm.Jno,
 				UserNm:       tbm.UserNm,
 				Department:   tbm.Department,
@@ -127,72 +205,97 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, jno int64, startDat
 				CompareState: utils.ParseNullString("C"),
 			}
 
-			deductionKey := entity.DeductionKey{Jno: tbm.Jno.Int64, UserNm: tbm.UserNm.String, Department: tbm.Department.String, RecordDate: tbm.TbmDate.Time}
+			deductionKey := entity.DeductionKey{tbm.Sno.Int64, tbm.Jno.Int64, tbm.UserNm.String, tbm.Department.String, tbm.TbmDate.Time}
 			if dList, ok := deductionMap[deductionKey]; ok && len(dList) > 0 {
 				d := dList[0]
-				compare.DeductionInTime = d.InRecogTime
-				compare.DeductionOutTime = d.OutRecogTime
+				compareTemp.DeductionInTime = d.InRecogTime
+				compareTemp.DeductionOutTime = d.OutRecogTime
+				compareTemp.Gender = d.Gender
+				compareTemp.DeductionBirth = d.RegNo
+				compareTemp.UserId = d.Phone
 				deductionMap[deductionKey] = dList[1:]
 				if len(deductionMap[deductionKey]) == 0 {
 					delete(deductionMap, deductionKey)
 				}
 
 				// 삭제 동기화 (regMap도)
-				regKey := entity.DeductionRegKey{Jno: d.Jno.Int64, RegNo: cleanRegNo(d.RegNo.String), RecordDate: d.RecordDate.Time}
+				regKey := entity.DeductionRegKey{d.Sno.Int64, d.Jno.Int64, replacer.Replace(d.Phone.String), cleanRegNo(d.RegNo.String), d.RecordDate.Time}
 				delete(deductionRegMap, regKey)
 			}
 
-			compareList = append(compareList, compare)
+			compareList = append(compareList, compareTemp)
 		}
 	}
 
 	// 근태x TBMx 공제 처리
 	for _, dList := range deductionMap {
 		for _, d := range dList {
-			compare := entity.Compare{
+			compareTemp := entity.Compare{
 				Jno:              d.Jno,
+				UserId:           d.Phone,
 				UserNm:           d.UserNm,
 				Department:       d.Department,
+				Gender:           d.Gender,
 				IsTbm:            utils.ParseNullString("N"),
 				CompareState:     utils.ParseNullString("C"),
 				RecordDate:       d.RecordDate,
 				DeductionInTime:  d.InRecogTime,
 				DeductionOutTime: d.OutRecogTime,
+				DeductionBirth:   d.RegNo,
 			}
-			compareList = append(compareList, compare)
+			compareList = append(compareList, compareTemp)
 		}
 	}
 
 	return compareList, nil
 }
 
-// 근로자 비교 반영/취소
-func (s *ServiceCompare) ModifyWorkerCompareState(ctx context.Context, workers entity.WorkerDailys) (err error) {
+// 근로자 비교 반영
+func (s *ServiceCompare) ModifyWorkerCompareApply(ctx context.Context, workers entity.WorkerDailys) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareState begin tx: %w", err)
+		return fmt.Errorf("service.ModifyWorkerCompareApply begin tx: %w", err)
 	}
 
 	defer func() {
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service.ModifyWorkerCompareState tx rollback error: %w", rollbackErr)
+				err = fmt.Errorf("service.ModifyWorkerCompareApply tx rollback error: %w", rollbackErr)
 			}
 		} else {
 			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service.ModifyWorkerCompareState tx commit error: %w", commitErr)
+				err = fmt.Errorf("service.ModifyWorkerCompareApply tx commit error: %w", commitErr)
 			}
 		}
 	}()
 
-	// 비교 상태 수정
-	if err = s.Store.ModifyWorkerCompareState(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareState store error: %w", err)
+	// 근로자 정보: IRIS_WORKER_SET
+	// 선택한 프로젝트로 수정
+	if err = s.Store.ModifyWorkerCompareApply(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+	}
+
+	// 근로자 비교 반영 - 근로자 일일 정보: IRIS_WORKER_DAILY_SET
+	// 반영상태, 선택한 프로젝트로 수정
+	if err = s.Store.ModifyDailyWorkerCompareApply(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+	}
+
+	// 근로자 비교 반영 - TBM 등록 정보: IRIS_TBM_SET
+	// 선택한 프로젝트로 수정
+	if err = s.Store.ModifyTbmCompareApply(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+	}
+
+	// 근로자 비교 반영 - 퇴직공제 등록 정보: IRIS_DEDUCTION_SET
+	// 선택한 프로젝트로 수정
+	if err = s.Store.ModifyDeductionCompareApply(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
 	}
 
 	// 비교 상태 수정 로그 등록
 	if err = s.Store.AddCompareLog(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareState store error: %w", err)
+		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
 	}
 
 	return

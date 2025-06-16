@@ -33,6 +33,7 @@ func ProjectRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	router.Get("/my-job_name/{uno}", projectHandler.MyJobNameList) // 본인이 속한 프로젝트 이름 목록
 	router.Get("/non-reg", projectHandler.NonRegList)              // 현장근태 사용되지 않은 프로젝트
 	router.Get("/setting/{jno}", projectHandler.JobSetting)        // 프로젝트 기본 설정 정보 조회
+	router.Get("/project-by-site", projectHandler.ProjectBySite)   // 현장별 프로젝트 조회
 	router.Post("/", projectHandler.Add)                           // 추가
 	router.Post("/setting", projectHandler.MergeJobSetting)        // 프로젝트 기본 정보 추가 및 수정
 	router.Put("/default", projectHandler.ModifyDefault)           // 현장 기본 프로젝트 변경

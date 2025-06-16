@@ -266,6 +266,22 @@ func (h *HandlerProject) MyOrgList(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
+func (h *HandlerProject) ProjectBySite(w http.ResponseWriter, r *http.Request) {
+	snoString := r.URL.Query().Get("sno")
+	if snoString == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	sno, _ := strconv.ParseInt(snoString, 10, 64)
+	list, err := h.Service.GetProjectBySite(r.Context(), sno)
+	if err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessValuesResponse(r.Context(), w, list)
+}
+
 // func: 본인이 속한 프로젝트 이름 목록
 // @param
 // -
