@@ -21,9 +21,10 @@ import (
  */
 
 type Scheduler struct {
-	WorkerService  service.WorkerService
-	ProjectService service.ProjectService
-	cron           *cron.Cron
+	WorkerService         service.WorkerService
+	ProjectService        service.ProjectService
+	ProjectSettingService service.ProjectSettingService
+	cron                  *cron.Cron
 }
 
 func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
@@ -40,11 +41,11 @@ func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
 			SafeDB:  safeDb,
 			SafeTDB: safeDb,
 			Store:   &r,
-			ManHourService: &service.ServiceManHour{
-				SafeDB:  safeDb,
-				SafeTDB: safeDb,
-				Store:   &r,
-			},
+		},
+		ProjectSettingService: &service.ServiceProjectSetting{
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
 		},
 
 		cron: c,
@@ -88,7 +89,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	// 프로젝트 정보 업데이트(초기 세팅)
 	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
 		var count int
-		if count, err = s.ProjectService.CheckProjectSetting(ctx); err != nil {
+		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
 			log.Printf("[Scheduler] CheckProjectSettings fail: %+v", err)
 		} else if count != 0 {
 			log.Println("[Scheduler] CheckProjectSettings completed")

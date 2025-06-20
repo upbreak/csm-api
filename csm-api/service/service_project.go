@@ -4,21 +4,19 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"csm-api/utils"
 	"database/sql"
 	"fmt"
-	"github.com/guregu/null"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type ServiceProject struct {
-	SafeDB         store.Queryer
-	SafeTDB        store.Beginner
-	Store          store.ProjectStore
-	UserStore      store.UserStore
-	ManHourService ManHourService
+	SafeDB    store.Queryer
+	SafeTDB   store.Beginner
+	Store     store.ProjectStore
+	UserStore store.UserStore
+	//ManHourService ManHourService
 }
 
 // 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
@@ -427,107 +425,4 @@ func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64
 		return fmt.Errorf("service_project/RemoveProject error: %w", err)
 	}
 	return
-}
-
-// func: 프로젝트 설정 정보 추가 및 수정
-// @param: ProjectSetting
-// -
-func (s *ServiceProject) MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("service_project/ModifyProjectSetting BeginTx error: %w", err)
-	}
-
-	defer func() {
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project/ModifyProjectSetting Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project/ModifyProjectSetting Commit error: %w", commitErr)
-			}
-		}
-	}()
-
-	err = s.Store.MergeProjectSetting(ctx, tx, project)
-	if err != nil {
-		return fmt.Errorf("service_project/ModifyProjectSetting error: %w", err)
-	}
-
-	// 공수 수정
-	for _, manHour := range *(project.ManHours) {
-
-		if err = s.ManHourService.MergeManHour(ctx, *manHour); err != nil {
-			return fmt.Errorf("service_project/service_ManHours error: %w", err)
-		}
-
-	}
-	return
-}
-
-// func: 프로젝트 미설정 정보 업데이트 확인(스케줄러)
-// @param
-// -
-func (s *ServiceProject) CheckProjectSetting(ctx context.Context) (count int, err error) {
-
-	projects := &entity.ProjectSettings{}
-	if projects, err = s.Store.GetCheckProjectSetting(ctx, s.SafeDB); err != nil {
-		return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
-	}
-
-	for _, project := range *projects {
-
-		// 프로젝트 기본값으로 설정하기
-		setting := &entity.ProjectSetting{}
-
-		setting.Jno = project.Jno
-		loc, _ := time.LoadLocation("Asia/Seoul")
-		setting.InTime = null.NewTime(time.Date(9999, 12, 31, 8, 0, 0, 0, loc), true)
-		setting.OutTime = null.NewTime(time.Date(9999, 12, 31, 17, 0, 0, 0, loc), true)
-		setting.RespiteTime = utils.ParseNullInt("30")
-		setting.CancelCode = utils.ParseNullString("NO_DAY")
-
-		// 기본 공수 추가하기
-		manHour := &entity.ManHour{}
-
-		manHour.WorkHour = utils.ParseNullInt("8")
-		manHour.ManHour = utils.ParseNullFloat("1.00")
-		manHour.Jno = project.Jno
-		manHours := &entity.ManHours{manHour}
-		setting.ManHours = manHours
-
-		if err = s.MergeProjectSetting(ctx, *setting); err != nil {
-			return 0, fmt.Errorf("service_project/CheckProjectSetting error: %w", err)
-		}
-
-	}
-
-	count = len(*projects)
-	return
-}
-
-// func: 프로젝트 설정 정보 가져오기
-// @param
-// - jno: 프로젝트PK
-func (s *ServiceProject) GetProjectSetting(ctx context.Context, jno int64) (*entity.ProjectSettings, error) {
-
-	setting, err := s.Store.GetProjectSetting(ctx, s.SafeDB, jno)
-	if err != nil {
-		//TODO: 에러 아카이브
-		return &entity.ProjectSettings{}, fmt.Errorf("service_project/GetProjectSetting: %w", err)
-	}
-
-	manHours, err := s.ManHourService.GetManHourList(ctx, jno)
-	if err != nil {
-		// TODO: 에러 아카이브
-		return &entity.ProjectSettings{}, fmt.Errorf("service_project/GetProjectSetting: %w", err)
-	}
-
-	if len(*setting) > 0 {
-		(*setting)[0].ManHours = manHours
-	}
-
-	return setting, nil
-
 }
