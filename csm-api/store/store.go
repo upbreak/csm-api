@@ -49,7 +49,6 @@ type ProjectStore interface {
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
-	GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error)
 	GetProjectBySite(ctx context.Context, db Queryer, sno int64) (entity.ProjectInfos, error)
 	AddProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, tx Execer, project entity.ReqProject) error
@@ -57,12 +56,14 @@ type ProjectStore interface {
 	RemoveProject(ctx context.Context, tx Execer, sno int64, jno int64) error
 	ModifyProjectIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
 	ModifyProject(ctx context.Context, tx Execer, project entity.ReqProject) error
-	MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) error
-	GetCheckProjectSetting(ctx context.Context, db Queryer) (*entity.ProjectSettings, error)
 }
-type ManHourStore interface {
+type ProjectSettingStore interface {
 	GetManHourList(ctx context.Context, db Queryer, jno int64) (*entity.ManHours, error)
 	MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) error
+	MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) error
+	GetCheckProjectSetting(ctx context.Context, db Queryer) (*entity.ProjectSettings, error)
+	GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error)
+	DeleteManHour(ctx context.Context, tx Execer, mhno int64) error
 }
 type OrganizationStore interface {
 	GetFuncNameList(ctx context.Context, db Queryer) (*entity.FuncNameSqls, error)
