@@ -102,12 +102,8 @@ func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count 
 		manHourLess := &entity.ManHour{}
 
 		manHourMore.WorkHour = utils.ParseNullInt("8")
-		manHourMore.ManHour = utils.ParseNullFloat("1.00")
+		manHourMore.ManHour = utils.ParseNullFloat("0.5")
 		manHourMore.Jno = project.Jno
-
-		manHourLess.WorkHour = utils.ParseNullInt("0")
-		manHourLess.ManHour = utils.ParseNullFloat("0.50")
-		manHourLess.Jno = project.Jno
 
 		manHours := entity.ManHours{manHourMore, manHourLess}
 

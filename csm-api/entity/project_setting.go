@@ -15,10 +15,11 @@ type ProjectSetting struct {
 type ProjectSettings []*ProjectSetting
 
 type ManHour struct {
-	Mhno     null.Int   `json:"mhno" db:"MHNO"`
-	WorkHour null.Int   `json:"work_hour" db:"WORK_HOUR"`
-	ManHour  null.Float `json:"man_hour" db:"MAN_HOUR"`
-	Jno      null.Int   `json:"jno" db:"JNO"`
+	Mhno     null.Int    `json:"mhno" db:"MHNO"`
+	WorkHour null.Int    `json:"work_hour" db:"WORK_HOUR"`
+	ManHour  null.Float  `json:"man_hour" db:"MAN_HOUR"`
+	Jno      null.Int    `json:"jno" db:"JNO"`
+	Etc      null.String `json:"etc" db:"ETC"`
 	Base
 }
 type ManHours []*ManHour

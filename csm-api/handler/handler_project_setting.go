@@ -84,20 +84,18 @@ func (h *HandlerProjectSetting) ManHourList(w http.ResponseWriter, r *http.Reque
 	SuccessValuesResponse(ctx, w, values)
 }
 
-// func: 프로젝트 기본 설정 추가 및 수정
+// func: 공수 설정 추가 및 수정
 // @param
-// - projectSetting
-func (h *HandlerProjectSetting) MergeManHour(w http.ResponseWriter, r *http.Request) {
+// - mamHours
+func (h *HandlerProjectSetting) MergeManHours(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	manhour := entity.ManHour{}
-
-	if err := json.NewDecoder(r.Body).Decode(&manhour); err != nil {
+	manhours := entity.ManHours{}
+	
+	if err := json.NewDecoder(r.Body).Decode(&manhours); err != nil {
 		BadRequestResponse(ctx, w)
 		return
 	}
-
-	manhours := entity.ManHours{&manhour}
 
 	err := h.Service.MergeManHours(ctx, &manhours)
 	if err != nil {
