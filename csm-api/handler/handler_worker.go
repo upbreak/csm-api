@@ -313,3 +313,47 @@ func (h *HandlerWorker) ModifyProject(w http.ResponseWriter, r *http.Request) {
 
 	SuccessResponse(ctx, w)
 }
+
+// func: 현장근로자 삭제
+// @param
+// - http method: post
+// - param: entity.WorkerDailys - json(raw)
+func (h *HandlerWorker) SiteBaseRemove(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//데이터 파싱
+	workers := entity.WorkerDailys{}
+	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	err := h.Service.RemoveSiteBaseWorkers(ctx, workers)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	SuccessResponse(ctx, w)
+}
+
+// func: 마감 취소
+// @param
+// - http method: post
+// - param: entity.WorkerDailys - json(raw)
+func (h *HandlerWorker) SiteBaseDeadlineCancel(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//데이터 파싱
+	workers := entity.WorkerDailys{}
+	if err := json.NewDecoder(r.Body).Decode(&workers); err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	err := h.Service.ModifyDeadlineCancel(ctx, workers)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	SuccessResponse(ctx, w)
+}

@@ -3,10 +3,14 @@ package main
 import (
 	"context"
 	"csm-api/clock"
+	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/store"
+	"csm-api/utils"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/sync/errgroup"
+	"log"
 )
 
 /**
@@ -17,7 +21,8 @@ import (
  * @description: 서버 실행시 초기화를 위한 설정
  */
 type Init struct {
-	WorkerService service.WorkerService
+	WorkerService   service.WorkerService
+	WorkHourService service.WorkHourService
 }
 
 func NewInit(safeDb *sqlx.DB) (*Init, error) {
@@ -25,6 +30,11 @@ func NewInit(safeDb *sqlx.DB) (*Init, error) {
 
 	init := &Init{
 		WorkerService: &service.ServiceWorker{
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
+		},
+		WorkHourService: &service.ServiceWorkHour{
 			SafeDB:  safeDb,
 			SafeTDB: safeDb,
 			Store:   &r,
@@ -40,10 +50,22 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 	eg.Go(func() error {
 		// 현장 근로자 마감처리 (당일 이전 날짜 중에서 퇴근을 한 근로자들만 마감처리)
 		// 필요시 주석 제거
-		//if err = i.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
-		//	return fmt.Errorf("[init] RunInitializations fail: %w", err)
+		//if initErr := i.WorkerService.ModifyWorkerDeadlineInit(ctx); initErr != nil {
+		//	return fmt.Errorf("[init] ModifyWorkerDeadlineInit fail: %w", initErr)
 		//}
 		//log.Println("[init] ModifyWorkerDeadlineInit completed")
+		return nil
+	})
+
+	eg.Go(func() error {
+		// 현장 근로자 공수계산 (당일 이전 날짜 중에서 출퇴퇴근을 데이터가 모드 있는 근로자만 처리)
+		user := entity.Base{
+			ModUser: utils.ParseNullString("SYSTEM_INIT"),
+		}
+		if initErr := i.WorkHourService.ModifyWorkHour(ctx, user); initErr != nil {
+			return fmt.Errorf("[init] ModifyWorkHour fail: %w", initErr)
+		}
+		log.Println("[init] ModifyWorkHour completed")
 		return nil
 	})
 

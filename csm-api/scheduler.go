@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"csm-api/clock"
+	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/store"
+	"csm-api/utils"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
@@ -22,6 +24,7 @@ import (
 
 type Scheduler struct {
 	WorkerService         service.WorkerService
+	WorkHourService       service.WorkHourService
 	ProjectService        service.ProjectService
 	ProjectSettingService service.ProjectSettingService
 	cron                  *cron.Cron
@@ -33,6 +36,11 @@ func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
 
 	scheduler := &Scheduler{
 		WorkerService: &service.ServiceWorker{
+			SafeDB:  safeDb,
+			SafeTDB: safeDb,
+			Store:   &r,
+		},
+		WorkHourService: &service.ServiceWorkHour{
 			SafeDB:  safeDb,
 			SafeTDB: safeDb,
 			Store:   &r,
@@ -97,6 +105,23 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	})
 	if err != nil {
 		// TODO: 에러아카이브
+		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+	}
+
+	// 0시 1분 0초에 실행
+	// 근로자 공수 계산 (마감 처리가 안되고 출퇴근이 모두 있는 근로자)
+	_, err = s.cron.AddFunc("0 1 0 * * *", func() {
+		log.Println("[Scheduler] Running ModifyWorkHour")
+		user := entity.Base{
+			ModUser: utils.ParseNullString("SYSTEM_BATCH"),
+		}
+		if err = s.WorkHourService.ModifyWorkHour(ctx, user); err != nil {
+			log.Printf("[Scheduler] ModifyWorkHour fail: %+v", err)
+		} else {
+			log.Println("[Scheduler] ModifyWorkHour completed")
+		}
+	})
+	if err != nil {
 		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
 	}
 

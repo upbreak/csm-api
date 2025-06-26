@@ -21,7 +21,6 @@ func (r *Repository) GetManHourList(ctx context.Context, db Queryer, jno int64) 
 			FROM 
 			    IRIS_MAN_HOUR MH
 			WHERE
-			    MH.DEL_YN = 'N' AND
 				MH.JNO = :1
 			ORDER BY
 			    WORK_HOUR ASC
@@ -51,7 +50,6 @@ func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity
 			FROM DUAL
 		) J2
 		ON (
-			J1.DEL_YN = 'N' AND
 			J1.MHNO = J2.MHNO
 		) WHEN MATCHED THEN
 			UPDATE SET
