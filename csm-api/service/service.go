@@ -118,6 +118,13 @@ type WorkerService interface {
 	ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyWorkerDeadlineInit(ctx context.Context) error
 	ModifyWorkerOverTime(ctx context.Context) (int, error)
+	RemoveSiteBaseWorkers(ctx context.Context, workers entity.WorkerDailys) error
+	ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) error
+}
+
+type WorkHourService interface {
+	ModifyWorkHour(ctx context.Context, user entity.Base) error
+	ModifyWorkHourByJno(ctx context.Context, jno int64, user entity.Base, ids []string) error
 }
 
 type CompanyService interface {

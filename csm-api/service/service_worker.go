@@ -251,9 +251,15 @@ func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity
 		}
 	}()
 
+	// 마감처리
 	if err = s.Store.ModifyWorkerDeadline(ctx, tx, workers); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("service_worker/ModifyWorkerDeadline err: %v", err)
+	}
+
+	// 마감 로그 저장
+	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
 	}
 	return
 }
@@ -289,7 +295,7 @@ func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.
 		return fmt.Errorf("service_worker/ModifyWorkerProject err: %v", err)
 	}
 
-	// 현장근로자 로그 저장
+	// 프로젝트 변경 로그 저장
 	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
 		return fmt.Errorf("service_worker/MergeSiteBaseWorker err: %v", err)
 	}
@@ -370,5 +376,71 @@ func (s *ServiceWorker) ModifyWorkerOverTime(ctx context.Context) (count int, er
 			return 0, fmt.Errorf("service_worker;DeleteWorkerOverTime err: %v", err)
 		}
 	}
+	return
+}
+
+// 현장 근로자 삭제
+func (s *ServiceWorker) RemoveSiteBaseWorkers(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("service_worker.RemoveSiteBaseWorkers BeginTx err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker.RemoveSiteBaseWorkers err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker.RemoveSiteBaseWorkers err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	// 현장 근로자 삭제
+	if err = s.Store.RemoveSiteBaseWorkers(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker.RemoveSiteBaseWorkers err: %v", err)
+	}
+
+	// 삭제 로그 저장
+	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker.MergeSiteBaseWorkerLog err: %v", err)
+	}
+
+	return
+}
+
+// 마감 취소
+func (s *ServiceWorker) ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("service_worker.ModifyDeadlineCancel BeginTx err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker.ModifyDeadlineCancel err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker.ModifyDeadlineCancel err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	// 마감 취소
+	if err = s.Store.ModifyDeadlineCancel(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker.ModifyDeadlineCancel err: %v", err)
+	}
+
+	// 마감 취소 로그 저장
+	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker.MergeSiteBaseWorkerLog err: %v", err)
+	}
+
 	return
 }

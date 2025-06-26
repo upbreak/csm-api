@@ -129,6 +129,13 @@ type WorkerStore interface {
 	GetWorkerOverTime(ctx context.Context, db Queryer) (*entity.WorkerOverTimes, error)
 	ModifyWorkerOverTime(ctx context.Context, tx Execer, workerOverTime entity.WorkerOverTime) error
 	DeleteWorkerOverTime(ctx context.Context, tx Execer, cno null.Int) error
+	RemoveSiteBaseWorkers(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	ModifyDeadlineCancel(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+}
+
+type WorkHourStore interface {
+	ModifyWorkHour(ctx context.Context, tx Execer, user entity.Base) error
+	ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int64, user entity.Base, ids []string) error
 }
 
 type CompanyStore interface {

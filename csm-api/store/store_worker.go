@@ -379,7 +379,8 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								t1.MOD_USER AS MOD_USER,
 								t1.MOD_DATE AS MOD_DATE,
 								t1.WORK_STATE AS WORK_STATE,
-								t1.COMPARE_STATE AS COMPARE_STATE
+								t1.COMPARE_STATE AS COMPARE_STATE,
+								t1.WORK_HOUR as WORK_HOUR
 							FROM IRIS_WORKER_DAILY_SET t1
 							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID AND t1.sno = t2.sno
 							WHERE t1.SNO > 100
@@ -463,7 +464,8 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 						:9 AS REG_UNO,
 						:10 AS IS_DEADLINE,
 						:11 AS WORK_STATE,
-						:12 AS IS_OVERTIME
+						:12 AS IS_OVERTIME,
+						:13 AS WORK_HOUR
 					FROM DUAL
 				) t2
 				ON (
@@ -481,20 +483,21 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 						t1.MOD_UNO       = t2.REG_UNO,
 				    	t1.IS_DEADLINE   = t2.IS_DEADLINE,
 				    	t1.WORK_STATE = t2.WORK_STATE,
-						t1.IS_OVERTIME   = t2.IS_OVERTIME
+						t1.IS_OVERTIME   = t2.IS_OVERTIME,
+						t1.WORK_HOUR   = t2.WORK_HOUR
 					WHERE t1.SNO = t2.SNO
 					AND t1.JNO = t2.JNO
 					AND t1.USER_ID = t2.USER_ID
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				WHEN NOT MATCHED THEN
-					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
-					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'X', SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
+					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
+					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'X', t2.WORK_HOUR, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
 
 	for _, worker := range workers {
 		_, err := tx.ExecContext(ctx, query,
 			worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
 			worker.OutRecogTime, agent, worker.ModUser, worker.ModUno, worker.IsDeadline,
-			worker.WorkState, worker.IsOvertime,
+			worker.WorkState, worker.IsOvertime, worker.WorkHour,
 		)
 		if err != nil {
 			//TODO: 에러 아카이브
@@ -714,6 +717,46 @@ func (r *Repository) DeleteWorkerOverTime(ctx context.Context, tx Execer, cno nu
 	if _, err := tx.ExecContext(ctx, query, cno); err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("DeleteWorkerOverTime fail: %w", err)
+	}
+	return nil
+}
+
+// 현장 근로자 삭제
+func (r *Repository) RemoveSiteBaseWorkers(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	query := `
+		DELETE FROM IRIS_WORKER_DAILY_SET
+		WHERE SNO = :1
+		AND JNO = :2
+		AND USER_ID = :3
+		AND TRUNC(RECORD_DATE) = TRUNC(:4)
+		AND IS_DEADLINE = 'N'`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+			return fmt.Errorf("RemoveSiteBaseWorkers fail: %w", err)
+		}
+	}
+	return nil
+}
+
+// 마감 취소
+func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	query := `
+		UPDATE IRIS_WORKER_DAILY_SET
+		SET
+			IS_DEADLINE = 'N',
+			MOD_DATE = SYSDATE,
+			MOD_USER = :1,
+			MOD_UNO = :2
+		WHERE SNO = :3
+		AND JNO = :4
+		AND USER_ID = :5
+		AND TRUNC(RECORD_DATE) = TRUNC(:6)`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyDeadlineCancel fail: %w", err)
+		}
 	}
 	return nil
 }
