@@ -43,7 +43,7 @@ type WorkerDaily struct {
 	IsDeadline      null.String `json:"is_deadline" db:"IS_DEADLINE"`
 	IsOvertime      null.String `json:"is_overtime" db:"IS_OVERTIME"`
 	CompareState    null.String `json:"compare_state" db:"COMPARE_STATE"`
-	WorkHours       null.Float  `json:"work_hours" db:"WORK_HOURS"`
+	WorkHour        null.Float  `json:"work_hour" db:"WORK_HOUR"`
 	SearchStartTime null.String `json:"search_start_time" db:"SEARCH_START_TIME"`
 	SearchEndTime   null.String `json:"search_end_time" db:"SEARCH_END_TIME"`
 	AfterJno        null.Int    `json:"after_jno" db:"AFTER_JNO"`
