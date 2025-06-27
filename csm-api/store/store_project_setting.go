@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"fmt"
 )
 
@@ -17,13 +18,14 @@ func (r *Repository) GetManHourList(ctx context.Context, db Queryer, jno int64) 
 			    MHNO,
 			    WORK_HOUR,
 			    MAN_HOUR,
-			    JNO
+			    JNO,
+			    ETC
 			FROM 
 			    IRIS_MAN_HOUR MH
 			WHERE
 				MH.JNO = :1
 			ORDER BY
-			    WORK_HOUR ASC
+			    WORK_HOUR DESC
 		`
 
 	if err := db.SelectContext(ctx, &manHours, query, jno); err != nil {
@@ -36,7 +38,7 @@ func (r *Repository) GetManHourList(ctx context.Context, db Queryer, jno int64) 
 // func: 공수 수정 및 추가
 // @param
 // - manHour: 공수 정보
-func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) (err error) {
+func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) (count int64, err error) {
 	query := `
 		MERGE INTO SAFE.IRIS_MAN_HOUR J1
 		USING (
@@ -45,8 +47,9 @@ func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity
 				:2 AS WORK_HOUR,
 				:3 AS MAN_HOUR,
 				:4 AS JNO, 
-				:5 AS UNO,	
-				:6 AS USER_NAME
+				:5 AS ETC,
+				:6 AS UNO,	
+				:7 AS USER_NAME
 			FROM DUAL
 		) J2
 		ON (
@@ -56,34 +59,37 @@ func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity
 				J1.WORK_HOUR = J2.WORK_HOUR,
 				J1.MAN_HOUR = J2.MAN_HOUR,
 				J1.JNO = J2.JNO,
+				J1.ETC = J2.ETC,
 				J1.MOD_UNO = J2.UNO,	
 				J1.MOD_USER = J2.USER_NAME,
 				J1.MOD_DATE = SYSDATE
 		WHEN NOT MATCHED THEN
-			INSERT ( MHNO, WORK_HOUR, MAN_HOUR, JNO, REG_UNO, REG_USER, REG_DATE )
+			INSERT ( WORK_HOUR, MAN_HOUR, JNO, ETC, REG_UNO, REG_USER, REG_DATE )
 			VALUES (
-				SEQ_IRIS_MAN_HOUR.NEXTVAL,
 				J2.WORK_HOUR,
 				J2.MAN_HOUR,
 				J2.JNO,
+				J2.ETC,
 				J2.UNO,	
 				J2.USER_NAME,
 				SYSDATE
 			)
 		`
-	if _, err = tx.ExecContext(ctx, query, manHour.Mhno, manHour.WorkHour, manHour.ManHour, manHour.Jno, manHour.RegUno, manHour.RegUser); err != nil {
+	result, err := tx.ExecContext(ctx, query, manHour.Mhno, manHour.WorkHour, manHour.ManHour, manHour.Jno, manHour.Etc, manHour.RegUno, manHour.RegUser)
+	if err != nil {
 		//TODO: 에러 아카이브
-		return fmt.Errorf("MargeManHour err: %w", err)
-
+		return 0, fmt.Errorf("MargeManHour err: %w", err)
 	}
 
-	return
+	count, _ = result.RowsAffected()
+
+	return count, nil
 }
 
 // func: 프로젝트 설정 정보 수정
 // @param: ProjectSetting
 // -
-func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) error {
+func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) (int64, error) {
 	//agent := utils.GetAgent()
 
 	query := `
@@ -122,12 +128,15 @@ func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project
 						J2.USER_NAME,
 						SYSDATE		
 			)`
-	if _, err := tx.ExecContext(ctx, query, project.Jno, project.InTime, project.OutTime, project.RespiteTime, project.CancelCode, project.RegUno, project.RegUser); err != nil {
+	result, err := tx.ExecContext(ctx, query, project.Jno, project.InTime, project.OutTime, project.RespiteTime, project.CancelCode, project.RegUno, project.RegUser)
+	if err != nil {
 		//TODO: 에러 아카이브
-		return fmt.Errorf("MergeProject. Failed to modify project setting: %w", err)
+		return 0, fmt.Errorf("MergeProject. Failed to modify project setting: %w", err)
 	}
 
-	return nil
+	count, _ := result.RowsAffected()
+
+	return count, nil
 }
 
 // func: 프로젝트 미설정 정보 조회(스케줄러)
@@ -188,15 +197,51 @@ func (r *Repository) GetProjectSetting(ctx context.Context, db Queryer, jno int6
 // - mhno: 공수pk
 func (r *Repository) DeleteManHour(ctx context.Context, tx Execer, mhno int64) error {
 	query := fmt.Sprintf(`
-			UPDATE IRIS_MAN_HOUR
-			SET
-			    DEL_YN = 'Y'
-			WHERE
-			    MHNO = :1			    
+			DELETE 
+			FROM IRIS_MAN_HOUR
+			WHERE 
+			    MHNO = :1
 			`)
-	if _, err := tx.ExecContext(ctx, query, mhno); err != nil {
+	result, err := tx.ExecContext(ctx, query, mhno)
+	if err != nil {
 		//TODO: 에러 아카이브
 		return fmt.Errorf("DeleteManHour fail: %v", err)
+	} else if count, _ := result.RowsAffected(); count <= 0 {
+		return fmt.Errorf("Deleted ManHour is Zero")
+	}
+
+	return nil
+}
+
+// 프로젝트 설정 저장 로그
+func (r *Repository) ProjectSettingLog(ctx context.Context, tx Execer, setting entity.ProjectSetting) error {
+	agent := utils.GetAgent()
+
+	query := fmt.Sprintf(`
+		INSERT INTO IRIS_JOB_SET_MAN_HOUR_LOG( JNO, CHANGE_SETTING, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES (:1, 'IRIS_JOB_SET', :2, SYSDATE, :3, :4, :5)
+	`)
+
+	if _, err := tx.ExecContext(ctx, query, setting.Jno, setting.Message, setting.RegUser, setting.RegUno, agent); err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("ProjectSettingLog fail: %v", err)
+	}
+
+	return nil
+}
+
+// 공수 설정 저장 로그
+func (r *Repository) ManHourLog(ctx context.Context, tx Execer, manhour entity.ManHour) error {
+	agent := utils.GetAgent()
+
+	query := fmt.Sprintf(`
+		INSERT INTO IRIS_JOB_SET_MAN_HOUR_LOG( JNO, CHANGE_SETTING, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES (:1, 'IRIS_MAN_HOUR', :2, SYSDATE, :3, :4, :5)
+	`)
+
+	if _, err := tx.ExecContext(ctx, query, manhour.Jno, manhour.Message, manhour.RegUser, manhour.RegUno, agent); err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("ManHourLog fail: %v", err)
 	}
 
 	return nil

@@ -112,8 +112,8 @@ func (r *Repository) ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int
 					END
 				),
 				T1.MOD_DATE = SYSDATE,
-				T1.MOD_USER = %d,
-				T1.MOD_UNO  = %d`, modUserIndex, modUnoIndex))
+				T1.MOD_USER = :%d,
+				T1.MOD_UNO  = :%d`, modUserIndex, modUnoIndex))
 
 	if _, err := tx.ExecContext(ctx, query.String(), args...); err != nil {
 		return fmt.Errorf("ModifyWorkHourByJno fail %w", err)
