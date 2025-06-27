@@ -13,9 +13,10 @@ func ProjectSettingRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 
 	projectSettingHandler := &handler.HandlerProjectSetting{
 		Service: &service.ServiceProjectSetting{
-			SafeDB:  safeDB,
-			SafeTDB: safeDB,
-			Store:   r,
+			SafeDB:        safeDB,
+			SafeTDB:       safeDB,
+			Store:         r,
+			WorkHourStore: r,
 		},
 	}
 
