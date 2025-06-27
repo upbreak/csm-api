@@ -91,7 +91,7 @@ func (h *HandlerProjectSetting) MergeManHours(w http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 
 	manhours := entity.ManHours{}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&manhours); err != nil {
 		BadRequestResponse(ctx, w)
 		return
@@ -119,7 +119,13 @@ func (h *HandlerProjectSetting) DeleteManHour(w http.ResponseWriter, r *http.Req
 	}
 	mhno, _ := strconv.ParseInt(mhnoString, 10, 64)
 
-	err := h.Service.DeleteManHour(ctx, mhno)
+	manhour := entity.ManHour{}
+	if err := json.NewDecoder(r.Body).Decode(&manhour); err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	err := h.Service.DeleteManHour(ctx, mhno, manhour)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

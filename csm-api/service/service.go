@@ -58,7 +58,7 @@ type ProjectSettingService interface {
 	MergeManHours(ctx context.Context, manHours *entity.ManHours) error
 	MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) error
 	CheckProjectSetting(ctx context.Context) (count int, err error)
-	DeleteManHour(ctx context.Context, mhno int64) error
+	DeleteManHour(ctx context.Context, mhno int64, manhour entity.ManHour) error
 }
 
 type OrganizationService interface {

@@ -47,8 +47,21 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 			}
 		}
 	}()
+
 	for _, manHour := range *manHours {
-		if err = s.Store.MergeManHour(ctx, tx, *manHour); err != nil {
+		if !manHour.Message.Valid {
+			continue
+		}
+
+		count, err := s.Store.MergeManHour(ctx, tx, *manHour)
+		if err != nil {
+			return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+		}
+
+		if count <= 0 {
+			continue
+		}
+		if err = s.Store.ManHourLog(ctx, tx, *manHour); err != nil {
 			return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
 		}
 	}
@@ -77,9 +90,21 @@ func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project
 		}
 	}()
 
-	err = s.Store.MergeProjectSetting(ctx, tx, project)
+	if !project.Message.Valid {
+		return
+	}
+
+	count, err := s.Store.MergeProjectSetting(ctx, tx, project)
 	if err != nil {
 		return fmt.Errorf("service_project_setting/ModifyProjectSetting error: %w", err)
+	}
+
+	if count <= 0 {
+		return
+	}
+
+	if err = s.Store.ProjectSettingLog(ctx, tx, project); err != nil {
+		return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
 	}
 
 	return
@@ -116,8 +141,8 @@ func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count 
 
 		setting.Jno = project.Jno
 		loc, _ := time.LoadLocation("Asia/Seoul")
-		setting.InTime = null.NewTime(time.Date(9999, 12, 31, 8, 0, 0, 0, loc), true)
-		setting.OutTime = null.NewTime(time.Date(9999, 12, 31, 17, 0, 0, 0, loc), true)
+		setting.InTime = null.NewTime(time.Date(2006, 01, 02, 8, 0, 0, 0, loc), true)
+		setting.OutTime = null.NewTime(time.Date(2006, 01, 02, 17, 0, 0, 0, loc), true)
 		setting.RespiteTime = utils.ParseNullInt("30")
 		setting.CancelCode = utils.ParseNullString("NO_DAY")
 
@@ -159,7 +184,7 @@ func (s *ServiceProjectSetting) GetProjectSetting(ctx context.Context, jno int64
 // func: 공수 삭제
 // @param
 // - mhno: 공수pk
-func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64) error {
+func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, manhour entity.ManHour) error {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("service_project_setting/ModifyProjectSetting BeginTx error: %w", err)
@@ -182,5 +207,8 @@ func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64) e
 		return fmt.Errorf("service_project_setting/DeleteManHour error: %w", err)
 	}
 
+	if err = s.Store.ManHourLog(ctx, tx, manhour); err != nil {
+		return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+	}
 	return nil
 }
