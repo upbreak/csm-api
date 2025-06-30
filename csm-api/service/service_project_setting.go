@@ -56,6 +56,13 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 			continue
 		}
 
+		if manHour.Mhno.Valid && manHour.WorkHour.Int64 == 0 && manHour.ManHour.Float64 == 0 {
+			if err = s.DeleteManHour(ctx, manHour.Mhno.Int64, *manHour); err != nil {
+				return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+			}
+			continue
+		}
+
 		count, err = s.Store.MergeManHour(ctx, tx, *manHour)
 		if err != nil {
 			// TODO: 에러 아카이브

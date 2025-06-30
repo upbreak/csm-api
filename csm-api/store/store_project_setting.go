@@ -218,7 +218,7 @@ func (r *Repository) ProjectSettingLog(ctx context.Context, tx Execer, setting e
 	agent := utils.GetAgent()
 
 	query := fmt.Sprintf(`
-		INSERT INTO IRIS_JOB_SET_MAN_HOUR_LOG( JNO, CHANGE_SETTING, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		INSERT INTO IRIS_JOB_MAN_HOUR_LOG( JNO, CHANGE_SETTING, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
 		VALUES (:1, 'IRIS_JOB_SET', :2, SYSDATE, :3, :4, :5)
 	`)
 
@@ -235,7 +235,7 @@ func (r *Repository) ManHourLog(ctx context.Context, tx Execer, manhour entity.M
 	agent := utils.GetAgent()
 
 	query := fmt.Sprintf(`
-		INSERT INTO IRIS_JOB_SET_MAN_HOUR_LOG( JNO, CHANGE_SETTING, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		INSERT INTO IRIS_JOB_MAN_HOUR_LOG( JNO, CHANGE_SETTING, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
 		VALUES (:1, 'IRIS_MAN_HOUR', :2, SYSDATE, :3, :4, :5)
 	`)
 
