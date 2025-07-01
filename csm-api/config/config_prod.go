@@ -16,7 +16,8 @@ func init() {
 		log.Fatalf("Failed to set ENV: %v", err)
 	}
 
-	err = os.Setenv("DOMAIN", "10.10.103.241")
+	//err = os.Setenv("DOMAIN", "csm.htenc.co.kr")
+	err = os.Setenv("DOMAIN", "0.0.0.0")
 	if err != nil {
 		log.Fatalf("Failed to set DOMAIN: %v", err)
 	}

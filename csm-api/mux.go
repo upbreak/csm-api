@@ -32,10 +32,10 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 
 	// CORS 미들웨어 설정
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3002", "http://127.0.0.1:3002", "http://10.10.103.241"}, // 허용할 도메인
-		AllowCredentials: true,                                                                               // 쿠키 허용
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                                // 허용할 메서드
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},                                          // 허용할 헤더
+		AllowedOrigins:   []string{"http://localhost:3002", "http://127.0.0.1:3002", "http://61.41.17.36", "http://csm.htenc.co.kr"}, // 허용할 도메인
+		AllowCredentials: true,                                                                                                       // 쿠키 허용
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                                                        // 허용할 메서드
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},                                                                  // 허용할 헤더
 	})
 	r := store.Repository{Clocker: clock.RealClock{}}
 

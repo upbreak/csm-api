@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        LOCAL_WORKSPACE_DIR = '/tmp/csm-api' // 컨테이너 내부 마운트 경로
+        LOCAL_WORKSPACE_DIR = '/tmp/csm-api'
     }
     stages {
         stage('Initialize Variables') {
@@ -10,7 +10,6 @@ pipeline {
                     script {
                         def secrets = new groovy.json.JsonSlurper().parseText(SECRET_JSON)
 
-                        // 환경 변수를 Jenkins 환경에 설정
                         env.CSM_API_IMAGE_NAME = secrets['CSM-API-IMAGE-NAME']
                         env.CSM_API_TAR_FILE = secrets['CSM-API-TAR-FILE']
                         env.CSM_API_DOCKER_NETWORK = secrets['CSM-API-DOCKER-NETWORK']
@@ -59,36 +58,36 @@ pipeline {
                     echo "=== 서버에 tar file 전송 ==="
                     sshpass -p '${remotePassword}' scp -o StrictHostKeyChecking=no '${LOCAL_WORKSPACE_DIR}/${tarFileName}' '${remoteUser}@${remoteServer}:${remotePath}'
 
-                    echo "=== 서버에 ssh 접속 ==="
-                    sshpass -p '${remotePassword}' ssh -o StrictHostKeyChecking=no '${remoteUser}@${remoteServer}' << 'EOF'
-                    set -e
+                    echo "=== 서버에 ssh 접속 및 컨테이너 재배포 ==="
+                    sshpass -p '${remotePassword}' ssh -o StrictHostKeyChecking=no '${remoteUser}@${remoteServer}' bash -c '
+                        set -e
 
-                    IMAGE_NAME="${imageName}"
-                    TAR_FILE_NAME="${tarFileName}"
-                    DOCKER_NETWORK="${dockerNetwork}"
-                    REMOTE_TAR_PATH="${remoteTarPath}"
+                        IMAGE_NAME="${imageName}"
+                        TAR_FILE_NAME="${tarFileName}"
+                        DOCKER_NETWORK="${dockerNetwork}"
+                        REMOTE_TAR_PATH="${remoteTarPath}"
 
-                    echo "=== 기존 이미지 백업 ==="
-                    if sudo docker images | grep -w "\${IMAGE_NAME}"; then
-                        TIMESTAMP=\$(date +"%Y%m%d%H%M")
-                        BACKUP_IMAGE_NAME="\${IMAGE_NAME}_backup_\${TIMESTAMP}"
-                        sudo docker tag "\${IMAGE_NAME}:latest" "\${BACKUP_IMAGE_NAME}:latest"
-                        sudo docker rmi -f "\${IMAGE_NAME}:latest" || true
-                        echo "기존 이미지를 \${BACKUP_IMAGE_NAME}으로 백업했습니다."
-                    fi
+                        echo "=== 기존 이미지 백업 ==="
+                        if docker images | grep -w "\${IMAGE_NAME}"; then
+                            TIMESTAMP=\$(date +\"%Y%m%d%H%M\")
+                            BACKUP_IMAGE_NAME="\${IMAGE_NAME}_backup_\${TIMESTAMP}"
+                            docker tag "\${IMAGE_NAME}:latest" "\${BACKUP_IMAGE_NAME}:latest"
+                            docker rmi -f "\${IMAGE_NAME}:latest" || true
+                            echo "기존 이미지를 \${BACKUP_IMAGE_NAME}으로 백업했습니다."
+                        fi
 
-                    echo "=== 새로운 이미지 생성 ==="
-                    sudo docker load -i "\${REMOTE_TAR_PATH}"
+                        echo "=== 새로운 이미지 로드 ==="
+                        docker load -i "\${REMOTE_TAR_PATH}"
 
-                    echo "=== 기존 컨테이너 중지 및 삭제 ==="
-                    if sudo docker ps -a | grep -w "\${IMAGE_NAME}"; then
-                        sudo docker stop "\${IMAGE_NAME}" || true
-                        sudo docker rm "\${IMAGE_NAME}" || true
-                    fi
+                        echo "=== 기존 컨테이너 중지 및 삭제 ==="
+                        if docker ps -a | grep -w "\${IMAGE_NAME}"; then
+                            docker stop "\${IMAGE_NAME}" || true
+                            docker rm "\${IMAGE_NAME}" || true
+                        fi
 
-                    echo "=== 새로운 컨테이너 실행 ==="
-                    sudo docker run -d --name "\${IMAGE_NAME}" --network "\${DOCKER_NETWORK}" --restart=unless-stopped -p 8080:8080 "\${IMAGE_NAME}:latest"
-
+                        echo "=== 새 컨테이너 실행 ==="
+                        docker run -d --name "\${IMAGE_NAME}" --network "\${DOCKER_NETWORK}" --restart=unless-stopped -p 8080:8080 "\${IMAGE_NAME}:latest"
+                    '
                     """
                 }
             }
