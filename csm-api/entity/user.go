@@ -12,6 +12,9 @@ type User struct {
 	UserPwd  string `json:"user_pwd" db:"USER_PWD"`
 	IsSaved  bool   `json:"is_saved"`
 	Agent    string `json:"agent"`
+	DeptName string `json:"dept_name" db:"DEPT_NAME"`
+	TeamName string `json:"team_name" db:"TEAM_NAME"`
+	RoleCode string `json:"role_code" db:"ROLE_CODE"`
 }
 
 func (u User) SetUser(uno int64, userName string) User {
