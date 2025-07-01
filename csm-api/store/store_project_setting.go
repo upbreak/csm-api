@@ -86,6 +86,22 @@ func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity
 	return count, nil
 }
 
+// func: 공수 추가
+// @param
+// - manHour: 공수 정보
+func (r *Repository) AddManHour(ctx context.Context, tx Execer, manHour entity.ManHour) error {
+	query := `
+			INSERT INTO IRIS_MAN_HOUR ( WORK_HOUR, MAN_HOUR, JNO, ETC, REG_UNO, REG_USER, REG_DATE )
+			VALUES (:1, :2,	:3,	:4,	:5,	:6,	SYSDATE )
+		`
+	_, err := tx.ExecContext(ctx, query, manHour.WorkHour, manHour.ManHour, manHour.Jno, manHour.Etc, manHour.RegUno, manHour.RegUser)
+	if err != nil {
+		//TODO: 에러 아카이브
+		return fmt.Errorf("Store/AddManHour err: %w", err)
+	}
+	return nil
+}
+
 // func: 프로젝트 설정 정보 수정
 // @param: ProjectSetting
 // -
