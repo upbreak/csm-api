@@ -32,7 +32,7 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 
 }
 
-// func: 공수 수정 및 추가
+// func: 공수 수정 및 추가 (수정 시 기존 공수 삭제 후 새로 넣는 방식)
 // @param
 // - manHours: 공수 정보 배열
 func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) error {
@@ -50,54 +50,66 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 			}
 		}
 	}()
-	var count int64
+
+	jno := (*manHours)[0].Jno.Int64
+	user := (*manHours)[0].Base
+
+	// jno에 해당하는 공수 찾기
+	deleteManhours, err := s.Store.GetManHourList(ctx, s.SafeDB, jno)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("MergeManHours/GetManHourList err: %w", err)
+	}
+
+	// jno에 해당하는 공수 모두 삭제
+	for _, deleteManhour := range *deleteManhours {
+		deleteManhour.Message.Valid = true
+		deleteManhour.Message.String = fmt.Sprintf(`[DELETE] mhno:[before:%d, after: N/A]|work_hour:[before: %d, after: N/A]|man_hour:[before:%.2f, after: N/A]|jno:[before:%d, after: N/A]|etc:[before:%s, after: N/A]`, deleteManhour.Mhno.Int64, deleteManhour.WorkHour.Int64, deleteManhour.ManHour.Float64, deleteManhour.Jno.Int64, deleteManhour.Etc.String)
+		deleteManhour.Base = user
+
+		// 삭제
+		if err = s.DeleteManHour(ctx, deleteManhour.Mhno.Int64, *deleteManhour); err != nil {
+			// TODO: 에러 아카이브
+			return fmt.Errorf("MergeManHours err: %w", err)
+		}
+	}
+
+	// 받아온 공수 추가
 	for _, manHour := range *manHours {
 		if !manHour.Message.Valid {
 			continue
 		}
 
-		if manHour.Mhno.Valid && manHour.WorkHour.Int64 == 0 && manHour.ManHour.Float64 == 0 {
-			if err = s.DeleteManHour(ctx, manHour.Mhno.Int64, *manHour); err != nil {
-				return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
-			}
-			continue
-		}
-
-		count, err = s.Store.MergeManHour(ctx, tx, *manHour)
+		// 추가
+		err = s.Store.AddManHour(ctx, tx, *manHour)
 		if err != nil {
 			// TODO: 에러 아카이브
-			return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+			return fmt.Errorf("service_project_setting/AddManHour error: %w", err)
 		}
 
-		if count <= 0 {
-			continue
-		}
-
+		// 로그 남기기
 		if err = s.Store.ManHourLog(ctx, tx, *manHour); err != nil {
 			// TODO: 에러 아카이브
 			return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
 		}
 	}
-	// 공수에 맞춰 근로자 업데이트
-	jno := (*manHours)[0].Jno.Int64
-	user := (*manHours)[0].Base
-	if count > 0 {
-		if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
-			// TODO: 에러 아카이브
-			return fmt.Errorf("service_project_setting/WorkHourStore/: %w", err)
-		}
 
+	// 공수에 맞춰 근로자 업데이트
+	if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("service_project_setting/WorkHourStore/: %w", err)
 	}
 
 	return nil
 }
 
 // func: 프로젝트 설정 정보 추가 및 수정
-// @param: ProjectSetting
-// -
+// @param
+// - ProjectSetting
 func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
+		// TODO: 에러 아카이브
 		return fmt.Errorf("service_project_setting/ModifyProjectSetting BeginTx error: %w", err)
 	}
 
@@ -253,6 +265,7 @@ func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, m
 	jno := manhour.Jno.Int64
 	user := manhour.Base
 	if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
+		// TODO: 에러 아카이브
 		return fmt.Errorf("service_project_setting/WorkHourStore error: %w", err)
 	}
 

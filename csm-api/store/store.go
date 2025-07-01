@@ -65,6 +65,7 @@ type ProjectStore interface {
 type ProjectSettingStore interface {
 	GetManHourList(ctx context.Context, db Queryer, jno int64) (*entity.ManHours, error)
 	MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) (int64, error)
+	AddManHour(ctx context.Context, tx Execer, manHour entity.ManHour) error
 	MergeProjectSetting(ctx context.Context, tx Execer, project entity.ProjectSetting) (int64, error)
 	GetCheckProjectSetting(ctx context.Context, db Queryer) (*entity.ProjectSettings, error)
 	GetProjectSetting(ctx context.Context, db Queryer, jno int64) (*entity.ProjectSettings, error)
