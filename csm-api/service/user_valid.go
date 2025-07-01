@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/md5"
+	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/store"
 	"encoding/hex"
@@ -23,6 +24,17 @@ func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd str
 	user, err := g.Store.GetUserValid(ctx, g.DB, userId, pwMd5)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("service.get user fail: %w", err)
+	}
+
+	// 권한
+	if user.RoleCode == "" {
+		if user.DeptName == "기술연구소" {
+			user.RoleCode = string(auth.SystemAdmin)
+		} else if user.TeamName == "프로젝트관리팀" {
+			user.RoleCode = string(auth.SuperAdmin)
+		} else {
+			user.RoleCode = string(auth.User)
+		}
 	}
 
 	return user, nil

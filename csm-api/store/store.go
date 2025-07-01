@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+type MenuStore interface {
+	GetParentMenu(ctx context.Context, db Queryer, roles []string) ([]entity.Menu, error)
+	GetChildMenu(ctx context.Context, db Queryer, roles []string) ([]entity.Menu, error)
+}
+
 type GetUserValidStore interface {
 	GetUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.User, error)
 }
@@ -83,6 +88,8 @@ type ProjectDailyStore interface {
 
 type UserStore interface {
 	GetUserInfoPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPeInfos, error)
+	GetSiteRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error)
+	GetOperationalRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error)
 }
 
 type CodeStore interface {

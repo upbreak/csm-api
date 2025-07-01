@@ -73,6 +73,7 @@ type Queryer interface {
 	QueryRowxContext(ctx context.Context, query string, args ...any) *sqlx.Row
 	GetContext(ctx context.Context, dest interface{}, query string, args ...any) error
 	SelectContext(ctx context.Context, dest interface{}, query string, args ...any) error
+	Rebind(query string) string
 }
 
 var (

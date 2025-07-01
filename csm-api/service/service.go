@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+type MenuService interface {
+	GetMenu(ctx context.Context, roles []string) (entity.MenuRes, error)
+}
+
 type GetUserValidService interface {
 	GetUserValid(ctx context.Context, userId string, userPwd string) (entity.User, error)
 }
@@ -75,6 +79,7 @@ type ProjectDailyService interface {
 
 type UserService interface {
 	GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error)
+	GetUserRole(ctx context.Context, jno int64, uno int64) (string, error)
 }
 
 type CodeService interface {

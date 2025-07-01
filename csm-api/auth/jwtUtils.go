@@ -19,8 +19,17 @@ type JWTUtils struct {
 type JWTRole string
 
 const (
-	Admin JWTRole = "admin"
-	User  JWTRole = "user"
+	SystemAdmin   JWTRole = "SYSTEM_ADMIN"
+	SuperAdmin    JWTRole = "SUPER_ADMIN"
+	Admin         JWTRole = "ADMIN"
+	SiteDirector  JWTRole = "SITE_DIRECTOR"
+	SiteManager   JWTRole = "SITE_MANAGER"
+	SafetyManager JWTRole = "SAFETY_MANAGER"
+	Supervisor    JWTRole = "SUPERVISOR"
+	CoManager     JWTRole = "CO_MANAGER"
+	Executive     JWTRole = "EXECUTIVE"
+	User          JWTRole = "USER"
+	CoUser        JWTRole = "CO_USER"
 )
 
 // claims 정의
@@ -139,10 +148,12 @@ func (j *JWTUtils) ValidateJWT(r *http.Request) (*JWTClaims, error) {
 	roleVal, exists := claims["role"]
 	if exists && roleVal != nil {
 		if roleStr, ok := roleVal.(string); ok {
-			switch JWTRole(roleStr) {
-			case Admin, User:
-				jwtClaims.Role = JWTRole(roleStr)
-			}
+			//switch JWTRole(roleStr) {
+			//case Admin, User:
+			//
+			//	jwtClaims.Role = JWTRole(roleStr)
+			//}
+			jwtClaims.Role = JWTRole(roleStr)
 		}
 	}
 

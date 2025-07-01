@@ -64,6 +64,8 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 		//		next.ServeHTTP(w, r)
 		//	})
 		//})
+		router.Mount("/menu", route.MenuRoute(safeDb, &r))                      // 메뉴
+		router.Mount("/user", route.UserRoute(safeDb, timesheetDb, &r))         // 사용자 {권한}
 		router.Mount("/api", route.ApiRoute(apiCfg, safeDb, &r))                // api
 		router.Mount("/excel", route.ExcelRoute(safeDb, &r))                    // 엑셀
 		router.Mount("/project", route.ProjectRoute(safeDb, &r))                // 프로젝트
