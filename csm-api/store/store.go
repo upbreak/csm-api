@@ -15,6 +15,7 @@ type MenuStore interface {
 
 type GetUserValidStore interface {
 	GetUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.User, error)
+	GetCompanyUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.CompanyInfo, error)
 }
 
 type SiteStore interface {

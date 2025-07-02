@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// 직원 로그인
 func (r *Repository) GetUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.User, error) {
 	user := entity.User{}
 
@@ -25,7 +26,30 @@ func (r *Repository) GetUserValid(ctx context.Context, db Queryer, userId string
 		AND t1.USER_PWD = :2`
 
 	if err := db.GetContext(ctx, &user, sql, userId, userPwd); err != nil {
-		return user, fmt.Errorf("user.get user fail: %w", err)
+		return user, fmt.Errorf("GetUserValid fail: %w", err)
 	}
 	return user, nil
+}
+
+// 협력업체 로그인
+func (r *Repository) GetCompanyUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.CompanyInfo, error) {
+	company := entity.CompanyInfo{}
+
+	sql := `
+		SELECT 
+		    S.JNO,
+			S.CNO,
+			S.ID
+		FROM 
+			JOB_SUBCON_INFO S, 
+			S_SYS_USER_SET U
+		WHERE S.UNO = U.UNO(+)
+		AND S.IS_USE = 'Y'
+		AND S.ID = :1
+		AND S.PW = :2`
+
+	if err := db.GetContext(ctx, &company, sql, userId, userPwd); err != nil {
+		return company, fmt.Errorf("GetCompanyUserValid fail: %w", err)
+	}
+	return company, nil
 }

@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"crypto/md5"
+	"csm-api/api"
 	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/store"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 type UserValid struct {
@@ -15,6 +18,7 @@ type UserValid struct {
 	Store store.GetUserValidStore
 }
 
+// 직원 로그인
 func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd string) (entity.User, error) {
 	// 비밀번호 암호화.
 	hash := md5.Sum([]byte(userPwd))
@@ -23,7 +27,7 @@ func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd str
 	// 유저 db에서 확인
 	user, err := g.Store.GetUserValid(ctx, g.DB, userId, pwMd5)
 	if err != nil {
-		return entity.User{}, fmt.Errorf("service.get user fail: %w", err)
+		return entity.User{}, fmt.Errorf("service.GetUserValid: %w", err)
 	}
 
 	// 권한
@@ -34,6 +38,52 @@ func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd str
 			user.RoleCode = string(auth.SuperAdmin)
 		} else {
 			user.RoleCode = string(auth.User)
+		}
+	}
+
+	return user, nil
+}
+
+// 협력업체 로그인
+func (g *UserValid) GetCompanyUserValid(ctx context.Context, userId string, userPwd string) (entity.User, error) {
+	user := entity.User{}
+
+	company, err := g.Store.GetCompanyUserValid(ctx, g.DB, userId, userPwd)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("service.GetCompanyUserValid: %w", err)
+	}
+
+	// 해당 업체관리자가 없는 경우
+	if !company.Cno.Valid {
+		return entity.User{}, fmt.Errorf("service.GetCompanyUserValid: Cno not valid")
+	}
+
+	// 있는 경우
+	// JOB별 협력업체 리스트 API
+	url := fmt.Sprintf("http://wcfservice.hi-techeng.co.kr/apipcs/getcontractinfo?jno=%d&contracttype=C", company.Jno.Int64)
+	response, err := api.CallGetAPI(url)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("service_conpany;companyInfo/call Get Api err: %w", err)
+	}
+	companyApiReq := &entity.CompanyApiReq{}
+	if err = json.Unmarshal([]byte(response), companyApiReq); err != nil {
+		return entity.User{}, fmt.Errorf("service_conpany;companyInfo/json.Unmarshal err: %w", err)
+	}
+	if companyApiReq.ResultType != "Success" {
+		return entity.User{}, fmt.Errorf("service_conpany;companyInfo/Api ResultType not Success")
+	}
+
+	for _, req := range companyApiReq.Value {
+		if company.Cno.Valid && int64(req.CompCno) == company.Cno.Int64 {
+			idStr := company.Id.String
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err != nil {
+				return entity.User{}, fmt.Errorf("service_conpany;companyInfo/ParseInt err: %w", err)
+			}
+			user.Uno = id
+			user.UserId = idStr
+			user.UserName = req.WorkerName + "(" + req.CompNameKr + ")"
+			user.RoleCode = "CO_MANAGER"
 		}
 	}
 
