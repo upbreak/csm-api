@@ -6,15 +6,16 @@ import (
 )
 
 type User struct {
-	Uno      int64  `json:"uno" db:"UNO"`
-	UserId   string `json:"user_id" db:"USER_ID"`
-	UserName string `json:"user_name" db:"USER_NAME"`
-	UserPwd  string `json:"user_pwd" db:"USER_PWD"`
-	IsSaved  bool   `json:"is_saved"`
-	Agent    string `json:"agent"`
-	DeptName string `json:"dept_name" db:"DEPT_NAME"`
-	TeamName string `json:"team_name" db:"TEAM_NAME"`
-	RoleCode string `json:"role_code" db:"ROLE_CODE"`
+	Uno       int64  `json:"uno" db:"UNO"`
+	UserId    string `json:"user_id" db:"USER_ID"`
+	UserName  string `json:"user_name" db:"USER_NAME"`
+	UserPwd   string `json:"user_pwd" db:"USER_PWD"`
+	IsSaved   bool   `json:"is_saved"`
+	Agent     string `json:"agent"`
+	DeptName  string `json:"dept_name" db:"DEPT_NAME"`
+	TeamName  string `json:"team_name" db:"TEAM_NAME"`
+	RoleCode  string `json:"role_code" db:"ROLE_CODE"`
+	IsCompany bool   `json:"is_company"`
 }
 
 func (u User) SetUser(uno int64, userName string) User {

@@ -34,8 +34,17 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 유저 유효성 검사
-	user, err := l.Service.GetUserValid(ctx, login.UserId, login.UserPwd)
+	var (
+		user entity.User
+		err  error
+	)
+	if login.IsCompany {
+		// 협력업체 유효성 검사
+		user, err = l.Service.GetCompanyUserValid(ctx, login.UserId, login.UserPwd)
+	} else {
+		// 직원 유효성 검사
+		user, err = l.Service.GetUserValid(ctx, login.UserId, login.UserPwd)
+	}
 	if err != nil {
 		RespondJSON(
 			ctx,
