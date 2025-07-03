@@ -78,7 +78,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 						N.IS_USE = 'Y'
 						AND N.POSTING_START_DATE <= SYSDATE
 						AND N.POSTING_END_DATE > SYSDATE
-						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0 )
+						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM S_JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0)
 				)
 				SELECT * 
 			  	FROM (
@@ -87,6 +87,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 						SELECT *
 						FROM Notice
 						WHERE
+							JNO = 0 OR
 							%s
 						ORDER BY
 							%s,
@@ -157,11 +158,12 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 					N.IS_USE = 'Y'
 					AND N.POSTING_START_DATE <= SYSDATE
 					AND N.POSTING_END_DATE > SYSDATE
-					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM TIMESHEET.JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0 )
+					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM S_JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0)
 			)
 			SELECT COUNT(*) 
 			FROM  Notice
 			WHERE
+				
 				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, role, uno); err != nil {

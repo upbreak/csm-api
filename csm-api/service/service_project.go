@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -252,7 +253,8 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, rol
 	}
 
 	var roleInt int
-	if role == "ADMIN" {
+	authorizationList := []string{"ADMIN", "SUPER_ADMIN", "SYSTEM_ADMIN"}
+	if utils.AuthorizationListCheck(authorizationList, utils.ParseNullString(role)) {
 		roleInt = 1
 	} else {
 		roleInt = 0

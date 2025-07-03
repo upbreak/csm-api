@@ -261,7 +261,7 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 				  WHERE t1.AUTH = 'SAFETY_MANAGER'
 				  UNION
 				  SELECT t1.JNO, USER_NAME
-				  FROM TIMESHEET.JOB_MEMBER_LIST t1
+				  FROM S_JOB_MEMBER_LIST t1
 				  JOIN S_SYS_USER_SET t2 ON t2.UNO = t1.UNO
 				  WHERE t1.COMP_TYPE = 'H'
 					AND t1.FUNC_CODE = 510
@@ -618,7 +618,7 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 					FROM 
 						S_JOB_INFO J 
 					INNER JOIN 
-						(SELECT * FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) JM 
+						(SELECT * FROM S_JOB_MEMBER_LIST WHERE UNO = :1) JM 
 					ON 
 						J.JNO = JM.JNO
 					LEFT JOIN
@@ -666,7 +666,7 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 					COUNT(*)
 				FROM S_JOB_INFO J 
 				INNER JOIN 
-					(SELECT * FROM TIMESHEET.JOB_MEMBER_LIST WHERE UNO = :1) JM 
+					(SELECT * FROM S_JOB_MEMBER_LIST WHERE UNO = :1) JM 
 				ON 
 					J.JNO = JM.JNO 
 				INNER JOIN 
@@ -699,7 +699,7 @@ func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sq
 			      JOB_STATE = 'Y' AND
 			      1=:1 OR 
 			      JNO IN (SELECT DISTINCT(JNO) 
-						  FROM TIMESHEET.JOB_MEMBER_LIST 
+						  FROM S_JOB_MEMBER_LIST 
 						  WHERE UNO = :2)
 			  ORDER BY 
 			      JNO DESC`
