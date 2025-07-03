@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"fmt"
 	"github.com/guregu/null"
 )
@@ -27,8 +28,11 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno null.Int, role nu
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
+	// 권한에 따라서 본인이 속한 jno를 불러올지 말지 query에 지정되어 있음.
 	var roleInt int
-	if role.String == "ADMIN" {
+	authorizationList := []string{"ADMIN", "SUPER_ADMIN", "SYSTEM_ADMIN"}
+
+	if utils.AuthorizationListCheck(authorizationList, role) {
 		roleInt = 1
 	} else {
 		roleInt = 0
@@ -48,7 +52,9 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, uno null.Int, role nu
 func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, uno null.Int, role null.String, search entity.Notice) (int, error) {
 
 	var roleInt int
-	if role.String == "ADMIN" {
+	authorizationList := []string{"ADMIN", "SUPER_ADMIN", "SYSTEM_ADMIN"}
+
+	if utils.AuthorizationListCheck(authorizationList, role) {
 		roleInt = 1
 	} else {
 		roleInt = 0

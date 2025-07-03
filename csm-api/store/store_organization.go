@@ -28,9 +28,9 @@ func (r *Repository) GetOrganizationClientList(ctx context.Context, db Queryer, 
 					CASE WHEN LENGTH(JM.CELL) > 6 THEN  JM.CELL ELSE '' END CELL, 
 					CASE WHEN LENGTH(JM.TEL) > 6 THEN  JM.TEL ELSE '' END TEL	
 				FROM 
-					JOB_MEMBER_LIST JM 
+					S_JOB_MEMBER_LIST JM 
 				INNER JOIN 
-					JOB_INFO J 
+					S_JOB_INFO J 
 				ON 
 					J.JNO = JM.JNO
 				INNER JOIN 
@@ -56,7 +56,7 @@ func (r *Repository) GetOrganizationHtencList(ctx context.Context, db Queryer, j
 
 	query := fmt.Sprintf(`
 					WITH MEMBER_LIST AS (
-						SELECT * FROM JOB_MEMBER_LIST
+						SELECT * FROM S_JOB_MEMBER_LIST
 						WHERE JNO = :1
 					)
 					,HITECH AS (
