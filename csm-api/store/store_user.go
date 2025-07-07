@@ -114,3 +114,24 @@ func (r *Repository) GetOperationalRole(ctx context.Context, db Queryer, jno int
 	}
 	return role, nil
 }
+
+// func: 기능 별로 권한 조회
+// @parms
+// - api : 조회할 기능 문자열
+func (r *Repository) GetAuthorizationList(ctx context.Context, db Queryer, api string) (*entity.RoleList, error) {
+	list := entity.RoleList{}
+
+	query := `
+		SELECT * 
+		FROM 
+		    IRIS_LIST_PERMIT_ROLE
+		WHERE
+		    API = :1 
+		`
+
+	if err := db.SelectContext(ctx, &list, query, api); err != nil {
+		return nil, fmt.Errorf("GetAuthorizationList", err)
+	}
+
+	return &list, nil
+}

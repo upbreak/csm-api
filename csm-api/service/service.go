@@ -81,6 +81,7 @@ type ProjectDailyService interface {
 type UserService interface {
 	GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error)
 	GetUserRole(ctx context.Context, jno int64, uno int64) (string, error)
+	GetAuthorizationList(ctx context.Context, api string) (*entity.RoleList, error)
 }
 
 type CodeService interface {

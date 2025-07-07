@@ -110,7 +110,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 
 	if err := db.SelectContext(ctx, &notices, query, role, uno, page.EndNum, page.StartNum); err != nil {
 		//TODO: 에러 아카이브 처리
-		fmt.Printf("store/notice. NoticeList error %s", err)
+		fmt.Errorf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
 	return &notices, nil

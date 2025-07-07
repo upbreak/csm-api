@@ -6,6 +6,7 @@ import (
 	"csm-api/config"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -45,6 +46,7 @@ type JWTClaims struct {
 // context에 저장하는 claims value
 type UserId struct{}
 type Role struct{}
+type Uno struct{}
 
 // JWTUtils 구조체 생성
 func JwtNew(c clock.Clocker) (*JWTUtils, error) {
@@ -171,13 +173,14 @@ func (j *JWTUtils) FillContext(r *http.Request) (*http.Request, *JWTClaims, erro
 	// claims 데이터 context에 저장
 	ctx := SetContext(r.Context(), UserId{}, claims.UserId)
 	ctx = SetContext(ctx, Role{}, string(claims.Role))
+	ctx = SetContext(ctx, Uno{}, strconv.FormatInt(claims.Uno, 10))
 
 	httpRequestClone := r.Clone(ctx)
 
 	return httpRequestClone, claims, nil
 }
 
-func SetContext(ctx context.Context, key struct{}, value string) context.Context {
+func SetContext(ctx context.Context, key interface{}, value string) context.Context {
 	return context.WithValue(ctx, key, value)
 }
 

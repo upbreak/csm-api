@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
 	"fmt"
 	"github.com/guregu/null"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,6 +31,7 @@ type ServiceSite struct {
 	ProjectDailyStore       store.ProjectDailyStore
 	SitePosStore            store.SitePosStore
 	SiteDateStore           store.SiteDateStore
+	UserService             UserService
 	ProjectService          ProjectService
 	WhetherApiService       WhetherApiService
 	AddressSearchAPIService AddressSearchAPIService
@@ -39,8 +42,28 @@ type ServiceSite struct {
 // - targetDate: 현재시간
 func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
 
+	unoString, _ := auth.GetContext(ctx, auth.Uno{})
+	role, _ := auth.GetContext(ctx, auth.Role{})
+
+	// 권한 조회
+	list, err := s.UserService.GetAuthorizationList(ctx, "/site")
+	authorization := entity.AuthorizationCheck(*list, role)
+	
+	var roleInt int
+	if authorization { // 권한이 있는 경우
+		roleInt = 1
+	} else {
+		roleInt = 0
+	}
+
+	uno, err := strconv.ParseInt(unoString, 10, 64)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return nil, fmt.Errorf("service_site/GetSiteList parseInt err: %w", err)
+	}
+
 	//현장관리 테이블 조회
-	sites, err := s.Store.GetSiteList(ctx, s.SafeDB, targetDate)
+	sites, err := s.Store.GetSiteList(ctx, s.SafeDB, targetDate, roleInt, uno)
 	if err != nil {
 		//TODO: 에러 아카이브
 		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteList err: %w", err)

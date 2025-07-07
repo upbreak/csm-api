@@ -9,7 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func SiteRoute(safeDB *sqlx.DB, r *store.Repository, apiConfig *config.ApiConfig) chi.Router {
+func SiteRoute(safeDB *sqlx.DB, timeSheetDB *sqlx.DB, r *store.Repository, apiConfig *config.ApiConfig) chi.Router {
 	router := chi.NewRouter()
 
 	siteHandler := &handler.HandlerSite{
@@ -21,6 +21,11 @@ func SiteRoute(safeDB *sqlx.DB, r *store.Repository, apiConfig *config.ApiConfig
 			ProjectDailyStore: r,
 			SitePosStore:      r,
 			SiteDateStore:     r,
+			UserService: &service.ServiceUser{
+				SafeDB:      safeDB,
+				TimeSheetDB: timeSheetDB,
+				Store:       r,
+			},
 			ProjectService: &service.ServiceProject{
 				SafeDB:    safeDB,
 				Store:     r,
