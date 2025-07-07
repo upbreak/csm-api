@@ -94,8 +94,8 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context, uno null.Int, role null.String, page entity.Page, search entity.Notice) (*entity.Notices, error)
-	GetNoticeListCount(ctx context.Context, uno null.Int, role null.String, search entity.Notice) (int, error)
+	GetNoticeList(ctx context.Context, page entity.Page, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx null.Int) error
