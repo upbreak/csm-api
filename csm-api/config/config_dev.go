@@ -25,4 +25,9 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to set PORT: %v", err)
 	}
+
+	err = os.Setenv("UPLOAD_PATH", "uploads")
+	if err != nil {
+		log.Fatalf("Failed to set UPLOAD_PATH: %v", err)
+	}
 }

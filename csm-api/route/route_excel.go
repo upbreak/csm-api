@@ -13,9 +13,10 @@ func ExcelRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 
 	excelHandler := &handler.HandlerExcel{
 		Service: &service.ServiceExcel{
-			SafeDB:  safeDB,
-			SafeTDB: safeDB,
-			Store:   r,
+			SafeDB:      safeDB,
+			SafeTDB:     safeDB,
+			Store:       r,
+			WorkerStore: r,
 		},
 		FileService: &service.ServiceUploadFile{
 			DB:    safeDB,
@@ -25,8 +26,9 @@ func ExcelRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 		DB: safeDB,
 	}
 
-	router.Post("/import", excelHandler.ImportExcel) // excel import
-	router.Get("/export", excelHandler.ExportExcel)  // excel export
+	router.Post("/import", excelHandler.ImportExcel)                            // excel import
+	router.Get("/export", excelHandler.ExportExcel)                             // excel export
+	router.Get("/daily-worker/form/export", excelHandler.DailyWorkerFormExport) // 현장근로자 양식 다운로드
 
 	return router
 }

@@ -1,19 +1,23 @@
 package handler
 
 import (
+	"csm-api/config"
 	"csm-api/ctxutil"
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/xuri/excelize/v2"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 /**
@@ -30,7 +34,8 @@ type HandlerExcel struct {
 }
 
 // excel 자료 import
-// fileType: WORK_LETTER (작업허가서), TBM (TBM 문서), DEDUCTION (퇴직공제), REPORT (작업일보)
+// fileType: WORK_LETTER (작업허가서), TBM (TBM 문서), DEDUCTION (퇴직공제), REPORT (작업일보), ADD_DAILY_WORKER (현장 근로자 등록)
+// POST ROW DATA
 func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20) // 최대 10MB
 	if err != nil {
@@ -84,11 +89,15 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 저장 경로 설정 및 생성
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 	var dir string
 	if addDir == "" {
-		dir = filepath.Join("uploads", strings.ToLower(fileType), dates[0], dates[1], dates[2], jnoString)
+		dir = filepath.Join(cfg.UploadPath, strings.ToLower(fileType), dates[0], dates[1], dates[2], jnoString)
 	} else {
-		dir = filepath.Join("uploads", strings.ToLower(fileType), dates[0], dates[1], dates[2], jnoString, addDir)
+		dir = filepath.Join(cfg.UploadPath, strings.ToLower(fileType), dates[0], dates[1], dates[2], jnoString, addDir)
 	}
 	err = os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
@@ -170,6 +179,20 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 			FailResponse(ctx, w, err)
 			return
 		}
+	} else if fileType == "ADD_DAILY_WORKER" {
+		workDaily := entity.WorkerDaily{
+			Sno:        utils.ParseNullInt(snoString),
+			Jno:        utils.ParseNullInt(jnoString),
+			RecordDate: utils.ParseNullTime(workDate),
+			Base: entity.Base{
+				RegUser: utils.ParseNullString(regUser),
+				RegUno:  utils.ParseNullInt(regUno),
+			},
+		}
+		if err = h.Service.ImportAddDailyWorker(ctx, tempFilePath, workDaily); err != nil {
+			FailResponse(ctx, w, err)
+			return
+		}
 	}
 
 	SuccessResponse(r.Context(), w)
@@ -232,6 +255,112 @@ func (h *HandlerExcel) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	// 파일 스트림 복사
 	if _, err = io.Copy(w, f); err != nil {
 		FailResponse(r.Context(), w, fmt.Errorf("파일 전송 실패: %v", err))
+		return
+	}
+}
+
+// 현장 근로자 엑셀 양식 다운로드
+func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Request) {
+	f := excelize.NewFile()
+	sheet := "Sheet1"
+
+	// 헤더
+	headers := []string{"No.", "이름", "부서/조직명", "핸드폰번호", "근로날짜", "출근시간", "퇴근시간", "공수"}
+	for i, header := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, header)
+	}
+
+	// 스타일
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#C6EFCE"}, Pattern: 1},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	borderStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+
+	dateFmt := "yyyy-mm-dd"
+	timeFmt := "hh:mm"
+	dateStyle, _ := f.NewStyle(&excelize.Style{
+		CustomNumFmt: &dateFmt,
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	timeStyle, _ := f.NewStyle(&excelize.Style{
+		CustomNumFmt: &timeFmt,
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+
+	f.SetCellStyle(sheet, "A1", "H1", headerStyle)
+
+	// 날짜 및 시간 데이터 파싱
+	layoutDate := "2006-01-02"
+	date1, _ := time.Parse(layoutDate, "2025-07-01")
+	date2, _ := time.Parse(layoutDate, "2025-07-01")
+
+	start1 := time.Date(1899, 12, 31, 7, 26, 0, 0, time.UTC)
+	end1 := time.Date(1899, 12, 31, 15, 41, 0, 0, time.UTC)
+
+	start2 := time.Date(1899, 12, 31, 11, 21, 0, 0, time.UTC)
+	end2 := time.Date(1899, 12, 31, 14, 12, 0, 0, time.UTC)
+
+	rows := [][]interface{}{
+		{1, "홍길동1", "진웅종합건설", "010-1234-5678", date1, start1, end1, 1},
+		{2, "홍길동2", "진웅종합건설", "010-1234-5678", date2, start2, end2, 0.5},
+	}
+
+	// 셀 값 입력
+	for rowIdx, row := range rows {
+		for colIdx, val := range row {
+			cell, _ := excelize.CoordinatesToCellName(colIdx+1, rowIdx+2)
+			f.SetCellValue(sheet, cell, val)
+		}
+	}
+
+	// 스타일 적용
+	f.SetCellStyle(sheet, "A2", "H10", borderStyle)
+	f.SetCellStyle(sheet, "E2", "E10", dateStyle)
+	f.SetCellStyle(sheet, "F2", "F10", timeStyle)
+	f.SetCellStyle(sheet, "G2", "G10", timeStyle)
+
+	// 컬럼 너비
+	f.SetColWidth(sheet, "A", "H", 15)
+
+	// 파일 이름 생성
+	fileName := "현장근로자 입력 양식.xlsx"
+	encodedName := url.PathEscape(fileName)
+
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename*=UTF-8''%s", encodedName))
+	w.Header().Set("File-Name", fileName)
+	w.Header().Set("Content-Transfer-Encoding", "binary")
+	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition, File-Name")
+
+	// 파일 출력
+	if err := f.Write(w); err != nil {
+		http.Error(w, "엑셀 파일 생성 실패", http.StatusInternalServerError)
 		return
 	}
 }

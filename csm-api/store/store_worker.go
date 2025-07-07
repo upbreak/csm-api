@@ -760,3 +760,42 @@ func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, worker
 	}
 	return nil
 }
+
+// 현장근로자 추가
+func (r *Repository) AddDailyWorkers(ctx context.Context, tx Execer, workers []entity.WorkerDaily) error {
+	agent := utils.GetAgent()
+
+	query := `
+		INSERT INTO IRIS_WORKER_DAILY_SET (
+			SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME,
+			OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE,
+			REG_USER, REG_UNO, REG_AGENT
+		)
+		SELECT
+			:1, :2, :3, :4, :5,
+			:6, :7, :8, :9, SYSDATE,
+			:10, :11, :12
+		FROM DUAL
+		WHERE EXISTS (
+			SELECT 1
+			FROM IRIS_WORKER_SET
+			WHERE SNO        = :13
+			  AND JNO        = :14
+			  AND USER_ID    = :15
+			  AND USER_NM    = :16
+			  AND DEPARTMENT LIKE :17
+		)`
+
+	for _, worker := range workers {
+		_, err := tx.ExecContext(ctx, query,
+			worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
+			worker.OutRecogTime, worker.WorkState, worker.CompareState, worker.WorkHour,
+			worker.RegUser, worker.RegUno, agent, worker.Sno, worker.Jno, worker.UserId,
+			worker.UserNm, fmt.Sprintf("%%%s%%", worker.Department.String),
+		)
+		if err != nil {
+			return fmt.Errorf("AddDailyWorkers fail: %w", err)
+		}
+	}
+	return nil
+}

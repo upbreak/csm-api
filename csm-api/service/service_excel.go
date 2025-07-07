@@ -12,9 +12,15 @@ import (
 )
 
 type ServiceExcel struct {
-	SafeDB  store.Queryer
-	SafeTDB store.Beginner
-	Store   store.ExcelStore
+	SafeDB      store.Queryer
+	SafeTDB     store.Beginner
+	Store       store.ExcelStore
+	WorkerStore store.WorkerStore
+}
+
+func mustGet(f *excelize.File, sheet, cell string) string {
+	val, _ := f.GetCellValue(sheet, cell)
+	return strings.TrimSpace(val)
 }
 
 // TBM excel import
@@ -206,7 +212,112 @@ func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deducti
 	return
 }
 
-func mustGet(f *excelize.File, sheet, cell string) string {
-	val, _ := f.GetCellValue(sheet, cell)
-	return strings.TrimSpace(val)
+func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, worker entity.WorkerDaily) (err error) {
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		return fmt.Errorf("ImportAddDailyWorker: failed to open Excel file: %w", err)
+	}
+
+	sheet := f.GetSheetName(0)
+	var excels []entity.WorkerDailyExcel
+
+	row := 2
+	for {
+		// B열 (이름) 기준으로 값이 없으면 종료
+		userNm, err := f.GetCellValue(sheet, fmt.Sprintf("B%d", row))
+		if err != nil || strings.TrimSpace(userNm) == "" {
+			break
+		}
+
+		department, _ := f.GetCellValue(sheet, fmt.Sprintf("C%d", row)) // 부서/조직명
+
+		rawPhone, _ := f.GetCellValue(sheet, fmt.Sprintf("D%d", row)) // 핸드폰번호
+		normalizedPhone := strings.ReplaceAll(strings.ReplaceAll(rawPhone, "-", ""), " ", "")
+		if strings.HasPrefix(normalizedPhone, "1") {
+			normalizedPhone = "0" + normalizedPhone
+		}
+
+		workDate, _ := f.GetCellValue(sheet, fmt.Sprintf("E%d", row)) // 날짜
+		if !utils.IsYYYYMMDD(workDate) {
+			workDate = utils.NormalizeYYMMDD(utils.ConvertMMDDYYToYYMMDD(workDate))
+		}
+
+		// F, G열 (출근/퇴근시간) → 시간 서식으로 저장됨
+		inTimeRaw, err := f.GetCellValue(sheet, fmt.Sprintf("F%d", row))
+		if err != nil {
+			return fmt.Errorf("failed to get InTime at row %d: %w", row, err)
+		}
+		inTime := inTimeRaw
+		if timeVal, err := f.GetCellValue(sheet, fmt.Sprintf("F%d", row), excelize.Options{RawCellValue: false}); err == nil {
+			inTime = timeVal
+		}
+
+		outTimeRaw, err := f.GetCellValue(sheet, fmt.Sprintf("G%d", row))
+		if err != nil {
+			return fmt.Errorf("failed to get OutTime at row %d: %w", row, err)
+		}
+		outTime := outTimeRaw
+		if timeVal, err := f.GetCellValue(sheet, fmt.Sprintf("G%d", row), excelize.Options{RawCellValue: false}); err == nil {
+			outTime = timeVal
+		}
+
+		workHour, _ := f.GetCellValue(sheet, fmt.Sprintf("H%d", row)) // 공수
+
+		excels = append(excels, entity.WorkerDailyExcel{
+			Department: department,
+			UserNm:     userNm,
+			Phone:      normalizedPhone,
+			WorkDate:   workDate,
+			InTime:     inTime,
+			OutTime:    outTime,
+			WorkHour:   workHour,
+		})
+
+		row++
+	}
+
+	var workers []entity.WorkerDaily
+	for _, excel := range excels {
+		temp := entity.WorkerDaily{
+			Sno:          worker.Sno,
+			Jno:          worker.Jno,
+			Department:   utils.ParseNullString(excel.Department),
+			UserNm:       utils.ParseNullString(excel.UserNm),
+			UserId:       utils.ParseNullString(excel.Phone),
+			RecordDate:   utils.ParseNullTime(excel.WorkDate),
+			InRecogTime:  utils.ParseNullDateTime(excel.WorkDate, utils.NormalizeHHMM(excel.InTime)),
+			OutRecogTime: utils.ParseNullDateTime(excel.WorkDate, utils.NormalizeHHMM(excel.OutTime)),
+			WorkHour:     utils.ParseNullFloat(excel.WorkHour),
+			CompareState: utils.ParseNullString("X"),
+			WorkState:    utils.ParseNullString("02"),
+			Base: entity.Base{
+				RegUser: worker.RegUser,
+				RegUno:  worker.RegUno,
+			},
+		}
+		workers = append(workers, temp)
+	}
+
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("ImportAddDailyWorker: failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("ImportAddDailyWorker: failed to rollback transaction: %w", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("ImportAddDailyWorker: failed to commit transaction: %w", commitErr)
+			}
+		}
+	}()
+
+	if err = s.WorkerStore.AddDailyWorkers(ctx, tx, workers); err != nil {
+		return fmt.Errorf("ImportAddDailyWorker: failed to add daily workers: %w", err)
+	}
+
+	return
 }
