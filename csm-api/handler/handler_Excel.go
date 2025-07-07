@@ -139,7 +139,7 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 		FileType: utils.ParseNullString(fileType),
 		FilePath: utils.ParseNullString(dir),
 		FileName: utils.ParseNullString(header.Filename),
-		WorkDate: utils.ParseNullTime(workDate),
+		WorkDate: utils.ParseNullDate(workDate),
 		Jno:      utils.ParseNullInt(jnoString),
 		Base: entity.Base{
 			RegUser: utils.ParseNullString(regUser),
@@ -156,7 +156,7 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 		tbm := entity.Tbm{
 			Sno:        utils.ParseNullInt(snoString),
 			Department: utils.ParseNullString(department),
-			TbmDate:    utils.ParseNullTime(workDate),
+			TbmDate:    utils.ParseNullDate(workDate),
 			Base: entity.Base{
 				RegUser: utils.ParseNullString(regUser),
 				RegUno:  utils.ParseNullInt(regUno),
@@ -169,7 +169,7 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	} else if fileType == "DEDUCTION" {
 		deduction := entity.Deduction{
 			Sno:        utils.ParseNullInt(snoString),
-			RecordDate: utils.ParseNullTime(workDate),
+			RecordDate: utils.ParseNullDate(workDate),
 			Base: entity.Base{
 				RegUser: utils.ParseNullString(regUser),
 				RegUno:  utils.ParseNullInt(regUno),
@@ -183,7 +183,7 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 		workDaily := entity.WorkerDaily{
 			Sno:        utils.ParseNullInt(snoString),
 			Jno:        utils.ParseNullInt(jnoString),
-			RecordDate: utils.ParseNullTime(workDate),
+			RecordDate: utils.ParseNullDate(workDate),
 			Base: entity.Base{
 				RegUser: utils.ParseNullString(regUser),
 				RegUno:  utils.ParseNullInt(regUno),
@@ -211,7 +211,7 @@ func (h *HandlerExcel) ExportExcel(w http.ResponseWriter, r *http.Request) {
 	file := entity.UploadFile{
 		FileType: utils.ParseNullString(fileType),
 		Jno:      utils.ParseNullInt(jno),
-		WorkDate: utils.ParseNullTime(workDate),
+		WorkDate: utils.ParseNullDate(workDate),
 	}
 
 	// 파일 경로, 명칭 조회

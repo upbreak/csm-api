@@ -23,7 +23,7 @@ func (h *HandlerDeadline) UploadFileList(w http.ResponseWriter, r *http.Request)
 
 	file := entity.UploadFile{
 		Jno:      utils.ParseNullInt(jno),
-		WorkDate: utils.ParseNullTime(workDate),
+		WorkDate: utils.ParseNullDate(workDate),
 	}
 	list, err := h.UploadService.GetUploadFileList(r.Context(), file)
 	if err != nil {
