@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	log.Println("start go:build dev")
+	log.Println("start go:build prod")
 
 	// 운영 환경에 필요한 기본값 설정
 	err := os.Setenv("ENV", "production")
@@ -25,5 +25,10 @@ func init() {
 	err = os.Setenv("PORT", "8080")
 	if err != nil {
 		log.Fatalf("Failed to set PORT: %v", err)
+	}
+
+	err = os.Setenv("UPLOAD_PATH", "tmp/data/csm/uploads")
+	if err != nil {
+		log.Fatalf("Failed to set UPLOAD_PATH: %v", err)
 	}
 }

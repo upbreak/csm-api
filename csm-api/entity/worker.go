@@ -60,3 +60,13 @@ type WorkerOverTime struct {
 	OutRecogTime null.Time `json:"out_recog_time" db:"OUT_RECOG_TIME"` // 퇴근시간
 }
 type WorkerOverTimes []*WorkerOverTime
+
+type WorkerDailyExcel struct {
+	Department string
+	UserNm     string
+	Phone      string
+	WorkDate   string
+	InTime     string
+	OutTime    string
+	WorkHour   string
+}
