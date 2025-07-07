@@ -28,7 +28,7 @@ func (h *HandlerCompare) List(w http.ResponseWriter, r *http.Request) {
 	compare := entity.Compare{
 		Sno:        utils.ParseNullInt(snoString),
 		Jno:        utils.ParseNullInt(jnoString),
-		RecordDate: utils.ParseNullTime(startDateString),
+		RecordDate: utils.ParseNullDate(startDateString),
 	}
 
 	list, err := h.Service.GetCompareList(r.Context(), compare, retrySearch, order)

@@ -762,40 +762,62 @@ func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, worker
 }
 
 // 현장근로자 추가
-func (r *Repository) AddDailyWorkers(ctx context.Context, tx Execer, workers []entity.WorkerDaily) error {
+func (r *Repository) AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers []entity.WorkerDaily) (entity.WorkerDailys, error) {
 	agent := utils.GetAgent()
 
-	query := `
+	existsQuery := `
+		SELECT 1
+		FROM IRIS_WORKER_SET
+		WHERE SNO        = :1
+		  AND JNO        = :2
+		  AND USER_ID    = :3
+		  AND USER_NM    = :4
+		  AND DEPARTMENT LIKE :5
+	`
+
+	insertQuery := `
 		INSERT INTO IRIS_WORKER_DAILY_SET (
 			SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME,
 			OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE,
 			REG_USER, REG_UNO, REG_AGENT
 		)
-		SELECT
+		VALUES (
 			:1, :2, :3, :4, :5,
 			:6, :7, :8, :9, SYSDATE,
 			:10, :11, :12
-		FROM DUAL
-		WHERE EXISTS (
-			SELECT 1
-			FROM IRIS_WORKER_SET
-			WHERE SNO        = :13
-			  AND JNO        = :14
-			  AND USER_ID    = :15
-			  AND USER_NM    = :16
-			  AND DEPARTMENT LIKE :17
-		)`
+		)
+	`
+
+	var insertedWorkers entity.WorkerDailys
 
 	for _, worker := range workers {
-		_, err := tx.ExecContext(ctx, query,
-			worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
-			worker.OutRecogTime, worker.WorkState, worker.CompareState, worker.WorkHour,
-			worker.RegUser, worker.RegUno, agent, worker.Sno, worker.Jno, worker.UserId,
-			worker.UserNm, fmt.Sprintf("%%%s%%", worker.Department.String),
-		)
-		if err != nil {
-			return fmt.Errorf("AddDailyWorkers fail: %w", err)
+		var dummy int
+		err := db.QueryRowxContext(ctx, existsQuery,
+			worker.Sno, worker.Jno, worker.UserId, worker.UserNm, fmt.Sprintf("%%%s%%", worker.Department.String),
+		).Scan(&dummy)
+
+		if err == nil {
+			// 조건 통과 → INSERT 시도
+			_, err := tx.ExecContext(ctx, insertQuery,
+				worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
+				worker.OutRecogTime, worker.WorkState, worker.CompareState, worker.WorkHour,
+				worker.RegUser, worker.RegUno, agent,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("AddDailyWorkers insert fail: %w", err)
+			}
+			// 통과된 항목만 슬라이스에 append
+			copied := worker // 새 인스턴스를 만들어야 주소 복사 문제 방지됨
+			copied.ModUser = worker.RegUser
+			copied.ModUno = worker.RegUno
+			copied.Message = utils.ParseNullString(fmt.Sprintf("[ADD DATA]in_recog_time: %v|out_recog_time: %v|work_hour: %v",
+				worker.InRecogTime.Time.Format("15:04:05"),
+				worker.OutRecogTime.Time.Format("15:04:05"),
+				worker.WorkHour.Float64,
+			))
+			insertedWorkers = append(insertedWorkers, &copied)
 		}
 	}
-	return nil
+
+	return insertedWorkers, nil
 }

@@ -284,7 +284,7 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 			Department:   utils.ParseNullString(excel.Department),
 			UserNm:       utils.ParseNullString(excel.UserNm),
 			UserId:       utils.ParseNullString(excel.Phone),
-			RecordDate:   utils.ParseNullTime(excel.WorkDate),
+			RecordDate:   utils.ParseNullDate(excel.WorkDate),
 			InRecogTime:  utils.ParseNullDateTime(excel.WorkDate, utils.NormalizeHHMM(excel.InTime)),
 			OutRecogTime: utils.ParseNullDateTime(excel.WorkDate, utils.NormalizeHHMM(excel.OutTime)),
 			WorkHour:     utils.ParseNullFloat(excel.WorkHour),
@@ -315,8 +315,13 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 		}
 	}()
 
-	if err = s.WorkerStore.AddDailyWorkers(ctx, tx, workers); err != nil {
+	var list entity.WorkerDailys
+	if list, err = s.WorkerStore.AddDailyWorkers(ctx, s.SafeDB, tx, workers); err != nil {
 		return fmt.Errorf("ImportAddDailyWorker: failed to add daily workers: %w", err)
+	}
+
+	if err = s.WorkerStore.MergeSiteBaseWorkerLog(ctx, tx, list); err != nil {
+		return fmt.Errorf("ImportAddDailyWorker: failed to merge site base worker log: %w", err)
 	}
 
 	return

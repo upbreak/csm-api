@@ -142,7 +142,7 @@ type WorkerStore interface {
 	DeleteWorkerOverTime(ctx context.Context, tx Execer, cno null.Int) error
 	RemoveSiteBaseWorkers(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	ModifyDeadlineCancel(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
-	AddDailyWorkers(ctx context.Context, tx Execer, workers []entity.WorkerDaily) error
+	AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers []entity.WorkerDaily) (entity.WorkerDailys, error)
 }
 
 type WorkHourStore interface {
