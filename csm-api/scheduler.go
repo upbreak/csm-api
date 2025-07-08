@@ -51,9 +51,10 @@ func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
 			Store:   &r,
 		},
 		ProjectSettingService: &service.ServiceProjectSetting{
-			SafeDB:  safeDb,
-			SafeTDB: safeDb,
-			Store:   &r,
+			SafeDB:        safeDb,
+			SafeTDB:       safeDb,
+			Store:         &r,
+			WorkHourStore: &r,
 		},
 
 		cron: c,
