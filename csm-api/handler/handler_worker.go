@@ -357,3 +357,27 @@ func (h *HandlerWorker) SiteBaseDeadlineCancel(w http.ResponseWriter, r *http.Re
 	}
 	SuccessResponse(ctx, w)
 }
+
+// 프로젝트, 기간내 모든 현장근로자 근태정보 조회
+func (h *HandlerWorker) DailyWorkersByJnoAndDate(w http.ResponseWriter, r *http.Request) {
+	jnoString := r.URL.Query().Get("jno")
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	if jnoString == "" || startDate == "" || endDate == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	param := entity.RecordDailyWorkerReq{
+		Jno:       utils.ParseNullInt(jnoString),
+		StartDate: utils.ParseNullString(startDate),
+		EndDate:   utils.ParseNullString(endDate),
+	}
+
+	list, err := h.Service.GetDailyWorkersByJnoAndDate(r.Context(), param)
+	if err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessValuesResponse(r.Context(), w, list)
+}

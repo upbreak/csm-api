@@ -821,3 +821,31 @@ func (r *Repository) AddDailyWorkers(ctx context.Context, db Queryer, tx Execer,
 
 	return insertedWorkers, nil
 }
+
+// 프로젝트, 기간내 모든 현장근로자 근태정보 조회
+func (r *Repository) GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error) {
+	var list []entity.RecordDailyWorkerRes
+
+	query := `
+		SELECT 
+			T3.JOB_NAME,
+			T1.USER_NM,
+			T1.DEPARTMENT,
+			T1.USER_ID AS PHONE,
+			T2.RECORD_DATE,
+			T2.IN_RECOG_TIME,
+			T2.OUT_RECOG_TIME,
+			T2.WORK_HOUR,
+			T2.IS_DEADLINE 
+		FROM IRIS_WORKER_SET T1
+		LEFT JOIN IRIS_WORKER_DAILY_SET T2 ON T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
+		LEFT JOIN S_JOB_INFO T3 ON T2.JNO = T3.JNO
+		WHERE T2.JNO = :1
+		AND TO_CHAR(T2.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
+		AND T2.COMPARE_STATE IN ('S', 'X')`
+
+	if err := db.SelectContext(ctx, &list, query, param.Jno, param.StartDate, param.EndDate); err != nil {
+		return list, fmt.Errorf("GetDailyWorkersByJnoAndDate fail: %w", err)
+	}
+	return list, nil
+}

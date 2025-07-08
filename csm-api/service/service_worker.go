@@ -444,3 +444,12 @@ func (s *ServiceWorker) ModifyDeadlineCancel(ctx context.Context, workers entity
 
 	return
 }
+
+// 프로젝트, 기간내 모든 현장근로자 근태정보 조회
+func (s *ServiceWorker) GetDailyWorkersByJnoAndDate(ctx context.Context, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error) {
+	list, err := s.Store.GetDailyWorkersByJnoAndDate(ctx, s.SafeDB, param)
+	if err != nil {
+		return []entity.RecordDailyWorkerRes{}, fmt.Errorf("service_worker;GetDailyWorkersByJnoAndDate err: %v", err)
+	}
+	return list, nil
+}
