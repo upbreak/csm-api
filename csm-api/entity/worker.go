@@ -70,3 +70,45 @@ type WorkerDailyExcel struct {
 	OutTime    string
 	WorkHour   string
 }
+
+type RecordDailyWorkerReq struct {
+	Jno       null.Int    `json:"jno" db:"JNO"`
+	StartDate null.String `json:"start_date" db:"START_DATE"`
+	EndDate   null.String `json:"end_date" db:"END_DATE"`
+}
+
+type RecordDailyWorkerRes struct {
+	JobName      null.String `json:"job_name" db:"JOB_NAME"`
+	UserNm       null.String `json:"user_nm" db:"USER_NM"`
+	Department   null.String `json:"department" db:"DEPARTMENT"`
+	Phone        null.String `json:"phone" db:"PHONE"`
+	RecordDate   null.Time   `json:"record_date" db:"RECORD_DATE"`
+	InRecogTime  null.Time   `json:"in_recog_time" db:"IN_RECOG_TIME"`
+	OutRecogTime null.Time   `json:"out_recog_time" db:"OUT_RECOG_TIME"`
+	WorkHour     null.Float  `json:"work_hour" db:"WORK_HOUR"`
+	IsDeadline   null.String `json:"is_deadline" db:"IS_DEADLINE"`
+}
+
+type DailyWorkerExcel struct {
+	StartDate   string        `json:"start_date" db:"START_DATE"`
+	EndDate     string        `json:"end_date" db:"END_DATE"`
+	WorkerExcel []WorkerExcel `json:"worker_excel"`
+}
+
+type WorkerExcel struct {
+	JobName         string            `json:"job_name" db:"JOB_NAME"`
+	UserNm          string            `json:"user_nm" db:"USER_NM"`
+	Department      string            `json:"department" db:"DEPARTMENT"`
+	Phone           string            `json:"phone" db:"PHONE"`
+	SumWorkHour     float64           `json:"sum_work_hour" db:"SUM_WORK_HOUR"`
+	SumWorkDate     int64             `json:"sum_work_date" db:"SUM_WORK_DATE"`
+	WorkerTimeExcel []WorkerTimeExcel `json:"worker_time_excel"`
+}
+
+type WorkerTimeExcel struct {
+	RecordDate   string  `json:"record_date" db:"RECORD_DATE"`
+	InRecogTime  string  `json:"in_recog_time" db:"IN_RECOG_TIME"`
+	OutRecogTime string  `json:"out_recog_time" db:"OUT_RECOG_TIME"`
+	WorkHour     float64 `json:"work_hour" db:"WORK_HOUR"`
+	IsDeadline   string  `json:"is_deadline" db:"IS_DEADLINE"`
+}

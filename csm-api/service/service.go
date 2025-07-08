@@ -126,6 +126,7 @@ type WorkerService interface {
 	ModifyWorkerOverTime(ctx context.Context) (int, error)
 	RemoveSiteBaseWorkers(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) error
+	GetDailyWorkersByJnoAndDate(ctx context.Context, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error)
 }
 
 type WorkHourService interface {

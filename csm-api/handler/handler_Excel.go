@@ -6,6 +6,7 @@ import (
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
+	"encoding/json"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/xuri/excelize/v2"
@@ -254,7 +255,7 @@ func (h *HandlerExcel) ExportExcel(w http.ResponseWriter, r *http.Request) {
 
 	// 파일 스트림 복사
 	if _, err = io.Copy(w, f); err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("파일 전송 실패: %v", err))
+		FailResponse(r.Context(), w, fmt.Errorf("failed to copy file stream: %v", err))
 		return
 	}
 }
@@ -360,7 +361,215 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 
 	// 파일 출력
 	if err := f.Write(w); err != nil {
-		http.Error(w, "엑셀 파일 생성 실패", http.StatusInternalServerError)
+		FailResponse(r.Context(), w, fmt.Errorf("excel file write error: %v", err))
+		return
+	}
+}
+
+// 근로자 근태기록 엑셀 export
+func (h *HandlerExcel) DailyWorkerRecordExcelExport(w http.ResponseWriter, r *http.Request) {
+	f := excelize.NewFile()
+	sheet := "Sheet1"
+
+	// JSON 바인딩
+	var input entity.DailyWorkerExcel
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		RespondJSON(
+			r.Context(),
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        BodyDataParseError,
+				HttpStatusCode: http.StatusInternalServerError,
+			},
+			http.StatusOK)
+		return
+	}
+
+	// 날짜 범위 생성
+	const layout = "2006-01-02"
+	startDate, _ := time.Parse(layout, input.StartDate)
+	endDate, _ := time.Parse(layout, input.EndDate)
+
+	var dates []time.Time
+	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
+		dates = append(dates, d)
+	}
+
+	// 스타일 정의
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"#C6EFCE"}},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+
+	borderStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+
+	italicBorderStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Italic: true},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+
+	boldBorderStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 2},
+			{Type: "right", Color: "000000", Style: 2},
+			{Type: "top", Color: "000000", Style: 2},
+			{Type: "bottom", Color: "000000", Style: 2},
+		},
+	})
+
+	// 고정 헤더 생성 및 병합
+	fixedHeaders := []string{"No.", "프로젝트명", "이름", "부서/조직명", "휴대폰", "근무일수", "공수"}
+	for i, h := range fixedHeaders {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+	}
+
+	for col := 1; col <= 5; col++ {
+		colName, _ := excelize.ColumnNumberToName(col)
+		f.MergeCell(sheet, fmt.Sprintf("%s1", colName), fmt.Sprintf("%s2", colName))
+	}
+
+	f.MergeCell(sheet, "F1", "G1")
+	f.SetCellValue(sheet, "F1", "소계")
+	f.SetCellValue(sheet, "F2", "근무일수")
+	f.SetCellValue(sheet, "G2", "공수")
+
+	for i, date := range dates {
+		baseCol := len(fixedHeaders) + i*3 + 1
+		dateStr := date.Format("2006-01-02")
+
+		colStart, _ := excelize.ColumnNumberToName(baseCol)
+		colMid, _ := excelize.ColumnNumberToName(baseCol + 1)
+		colEnd, _ := excelize.ColumnNumberToName(baseCol + 2)
+
+		f.MergeCell(sheet, fmt.Sprintf("%s1", colStart), fmt.Sprintf("%s1", colEnd))
+		f.SetCellValue(sheet, fmt.Sprintf("%s1", colStart), dateStr)
+		f.SetCellValue(sheet, fmt.Sprintf("%s2", colStart), "출근시간")
+		f.SetCellValue(sheet, fmt.Sprintf("%s2", colMid), "퇴근시간")
+		f.SetCellValue(sheet, fmt.Sprintf("%s2", colEnd), "공수")
+		_ = f.SetCellStyle(sheet, fmt.Sprintf("%s1", colStart), fmt.Sprintf("%s2", colEnd), boldBorderStyle)
+	}
+
+	lastCol := len(fixedHeaders) + len(dates)*3
+	lastColName, _ := excelize.ColumnNumberToName(lastCol)
+	f.SetCellStyle(sheet, "A1", fmt.Sprintf("%s2", lastColName), headerStyle)
+
+	// 이탤릭체 셀을 기록할 맵
+	italicCells := make(map[string]bool)
+
+	for i, worker := range input.WorkerExcel {
+		row := i + 3
+
+		// 기본 정보
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), i+1)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), worker.JobName)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), worker.UserNm)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), worker.Department)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), worker.Phone)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), worker.SumWorkDate)
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), worker.SumWorkHour)
+
+		// 날짜별 근무 기록 맵
+		timeMap := make(map[string]entity.WorkerTimeExcel)
+		for _, wt := range worker.WorkerTimeExcel {
+			timeMap[wt.RecordDate] = wt
+		}
+
+		for j, d := range dates {
+			key := d.Format("2006-01-02")
+			wt, ok := timeMap[key]
+
+			baseCol := len(fixedHeaders) + j*3 + 1
+			inCol, _ := excelize.ColumnNumberToName(baseCol)
+			outCol, _ := excelize.ColumnNumberToName(baseCol + 1)
+			hourCol, _ := excelize.ColumnNumberToName(baseCol + 2)
+
+			if ok {
+				style := borderStyle
+				if wt.IsDeadline != "Y" {
+					style = italicBorderStyle
+				}
+
+				if wt.InRecogTime != "" {
+					cell := fmt.Sprintf("%s%d", inCol, row)
+					f.SetCellValue(sheet, cell, wt.InRecogTime)
+					f.SetCellStyle(sheet, cell, cell, style)
+					if style == italicBorderStyle {
+						italicCells[cell] = true
+					}
+				}
+
+				if wt.OutRecogTime != "" {
+					cell := fmt.Sprintf("%s%d", outCol, row)
+					f.SetCellValue(sheet, cell, wt.OutRecogTime)
+					f.SetCellStyle(sheet, cell, cell, style)
+					if style == italicBorderStyle {
+						italicCells[cell] = true
+					}
+				}
+
+				if wt.WorkHour != 0 {
+					cell := fmt.Sprintf("%s%d", hourCol, row)
+					f.SetCellValue(sheet, cell, wt.WorkHour)
+					f.SetCellStyle(sheet, cell, cell, style)
+					if style == italicBorderStyle {
+						italicCells[cell] = true
+					}
+				}
+			}
+		}
+	}
+
+	// 모든 셀에 테두리 스타일 적용 (단, 이탤릭 셀은 제외)
+	for i := 0; i < len(input.WorkerExcel); i++ {
+		row := i + 3
+		for col := 1; col <= lastCol; col++ {
+			colName, _ := excelize.ColumnNumberToName(col)
+			cell := fmt.Sprintf("%s%d", colName, row)
+			if !italicCells[cell] {
+				f.SetCellStyle(sheet, cell, cell, borderStyle)
+			}
+		}
+	}
+
+	start := strings.ReplaceAll(input.StartDate, "-", "")
+	end := strings.ReplaceAll(input.EndDate, "-", "")
+	var fileName string
+	if start == end {
+		fileName = fmt.Sprintf("근로자 근태기록_%s.xlsx", start)
+	} else {
+		fileName = fmt.Sprintf("근로자 근태기록_%s_%s.xlsx", start, end)
+	}
+	embeddedName := url.PathEscape(fileName)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename*=UTF-8''%s", embeddedName))
+	w.Header().Set("File-Name", fileName)
+	w.Header().Set("Content-Transfer-Encoding", "binary")
+	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition, File-Name")
+	if err := f.Write(w); err != nil {
+		FailResponse(r.Context(), w, fmt.Errorf("excel file write error: %v", err))
 		return
 	}
 }
