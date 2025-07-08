@@ -60,6 +60,12 @@ func run(ctx context.Context) error {
 	}
 	cleanup = append(cleanup, func() { timesheetCleanup() })
 
+	// api config 생성
+	apiCfg, err := config.GetApiConfig()
+	if err != nil {
+		return fmt.Errorf("config.ApiConfig: %w", err)
+	}
+
 	defer func() {
 		for _, clean := range cleanup {
 			clean()
@@ -87,7 +93,7 @@ func run(ctx context.Context) error {
 	server := NewServer(l, mux)
 
 	// scheduler 생성
-	scheduler, err := NewScheduler(safeDb)
+	scheduler, err := NewScheduler(safeDb, apiCfg)
 	if err != nil {
 		return fmt.Errorf("NewScheduler fail: %w", err)
 	}

@@ -197,3 +197,7 @@ type ExcelStore interface {
 	GetDeductionOrder(ctx context.Context, db Queryer, tbm entity.Deduction) (string, error)
 	AddDeductionExcel(ctx context.Context, tx Execer, tbm []entity.Deduction) error
 }
+
+type WeatherStore interface {
+	SaveWeather(ctx context.Context, tx Execer, weather entity.Weather) error
+}

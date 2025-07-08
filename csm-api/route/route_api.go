@@ -20,9 +20,13 @@ func ApiRoute(apiConfig *config.ApiConfig, safeDB *sqlx.DB, r *store.Repository)
 	}
 
 	// 기상청 초단기 실황
-	handlerWhetherSrt := &handler.HandlerWhetherSrtNcst{
-		Service: &service.ServiceWhether{
-			ApiKey: apiConfig,
+	handlerWeatherSrt := &handler.HandlerWeatherSrtNcst{
+		Service: &service.ServiceWeather{
+			ApiKey:       apiConfig,
+			SafeDB:       safeDB,
+			SafeTDB:      safeDB,
+			Store:        r,
+			SitePosStore: r,
 		},
 		SitePosService: &service.ServiceSitePos{
 			DB:    safeDB,
@@ -31,9 +35,13 @@ func ApiRoute(apiConfig *config.ApiConfig, safeDB *sqlx.DB, r *store.Repository)
 	}
 
 	// 기상청 기상특보통보문 조회
-	handlerWhetherWrn := &handler.HandlerWhetherWrnMsg{
-		Service: &service.ServiceWhether{
-			ApiKey: apiConfig,
+	handlerWeatherWrn := &handler.HandlerWeatherWrnMsg{
+		Service: &service.ServiceWeather{
+			ApiKey:       apiConfig,
+			SafeDB:       safeDB,
+			SafeTDB:      safeDB,
+			Store:        r,
+			SitePosStore: r,
 		},
 	}
 
@@ -45,9 +53,10 @@ func ApiRoute(apiConfig *config.ApiConfig, safeDB *sqlx.DB, r *store.Repository)
 	}
 
 	router.Get("/map/point", roadAddressHandler.AddressPoint) // 지도 좌표
-	router.Get("/whether/srt", handlerWhetherSrt.ServeHTTP)   // 기상청 초단기 실황
-	router.Get("/whether/wrn", handlerWhetherWrn.ServeHTTP)   // 기상청 기상특보통보문 조회
+	router.Get("/weather/srt", handlerWeatherSrt.ServeHTTP)   // 기상청 초단기 실황
+	router.Get("/weather/wrn", handlerWeatherWrn.ServeHTTP)   // 기상청 기상특보통보문 조회
 	router.Get("/rest-date", restDatehandler.ServeHTTP)       // 공휴일 조회
+	//router.Get("/weather/") // 날씨
 
 	return router
 }

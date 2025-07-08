@@ -31,8 +31,12 @@ func SiteRoute(safeDB *sqlx.DB, timeSheetDB *sqlx.DB, r *store.Repository, apiCo
 				Store:     r,
 				UserStore: r,
 			},
-			WhetherApiService: &service.ServiceWhether{
-				ApiKey: apiConfig,
+			WeatherApiService: &service.ServiceWeather{
+				ApiKey:       apiConfig,
+				SafeDB:       safeDB,
+				SafeTDB:      safeDB,
+				Store:        r,
+				SitePosStore: r,
 			},
 			AddressSearchAPIService: &service.ServiceAddressSearch{
 				ApiKey: apiConfig,

@@ -143,9 +143,10 @@ type CompanyService interface {
 	GetCompanyInfoList(ctx context.Context, jno int64) (*entity.CompanyInfoResList, error)
 }
 
-type WhetherApiService interface {
-	GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error)
-	GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error)
+type WeatherApiService interface {
+	GetWeatherSrtNcst(date string, time string, nx int, ny int) (entity.WeatherSrtEntityRes, error)
+	GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error)
+	SaveWeather(ctx context.Context) error
 }
 type AddressSearchAPIService interface {
 	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)

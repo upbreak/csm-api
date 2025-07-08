@@ -174,16 +174,16 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 				LEFT JOIN (
 					SELECT DISTINCT JNO
 					FROM IRIS_SCH_REST_SET
-					WHERE TO_DATE(REST_YEAR || LPAD(REST_MONTH, 2, '0') || LPAD(REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(SYSDATE)
+					WHERE TO_DATE(REST_YEAR || LPAD(REST_MONTH, 2, '0') || LPAD(REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:1)
 				) T2 ON T1.JNO = T2.JNO
 				LEFT JOIN (
 					SELECT SNO, COUNT(*) AS WORKER_COUNT
 					FROM IRIS_WORKER_DAILY_SET
-					WHERE TRUNC(RECORD_DATE) = TRUNC(SYSDATE)
+					WHERE TRUNC(RECORD_DATE) = TRUNC(:2)
 					AND WORK_STATE = '01'
 					GROUP BY SNO
 				) T3 ON T1.SNO = T3.SNO`
-	if err := db.SelectContext(ctx, &sites, query, targetDate); err != nil {
+	if err := db.SelectContext(ctx, &sites, query, targetDate, targetDate); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteStatsList fail: %w", err)
 	}
