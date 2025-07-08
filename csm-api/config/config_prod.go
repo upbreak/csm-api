@@ -31,4 +31,9 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to set UPLOAD_PATH: %v", err)
 	}
+
+	err = os.Setenv("LOG_PATH", "tmp/data/csm/logs")
+	if err != nil {
+		log.Fatalf("Failed to set LOG_PATH: %v", err)
+	}
 }

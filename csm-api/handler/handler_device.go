@@ -4,11 +4,8 @@ import (
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
-	"encoding/json"
 	"net/http"
 	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 /**
@@ -82,19 +79,16 @@ func (d *DeviceHandler) List(w http.ResponseWriter, r *http.Request) {
 func (d *DeviceHandler) Add(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	//response 데이터 파싱
-	device := entity.Device{}
-	if err := json.NewDecoder(r.Body).Decode(&device); err != nil {
-		FailResponse(ctx, w, err)
-		return
-	}
+	itemLog, device, err := entity.DecodeItem(r, entity.Device{})
 
 	// 근태인식기 추가
-	err := d.Service.AddDevice(ctx, device)
+	err = d.Service.AddDevice(ctx, device)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}
+
+	entity.WriteLog(itemLog)
 
 	SuccessResponse(ctx, w)
 }
@@ -105,45 +99,37 @@ func (d *DeviceHandler) Add(w http.ResponseWriter, r *http.Request) {
 func (d *DeviceHandler) Modify(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	//response 데이터 파싱
-	device := entity.Device{}
-	if err := json.NewDecoder(r.Body).Decode(&device); err != nil {
-		FailResponse(ctx, w, err)
-		return
-	}
+	itemLog, device, err := entity.DecodeItem(r, entity.Device{})
 
 	// 근태인식기 수정
-	err := d.Service.ModifyDevice(ctx, device)
+	err = d.Service.ModifyDevice(ctx, device)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}
+
+	entity.WriteLog(itemLog)
 
 	SuccessResponse(ctx, w)
 }
 
 // func: 근태인식기 삭제
 // @param
-// - response: url parameter
+// - response: post
 func (d *DeviceHandler) Remove(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// URL에서 {id} 값을 가져오기
-	id := chi.URLParam(r, "id")
-	int64ID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		FailResponse(ctx, w, err)
-		return
-	}
+	itemLog, device, err := entity.DecodeItem(r, entity.Device{})
 
 	// 서비스 호출하여 삭제 처리
-	err = d.Service.RemoveDevice(ctx, int64ID)
+	err = d.Service.RemoveDevice(ctx, device.Dno.Int64)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}
 
-	// 성공 응답
+	entity.WriteLog(itemLog)
+
 	SuccessResponse(ctx, w)
 }
 

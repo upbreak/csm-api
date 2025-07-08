@@ -22,7 +22,7 @@ func DeviceRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	router.Get("/", deviceHandler.List)                            // 조회
 	router.Post("/", deviceHandler.Add)                            // 추가
 	router.Put("/", deviceHandler.Modify)                          // 수정
-	router.Delete("/{id}", deviceHandler.Remove)                   // 삭제
+	router.Post("/delete", deviceHandler.Remove)                   // 삭제
 	router.Get("/check-registered", deviceHandler.CheckRegistered) // 장치 등록 확인
 
 	return router
