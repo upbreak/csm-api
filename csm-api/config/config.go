@@ -10,6 +10,7 @@ type Config struct {
 	Port       int    `env:"PORT" envDefault:"8082"`
 	Domain     string `env:"DOMAIN" envDefault:"localhost"`
 	UploadPath string `env:"UPLOAD_PATH" envDefault:"uploads"`
+	LogPath    string `env:"LOG_PATH" envDefault:"logs"`
 }
 
 // caarlos0/env 패키지를 사용하여 struct의 envDefault값을 환경변수로 넘겨준다.
