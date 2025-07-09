@@ -1,5 +1,6 @@
 package store
 
+import "C"
 import (
 	"context"
 	"csm-api/entity"
@@ -149,6 +150,41 @@ func (r *Repository) GetSupervisorList(ctx context.Context, db Queryer, jno sql.
 					 U.USER_NAME`
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
 		return nil, fmt.Errorf("GetSupervisorList err: %v", err)
+	}
+	return &list, nil
+}
+
+// 조직도 construction 조회
+// 안전보건시스템에 등록되지 않은 관리감독자 조회 용도
+// timeSheet db 사용
+func (r *Repository) GetConstruction(ctx context.Context, db Queryer, jno int64) (*entity.Supervisors, error) {
+	list := entity.Supervisors{}
+
+	query := `
+		SELECT
+			M.UNO,
+			U.USER_NAME,
+			U.USER_ID,
+			SC.CD_NM,
+			U.DUTY_NAME,
+			U.DUTY_CD,
+			U.JOBDUTY_ID,
+			U.JOIN_DATE
+		FROM S_JOB_MEMBER_LIST M
+		JOIN S_SYS_USER_SET U ON M.UNO = U.UNO
+		JOIN SYS_CODE_SET SC ON M.CHARGE = SC.MINOR_CD AND SC.MAJOR_CD = 'MEMBER_CHARGE'
+		WHERE M.COMP_TYPE = 'H'
+		AND U.IS_USE = 'Y'
+		AND M.FUNC_CODE = 510
+		AND M.CHARGE NOT IN (21, 38)
+		AND M.JNO = :1
+		ORDER BY U.DUTY_CD, 
+			 U.JOBDUTY_ID, 
+			 U.JOIN_DATE, 
+			 U.USER_NAME`
+
+	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
+		return nil, fmt.Errorf("GetConstruction err: %v", err)
 	}
 	return &list, nil
 }

@@ -81,6 +81,7 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 		router.Mount("/notice", route.NoticeRoute(safeDb, &r))                  // 공지사항
 		router.Mount("/code", route.CodeRoute(safeDb, &r))                      // 코드
 		router.Mount("/project-setting", route.ProjectSettingRoute(safeDb, &r)) // 프로젝트 설정
+		router.Mount("/user-role", route.UserRoleRoute(safeDb, &r))             // 사용자 권한
 	})
 
 	return c.Handler(mux), nil

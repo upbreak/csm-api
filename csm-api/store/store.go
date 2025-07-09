@@ -157,6 +157,7 @@ type CompanyStore interface {
 	GetSiteManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error)
 	GetSafeManagerList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Managers, error)
 	GetSupervisorList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.Supervisors, error)
+	GetConstruction(ctx context.Context, db Queryer, jno int64) (*entity.Supervisors, error)
 	GetWorkInfoList(ctx context.Context, db Queryer) (*entity.WorkInfos, error)
 	GetCompanyInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.CompanyInfos, error)
 	GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno sql.NullInt64) (*entity.WorkInfos, error)
@@ -203,4 +204,11 @@ type ExcelStore interface {
 type WeatherStore interface {
 	SaveWeather(ctx context.Context, tx Execer, weather entity.Weather) error
 	GetWeatherList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.Weathers, error)
+}
+
+type UserRoleStore interface {
+	GetUserRoleListByUno(ctx context.Context, db Queryer, uno int64) ([]entity.UserRoleMap, error)
+	GetUserRoleListByCodeAndJno(ctx context.Context, db Queryer, code string, jno int64) ([]entity.UserRoleMap, error)
+	AddUserRole(ctx context.Context, tx Execer, userRoles []entity.UserRoleMap) error
+	RemoveUserRole(ctx context.Context, tx Execer, userRoles []entity.UserRoleMap) error
 }

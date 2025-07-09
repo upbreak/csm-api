@@ -20,7 +20,7 @@ func (r *Repository) GetUserValid(ctx context.Context, db Queryer, userId string
 			T2.ROLE_CODE
 		FROM
 			COMMON.V_BIZ_USER_INFO T1
-			LEFT JOIN IRIS_USER_ROLE_MAP T2 ON T1.UNO = T2.USER_UNO
+			LEFT JOIN IRIS_USER_ROLE_MAP T2 ON T1.UNO = T2.USER_UNO AND T2.JNO = 0
 		WHERE T1.IS_USE = 'Y'
 		AND T1.USER_ID = :1
 		AND t1.USER_PWD = :2`

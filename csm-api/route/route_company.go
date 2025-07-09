@@ -13,9 +13,10 @@ func CompanyRoute(safeDB *sqlx.DB, timeSheetDB *sqlx.DB, r *store.Repository) ch
 
 	companyHandler := handler.HandlerCompany{
 		Service: &service.ServiceCompany{
-			SafeDB:      safeDB,
-			TimeSheetDB: timeSheetDB,
-			Store:       r,
+			SafeDB:        safeDB,
+			TimeSheetDB:   timeSheetDB,
+			Store:         r,
+			UserRoleStore: r,
 		},
 	}
 
