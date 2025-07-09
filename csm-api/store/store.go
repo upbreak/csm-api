@@ -200,4 +200,5 @@ type ExcelStore interface {
 
 type WeatherStore interface {
 	SaveWeather(ctx context.Context, tx Execer, weather entity.Weather) error
+	GetWeatherList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.Weathers, error)
 }

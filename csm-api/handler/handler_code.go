@@ -95,7 +95,7 @@ func (h *HandlerCode) Merge(w http.ResponseWriter, r *http.Request) {
 func (h *HandlerCode) Remove(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	idx, err := strconv.ParseInt(r.PathValue("idx"), 0, 64)
+	idx, err := strconv.ParseInt(r.PathValue("idx"), 10, 64)
 	if err != nil {
 		BadRequestResponse(ctx, w)
 		return

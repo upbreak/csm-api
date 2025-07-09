@@ -5,6 +5,7 @@ import (
 	"csm-api/service"
 	"csm-api/utils"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -93,4 +94,55 @@ func (h *HandlerWeatherWrnMsg) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	RespondJSON(ctx, w, &rsp, http.StatusOK)
 
+}
+
+// 저장된 날씨 리스트 불러오기
+type HandlerWeather struct {
+	Service service.WeatherApiService
+}
+
+func (h *HandlerWeather) List(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	sno, err := strconv.ParseInt(r.PathValue("sno"), 10, 64)
+	if err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	targetDateString := r.URL.Query().Get("targetDate")
+	if targetDateString == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	targetDate, err := time.Parse("2006-01-02", targetDateString)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	weathers, err := h.Service.GetWeatherList(ctx, sno, targetDate)
+	if err != nil {
+		RespondJSON(
+			ctx,
+			w,
+			&ErrResponse{
+				Result:         Failure,
+				Message:        err.Error(),
+				Details:        CallApiFailed,
+				HttpStatusCode: http.StatusBadRequest,
+			},
+			http.StatusOK)
+		return
+	}
+
+	rsp := Response{
+		Result: Success,
+		Values: struct {
+			Weathers entity.Weathers `json:"list"`
+		}{Weathers: *weathers},
+	}
+
+	RespondJSON(ctx, w, &rsp, http.StatusOK)
 }

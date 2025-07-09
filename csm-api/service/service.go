@@ -147,6 +147,7 @@ type WeatherApiService interface {
 	GetWeatherSrtNcst(date string, time string, nx int, ny int) (entity.WeatherSrtEntityRes, error)
 	GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error)
 	SaveWeather(ctx context.Context) error
+	GetWeatherList(ctx context.Context, sno int64, targetDate time.Time) (*entity.Weathers, error)
 }
 type AddressSearchAPIService interface {
 	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)

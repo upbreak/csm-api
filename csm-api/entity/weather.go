@@ -73,6 +73,8 @@ type Weather struct {
 	RecogTime null.Time   `json:"recog_time" db:"RECOG_TIME"` // 날씨 측정 시각
 }
 
+type Weathers []*Weather
+
 // func: 풍향 변환 숫자 -> 한글
 // @param
 // - value: 풍향(방위)

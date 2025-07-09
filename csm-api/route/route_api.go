@@ -52,11 +52,21 @@ func ApiRoute(apiConfig *config.ApiConfig, safeDB *sqlx.DB, r *store.Repository)
 		},
 	}
 
+	handlerWeather := &handler.HandlerWeather{
+		Service: &service.ServiceWeather{
+			ApiKey:       apiConfig,
+			SafeDB:       safeDB,
+			SafeTDB:      safeDB,
+			Store:        r,
+			SitePosStore: r,
+		},
+	}
+
 	router.Get("/map/point", roadAddressHandler.AddressPoint) // 지도 좌표
-	router.Get("/weather/srt", handlerWeatherSrt.ServeHTTP)   // 기상청 초단기 실황
+	router.Get("/weather/srt", handlerWeatherSrt.ServeHTTP)   // 기상청 초단기예보
 	router.Get("/weather/wrn", handlerWeatherWrn.ServeHTTP)   // 기상청 기상특보통보문 조회
 	router.Get("/rest-date", restDatehandler.ServeHTTP)       // 공휴일 조회
-	//router.Get("/weather/") // 날씨
+	router.Get("/weather/{sno}", handlerWeather.List)         // 날씨 조회
 
 	return router
 }

@@ -212,6 +212,20 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 	return list, nil
 }
 
+// func: 저장된 날씨 리스트 조회
+// params
+// - sno: 현장 PK
+// - targetDate: 조회할 날짜
+func (s *ServiceWeather) GetWeatherList(ctx context.Context, sno int64, targetDate time.Time) (*entity.Weathers, error) {
+
+	weathers, err := s.Store.GetWeatherList(ctx, s.SafeDB, sno, targetDate)
+	if err != nil {
+		return nil, fmt.Errorf("service_weather/GetWeatherList err: %w", err)
+	}
+
+	return weathers, nil
+}
+
 // func: IRIS_SITE_POS에 저장된 현장 날씨 저장(스케줄러)
 // params:
 // -
@@ -242,6 +256,7 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 
 	for _, site := range list {
 
+		// 장소를 바꿀 수 없는 경우
 		if site.Latitude.Valid == false || site.Longitude.Valid == false {
 			continue
 		}
@@ -260,10 +275,17 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 
 		// weather 형태로 변경
 		weather, convertErr := s.convertWeather(res)
+
 		if convertErr != nil {
 			// TODO: 에러 아카이브
 			err = fmt.Errorf("service_weather/ConvertError: %w", convertErr)
 		}
+
+		// 값이 없는 경우 저장하지 않음
+		if !weather.Lgt.Valid && !weather.Pty.Valid && !weather.Sky.Valid && !weather.Rn1.Valid && !weather.T1h.Valid && !weather.Wsd.Valid && weather.Vec.Valid {
+			continue
+		}
+
 		weather.Sno = site.Sno
 		weather.RecogTime = null.TimeFrom(now)
 
