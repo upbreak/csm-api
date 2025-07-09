@@ -35,7 +35,7 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 // func: 공수 수정 및 추가 (수정 시 기존 공수 삭제 후 새로 넣는 방식)
 // @param
 // - manHours: 공수 정보 배열
-func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) error {
+func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	defer func() {
 		if err != nil {
@@ -62,15 +62,20 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 	}
 
 	// jno에 해당하는 공수 모두 삭제
-	for _, deleteManhour := range *deleteManhours {
-		deleteManhour.Message.Valid = true
-		deleteManhour.Message.String = fmt.Sprintf(`[DELETE] mhno:[before:%d, after: N/A]|work_hour:[before: %d, after: N/A]|man_hour:[before:%.2f, after: N/A]|jno:[before:%d, after: N/A]|etc:[before:%s, after: N/A]`, deleteManhour.Mhno.Int64, deleteManhour.WorkHour.Int64, deleteManhour.ManHour.Float64, deleteManhour.Jno.Int64, deleteManhour.Etc.String)
-		deleteManhour.Base = user
+	if deleteManhours != nil && len(*deleteManhours) > 0 {
+		for _, deleteManhour := range *deleteManhours {
+			if deleteManhour == nil {
+				continue
+			}
+			deleteManhour.Message.Valid = true
+			deleteManhour.Message.String = fmt.Sprintf(`[DELETE] mhno:[before:%d, after: N/A]|work_hour:[before: %d, after: N/A]|man_hour:[before:%.2f, after: N/A]|jno:[before:%d, after: N/A]|etc:[before:%s, after: N/A]`, deleteManhour.Mhno.Int64, deleteManhour.WorkHour.Int64, deleteManhour.ManHour.Float64, deleteManhour.Jno.Int64, deleteManhour.Etc.String)
+			deleteManhour.Base = user
 
-		// 삭제
-		if err = s.DeleteManHour(ctx, deleteManhour.Mhno.Int64, *deleteManhour); err != nil {
-			// TODO: 에러 아카이브
-			return fmt.Errorf("MergeManHours err: %w", err)
+			// 삭제
+			if err = s.DeleteManHour(ctx, deleteManhour.Mhno.Int64, *deleteManhour); err != nil {
+				// TODO: 에러 아카이브
+				return fmt.Errorf("MergeManHours err: %w", err)
+			}
 		}
 	}
 
@@ -94,13 +99,18 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 		}
 	}
 
+	if !user.ModUser.Valid || !user.ModUno.Valid {
+		user.ModUser = utils.ParseNullString("SYSTEM")
+		user.ModUno = utils.ParseNullInt("0")
+	}
+
 	// 공수에 맞춰 근로자 업데이트
 	if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
 		// TODO: 에러 아카이브
 		return fmt.Errorf("service_project_setting/WorkHourStore/: %w", err)
 	}
 
-	return nil
+	return
 }
 
 // func: 프로젝트 설정 정보 추가 및 수정

@@ -57,6 +57,7 @@ func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error)
 			SafeTDB:       safeDb,
 			Store:         &r,
 			WorkHourStore: &r,
+
 		},
 		WeatherService: &service.ServiceWeather{
 			ApiKey:       apiCfg,
@@ -64,6 +65,7 @@ func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error)
 			SafeTDB:      safeDb,
 			Store:        &r,
 			SitePosStore: &r,
+
 		},
 
 		cron: c,

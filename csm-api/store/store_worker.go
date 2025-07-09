@@ -760,3 +760,92 @@ func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, worker
 	}
 	return nil
 }
+
+// 현장근로자 추가
+func (r *Repository) AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers []entity.WorkerDaily) (entity.WorkerDailys, error) {
+	agent := utils.GetAgent()
+
+	existsQuery := `
+		SELECT 1
+		FROM IRIS_WORKER_SET
+		WHERE SNO        = :1
+		  AND JNO        = :2
+		  AND USER_ID    = :3
+		  AND USER_NM    = :4
+		  AND DEPARTMENT LIKE :5
+	`
+
+	insertQuery := `
+		INSERT INTO IRIS_WORKER_DAILY_SET (
+			SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME,
+			OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE,
+			REG_USER, REG_UNO, REG_AGENT
+		)
+		VALUES (
+			:1, :2, :3, :4, :5,
+			:6, :7, :8, :9, SYSDATE,
+			:10, :11, :12
+		)
+	`
+
+	var insertedWorkers entity.WorkerDailys
+
+	for _, worker := range workers {
+		var dummy int
+		err := db.QueryRowxContext(ctx, existsQuery,
+			worker.Sno, worker.Jno, worker.UserId, worker.UserNm, fmt.Sprintf("%%%s%%", worker.Department.String),
+		).Scan(&dummy)
+
+		if err == nil {
+			// 조건 통과 → INSERT 시도
+			_, err := tx.ExecContext(ctx, insertQuery,
+				worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
+				worker.OutRecogTime, worker.WorkState, worker.CompareState, worker.WorkHour,
+				worker.RegUser, worker.RegUno, agent,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("AddDailyWorkers insert fail: %w", err)
+			}
+			// 통과된 항목만 슬라이스에 append
+			copied := worker // 새 인스턴스를 만들어야 주소 복사 문제 방지됨
+			copied.ModUser = worker.RegUser
+			copied.ModUno = worker.RegUno
+			copied.Message = utils.ParseNullString(fmt.Sprintf("[ADD DATA]in_recog_time: %v|out_recog_time: %v|work_hour: %v",
+				worker.InRecogTime.Time.Format("15:04:05"),
+				worker.OutRecogTime.Time.Format("15:04:05"),
+				worker.WorkHour.Float64,
+			))
+			insertedWorkers = append(insertedWorkers, &copied)
+		}
+	}
+
+	return insertedWorkers, nil
+}
+
+// 프로젝트, 기간내 모든 현장근로자 근태정보 조회
+func (r *Repository) GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error) {
+	var list []entity.RecordDailyWorkerRes
+
+	query := `
+		SELECT 
+			T3.JOB_NAME,
+			T1.USER_NM,
+			T1.DEPARTMENT,
+			T1.USER_ID AS PHONE,
+			T2.RECORD_DATE,
+			T2.IN_RECOG_TIME,
+			T2.OUT_RECOG_TIME,
+			T2.WORK_HOUR,
+			T2.IS_DEADLINE 
+		FROM IRIS_WORKER_SET T1
+		LEFT JOIN IRIS_WORKER_DAILY_SET T2 ON T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
+		LEFT JOIN S_JOB_INFO T3 ON T2.JNO = T3.JNO
+		WHERE T2.JNO = :1
+		AND TO_CHAR(T2.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
+		AND T2.COMPARE_STATE IN ('S', 'X')`
+
+	if err := db.SelectContext(ctx, &list, query, param.Jno, param.StartDate, param.EndDate); err != nil {
+		return list, fmt.Errorf("GetDailyWorkersByJnoAndDate fail: %w", err)
+	}
+	return list, nil
+}

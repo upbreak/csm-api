@@ -37,12 +37,17 @@ func ParseNullFloat(s string) null.Float {
 	return null.NewFloat(f, true)
 }
 
-func ParseNullTime(s string) null.Time {
+func ParseNullDate(s string) null.Time {
 	if s == "" {
 		return null.NewTime(time.Time{}, false)
 	}
 
-	t, err := time.Parse("2006-01-02", s)
+	loc, err := time.LoadLocation("Asia/Seoul") // 명시적으로 KST 지정
+	if err != nil {
+		loc = time.FixedZone("KST", 9*60*60) // Fallback
+	}
+
+	t, err := time.ParseInLocation("2006-01-02", s, loc) // ← 여기 핵심
 	if err != nil {
 		return null.NewTime(time.Time{}, false)
 	}

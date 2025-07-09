@@ -127,6 +127,7 @@ type WorkerService interface {
 	ModifyWorkerOverTime(ctx context.Context) (int, error)
 	RemoveSiteBaseWorkers(ctx context.Context, workers entity.WorkerDailys) error
 	ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) error
+	GetDailyWorkersByJnoAndDate(ctx context.Context, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error)
 }
 
 type WorkHourService interface {
@@ -173,6 +174,7 @@ type ScheduleService interface {
 type ExcelService interface {
 	ImportTbm(ctx context.Context, path string, tbm entity.Tbm) error
 	ImportDeduction(ctx context.Context, path string, deduction entity.Deduction) error
+	ImportAddDailyWorker(ctx context.Context, path string, worker entity.WorkerDaily) error
 }
 
 type UploadFileService interface {
