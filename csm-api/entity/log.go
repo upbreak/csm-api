@@ -12,36 +12,49 @@ import (
 )
 
 type ItemLogEntry struct {
-	Time     string                 `json:"time"`
-	Type     string                 `json:"type"`
-	Menu     string                 `json:"menu"`
-	UserName string                 `json:"user_name"`
-	UserUno  int64                  `json:"user_uno"`
-	Record   map[string]interface{} `json:"record"`
-	Item     map[string]interface{} `json:"item"`
+	Time     string                   `json:"time"`
+	Type     string                   `json:"type"`
+	Menu     string                   `json:"menu"`
+	UserName string                   `json:"user_name"`
+	UserUno  int64                    `json:"user_uno"`
+	Record   map[string]interface{}   `json:"record"`
+	Item     map[string]interface{}   `json:"item"`
+	Items    []map[string]interface{} `json:"items"`
 }
 
 func DecodeItem[T any](r *http.Request, model T) (*ItemLogEntry, T, error) {
 	var itemLog ItemLogEntry
 	var result T
 
-	// 1. 전체 요청 파싱
 	if err := json.NewDecoder(r.Body).Decode(&itemLog); err != nil {
 		return nil, result, err
 	}
 
-	// 2. itemLog.Item → JSON
-	b, err := json.Marshal(itemLog.Item)
-	if err != nil {
-		return &itemLog, result, err
+	// 1. 우선 items 배열로 처리 시도
+	if itemLog.Items != nil {
+		b, err := json.Marshal(itemLog.Items)
+		if err != nil {
+			return &itemLog, result, err
+		}
+		if err := json.Unmarshal(b, &result); err != nil {
+			return &itemLog, result, err
+		}
+		return &itemLog, result, nil
 	}
 
-	// 3. JSON → 원하는 타입(T)
-	if err := json.Unmarshal(b, &result); err != nil {
-		return &itemLog, result, err
+	// 2. item 단일 객체 처리
+	if itemLog.Item != nil {
+		b, err := json.Marshal(itemLog.Item)
+		if err != nil {
+			return &itemLog, result, err
+		}
+		if err := json.Unmarshal(b, &result); err != nil {
+			return &itemLog, result, err
+		}
+		return &itemLog, result, nil
 	}
 
-	return &itemLog, result, nil
+	return &itemLog, result, fmt.Errorf("no item or items field found")
 }
 
 // 성공한 요청만 로그 파일에 기록 (에러는 콘솔 출력)

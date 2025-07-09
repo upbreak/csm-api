@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/guregu/null"
 )
 
 /**
@@ -20,9 +21,10 @@ import (
  */
 
 type ServiceCompany struct {
-	SafeDB      store.Queryer
-	TimeSheetDB store.Queryer
-	Store       store.CompanyStore
+	SafeDB        store.Queryer
+	TimeSheetDB   store.Queryer
+	Store         store.CompanyStore
+	UserRoleStore store.UserRoleStore
 }
 
 // func: job 정보 조회
@@ -68,12 +70,61 @@ func (s *ServiceCompany) GetSafeManagerList(ctx context.Context, jno int64) (*en
 // - jno int64: 프로젝트 고유번호
 func (s *ServiceCompany) GetSupervisorList(ctx context.Context, jno int64) (*entity.Supervisors, error) {
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
+	// 안전보건시스템에 등록된 관리감독자
 	list, err := s.Store.GetSupervisorList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
 		return nil, fmt.Errorf("service_company/GetSupervisorList err: %w", err)
 	}
 
-	return list, nil
+	// 조직도에 등록된 construction
+	cList, err := s.Store.GetConstruction(ctx, s.TimeSheetDB, jno)
+	if err != nil {
+		return nil, fmt.Errorf("service_company/GetConstruction err: %w", err)
+	}
+
+	rList, err := s.UserRoleStore.GetUserRoleListByCodeAndJno(ctx, s.SafeDB, "TEMP_SITE_MANAGER", jno)
+	if err != nil {
+		return nil, fmt.Errorf("service_company/GetUserRoleListByCodeAndJno err: %w", err)
+	}
+
+	// 현장관리자 권한 셋팅
+	siteManagerMap := make(map[int64]struct{})
+	for _, role := range rList {
+		if role.UserUno.Valid && role.RoleCode.Valid {
+			if role.RoleCode.String == "TEMP_SITE_MANAGER" {
+				siteManagerMap[role.UserUno.Int64] = struct{}{}
+			}
+		}
+	}
+	for _, user := range *cList {
+		if user != nil && user.Uno.Valid {
+			if _, ok := siteManagerMap[user.Uno.Int64]; ok {
+				user.IsSiteManager = null.StringFrom("Y")
+			} else {
+				user.IsSiteManager = null.StringFrom("N")
+			}
+		}
+	}
+
+	// 공종 셋팅
+	funcNoMap := make(map[int64]null.String)
+	for _, sup := range *list {
+		if sup != nil && sup.Uno.Valid {
+			funcNoMap[sup.Uno.Int64] = sup.FuncNo
+		}
+	}
+	for _, cs := range *cList {
+		if cs != nil && cs.Uno.Valid {
+			if fn, exists := funcNoMap[cs.Uno.Int64]; exists {
+				cs.FuncNo = fn
+				cs.SysSafe = null.StringFrom("Y")
+			} else {
+				cs.SysSafe = null.StringFrom("N")
+			}
+		}
+	}
+
+	return cList, nil
 }
 
 // func: 공종 정보 조회

@@ -187,3 +187,10 @@ type CompareService interface {
 	GetCompareList(ctx context.Context, compare entity.Compare, retry string, order string) ([]entity.Compare, error)
 	ModifyWorkerCompareApply(ctx context.Context, workers entity.WorkerDailys) error
 }
+
+type UserRoleService interface {
+	GetUserRoleListByUno(ctx context.Context, uno int64) ([]entity.UserRoleMap, error)
+	GetUserRoleListByCodeAndJno(ctx context.Context, code string, jno int64) ([]entity.UserRoleMap, error)
+	AddUserRole(ctx context.Context, userRoles []entity.UserRoleMap) error
+	RemoveUserRole(ctx context.Context, userRoles []entity.UserRoleMap) error
+}
