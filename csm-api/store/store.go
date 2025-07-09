@@ -19,7 +19,7 @@ type GetUserValidStore interface {
 }
 
 type SiteStore interface {
-	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
+	GetSiteList(ctx context.Context, db Queryer, targetDate time.Time, role int, uno int64) (*entity.Sites, error)
 	GetSiteNmList(ctx context.Context, db Queryer, page entity.PageSql, search entity.Site, nonSite int) (*entity.Sites, error)
 	GetSiteNmCount(ctx context.Context, db Queryer, search entity.Site, nonSite int) (int, error)
 	GetSiteStatsList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error)
@@ -92,6 +92,7 @@ type UserStore interface {
 	GetUserInfoPeList(ctx context.Context, db Queryer, unoList []int) (*entity.UserPeInfos, error)
 	GetSiteRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error)
 	GetOperationalRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error)
+	GetAuthorizationList(ctx context.Context, db Queryer, api string) (*entity.RoleList, error)
 }
 
 type CodeStore interface {
@@ -197,4 +198,9 @@ type ExcelStore interface {
 	GetDeductionSiteNameBySno(ctx context.Context, db Queryer, sno int64) (string, error)
 	GetDeductionOrder(ctx context.Context, db Queryer, tbm entity.Deduction) (string, error)
 	AddDeductionExcel(ctx context.Context, tx Execer, tbm []entity.Deduction) error
+}
+
+type WeatherStore interface {
+	SaveWeather(ctx context.Context, tx Execer, weather entity.Weather) error
+	GetWeatherList(ctx context.Context, db Queryer, sno int64, targetDate time.Time) (*entity.Weathers, error)
 }

@@ -3,6 +3,7 @@ package entity
 import (
 	"csm-api/utils"
 	"github.com/guregu/null"
+	"strings"
 )
 
 type User struct {
@@ -32,3 +33,38 @@ type UserPeInfo struct {
 }
 
 type UserPeInfos []*UserPeInfo
+
+type Role struct {
+	Api        null.String `db:"API"`
+	PermitRole null.String `db:"PERMIT_ROLE"`
+}
+
+type RoleList []*Role
+
+// func: 권한 테이블(IRIS_LIST_PERMIT_ROLE)에서 role이 있는지 확인 후 있으면 ture값 반환, 없으면 false값 반환
+// @param
+// - api: 요청 API에 따라 권한 분리
+// - roles: 역할 문자열(|로 나열된 것)
+func AuthorizationCheck(list RoleList, roles string) bool {
+
+	check := false
+
+	roleList := strings.Split(roles, "|")
+
+	flag := false
+	for _, permit := range list {
+		for _, role := range roleList {
+			if permit.PermitRole.String == role {
+				check = true
+				flag = true
+				break
+			}
+		}
+		if flag {
+			break
+		}
+	}
+
+	return check
+
+}

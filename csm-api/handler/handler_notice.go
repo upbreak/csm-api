@@ -28,15 +28,6 @@ type NoticeHandler struct {
 // - response: hhtp get parameter
 func (n *NoticeHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	uno := r.PathValue("uno")
-	role := utils.ParseNullString(r.URL.Query().Get("role"))
-
-	intUNO := utils.ParseNullInt(uno)
-
-	if uno == "" {
-		BadRequestResponse(ctx, w)
-		return
-	}
 
 	page := entity.Page{}
 	search := entity.Notice{}
@@ -60,13 +51,13 @@ func (n *NoticeHandler) List(w http.ResponseWriter, r *http.Request) {
 	search.Title = utils.ParseNullString(r.URL.Query().Get("title"))
 	search.UserInfo = utils.ParseNullString(r.URL.Query().Get("user_info"))
 
-	notices, err := n.Service.GetNoticeList(ctx, intUNO, role, page, search)
+	notices, err := n.Service.GetNoticeList(ctx, page, search)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	count, err := n.Service.GetNoticeListCount(ctx, intUNO, role, search)
+	count, err := n.Service.GetNoticeListCount(ctx, search)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

@@ -70,7 +70,7 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 		router.Mount("/excel", route.ExcelRoute(safeDb, &r))                    // 엑셀
 		router.Mount("/project", route.ProjectRoute(safeDb, &r))                // 프로젝트
 		router.Mount("/organization", route.OrganiztionRoute(timesheetDb, &r))  // 조직도
-		router.Mount("/site", route.SiteRoute(safeDb, &r, apiCfg))              // 현장
+		router.Mount("/site", route.SiteRoute(safeDb, timesheetDb, &r, apiCfg)) // 현장
 		router.Mount("/worker", route.WorkerRoute(safeDb, &r))                  // 근로자
 		router.Mount("/compare", route.CompareRoute(safeDb, &r))                // 일일 근로자 비교
 		router.Mount("/deadline", route.DeadlineRoute(safeDb, &r))              // 일일마감

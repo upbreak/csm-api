@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"csm-api/clock"
+	"csm-api/config"
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/store"
@@ -27,10 +28,11 @@ type Scheduler struct {
 	WorkHourService       service.WorkHourService
 	ProjectService        service.ProjectService
 	ProjectSettingService service.ProjectSettingService
+	WeatherService        service.WeatherApiService
 	cron                  *cron.Cron
 }
 
-func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
+func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error) {
 	r := store.Repository{Clocker: clock.RealClock{}}
 	c := cron.New(cron.WithSeconds())
 
@@ -55,6 +57,15 @@ func NewScheduler(safeDb *sqlx.DB) (*Scheduler, error) {
 			SafeTDB:       safeDb,
 			Store:         &r,
 			WorkHourStore: &r,
+
+		},
+		WeatherService: &service.ServiceWeather{
+			ApiKey:       apiCfg,
+			SafeDB:       safeDb,
+			SafeTDB:      safeDb,
+			Store:        &r,
+			SitePosStore: &r,
+
 		},
 
 		cron: c,
@@ -121,6 +132,22 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		} else {
 			log.Println("[Scheduler] ModifyWorkHour completed")
 		}
+	})
+	if err != nil {
+		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+	}
+
+	// 8시, 10시, 13시, 15시, 16시, 17시에 시작
+	_, err = s.cron.AddFunc("0 0 8,10,13,15,16,17 * * *", func() {
+		log.Println("[Scheduler] Running SaveWeather")
+
+		err = s.WeatherService.SaveWeather(ctx)
+		if err != nil {
+			log.Printf("[Scheduler] SaveWeather fail: %w", err)
+		} else {
+			log.Printf("[Scheduler] SaveWeather completed")
+		}
+
 	})
 	if err != nil {
 		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)

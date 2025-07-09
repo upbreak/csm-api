@@ -13,9 +13,10 @@ func NoticeRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 
 	noticeHandler := &handler.NoticeHandler{
 		Service: &service.ServiceNotice{
-			SafeDB:  safeDB,
-			SafeTDB: safeDB,
-			Store:   r,
+			SafeDB:    safeDB,
+			SafeTDB:   safeDB,
+			Store:     r,
+			UserStore: r,
 		},
 	}
 

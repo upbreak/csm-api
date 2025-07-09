@@ -47,3 +47,16 @@ func (u *ServiceUser) GetUserRole(ctx context.Context, jno int64, uno int64) (st
 
 	return "", nil
 }
+
+// 각 기능별 권한 리스트 불러오기
+func (u *ServiceUser) GetAuthorizationList(ctx context.Context, api string) (*entity.RoleList, error) {
+
+	list, err := u.Store.GetAuthorizationList(ctx, u.SafeDB, api)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return nil, fmt.Errorf("service_user/GetAuthorizationList err: %w", err)
+	}
+
+	return list, nil
+
+}

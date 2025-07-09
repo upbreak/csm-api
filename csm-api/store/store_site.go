@@ -20,7 +20,7 @@ import (
 // func: 현장 관리 조회
 // @param
 // - targetDate: 현재시간
-func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.Sites, error) {
+func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate time.Time, role int, uno int64) (*entity.Sites, error) {
 	sites := entity.Sites{}
 
 	sql := `
@@ -58,12 +58,13 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 					END AS CURRENT_SITE_STATS
 				FROM IRIS_SITE_SET t1
 				INNER JOIN IRIS_SITE_JOB t2 ON t1.SNO = t2.SNO AND t2.IS_DEFAULT = 'Y'
-				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO
+				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO AND t3.JNO IN (SELECT DISTINCT(JNO) FROM S_JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2)
+				INNER JOIN (SELECT * FROM IRIS_SITE_DATE WHERE TO_DATE(TO_CHAR(:3, 'YYYY-MM-DD'), 'YYYY-MM-DD') BETWEEN NVL(OPENING_DATE, TO_DATE('1025-12-31', 'YYYY-MM-DD')) AND NVL(CLOSING_ACTUAL_DATE, TO_DATE('3025-12-31', 'YYYY-MM-DD'))) t4 ON t1.SNO = t4.SNO
 				WHERE t1.SNO > -1
 				AND t1.IS_USE = 'Y'
 				ORDER BY t1.SNO DESC`
 
-	if err := db.SelectContext(ctx, &sites, sql); err != nil {
+	if err := db.SelectContext(ctx, &sites, sql, role, uno, targetDate); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteList fail: %w", err)
 	}
@@ -173,16 +174,16 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 				LEFT JOIN (
 					SELECT DISTINCT JNO
 					FROM IRIS_SCH_REST_SET
-					WHERE TO_DATE(REST_YEAR || LPAD(REST_MONTH, 2, '0') || LPAD(REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(SYSDATE)
+					WHERE TO_DATE(REST_YEAR || LPAD(REST_MONTH, 2, '0') || LPAD(REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:1)
 				) T2 ON T1.JNO = T2.JNO
 				LEFT JOIN (
 					SELECT SNO, COUNT(*) AS WORKER_COUNT
 					FROM IRIS_WORKER_DAILY_SET
-					WHERE TRUNC(RECORD_DATE) = TRUNC(SYSDATE)
+					WHERE TRUNC(RECORD_DATE) = TRUNC(:2)
 					AND WORK_STATE = '01'
 					GROUP BY SNO
 				) T3 ON T1.SNO = T3.SNO`
-	if err := db.SelectContext(ctx, &sites, query, targetDate); err != nil {
+	if err := db.SelectContext(ctx, &sites, query, targetDate, targetDate); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteStatsList fail: %w", err)
 	}

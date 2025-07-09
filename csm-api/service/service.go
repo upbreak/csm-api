@@ -81,6 +81,7 @@ type ProjectDailyService interface {
 type UserService interface {
 	GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error)
 	GetUserRole(ctx context.Context, jno int64, uno int64) (string, error)
+	GetAuthorizationList(ctx context.Context, api string) (*entity.RoleList, error)
 }
 
 type CodeService interface {
@@ -93,8 +94,8 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context, uno null.Int, role null.String, page entity.Page, search entity.Notice) (*entity.Notices, error)
-	GetNoticeListCount(ctx context.Context, uno null.Int, role null.String, search entity.Notice) (int, error)
+	GetNoticeList(ctx context.Context, page entity.Page, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx null.Int) error
@@ -143,9 +144,11 @@ type CompanyService interface {
 	GetCompanyInfoList(ctx context.Context, jno int64) (*entity.CompanyInfoResList, error)
 }
 
-type WhetherApiService interface {
-	GetWhetherSrtNcst(date string, time string, nx int, ny int) (entity.WhetherSrtEntityRes, error)
-	GetWhetherWrnMsg() (entity.WhetherWrnMsgList, error)
+type WeatherApiService interface {
+	GetWeatherSrtNcst(date string, time string, nx int, ny int) (entity.WeatherSrtEntityRes, error)
+	GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error)
+	SaveWeather(ctx context.Context) error
+	GetWeatherList(ctx context.Context, sno int64, targetDate time.Time) (*entity.Weathers, error)
 }
 type AddressSearchAPIService interface {
 	GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error)
