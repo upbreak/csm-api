@@ -110,7 +110,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
 			log.Printf("[Scheduler] CheckProjectSettings fail: %+v", err)
 		} else if count != 0 {
-			log.Println("[Scheduler] CheckProjectSettings completed")
+			log.Printf("[Scheduler] CheckProjectSettings %d completed \n", count)
 		}
 	})
 	if err != nil {
