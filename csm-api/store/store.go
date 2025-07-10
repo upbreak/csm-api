@@ -145,6 +145,7 @@ type WorkerStore interface {
 	ModifyDeadlineCancel(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 	AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers []entity.WorkerDaily) (entity.WorkerDailys, error)
 	GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error)
+	ModifyWorkHours(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 }
 
 type WorkHourStore interface {

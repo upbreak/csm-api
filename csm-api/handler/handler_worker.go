@@ -381,3 +381,22 @@ func (h *HandlerWorker) DailyWorkersByJnoAndDate(w http.ResponseWriter, r *http.
 	}
 	SuccessValuesResponse(r.Context(), w, list)
 }
+
+// 현장근로자 일괄 공수 변경
+func (h *HandlerWorker) ModifyWorkHours(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logEntry, workers, err := entity.DecodeItem(r, entity.WorkerDailys{})
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	if err = h.Service.ModifyWorkHours(ctx, workers); err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	entity.WriteLog(logEntry)
+	SuccessResponse(ctx, w)
+}
