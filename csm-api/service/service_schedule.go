@@ -35,6 +35,11 @@ func (s *ServiceSchedule) AddRestSchedule(ctx context.Context, schedule entity.R
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;add;Panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;add;Rollback fail: %w", rollbackErr)
@@ -64,6 +69,11 @@ func (s *ServiceSchedule) ModifyRestSchedule(ctx context.Context, schedule entit
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;modify;Panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;modify;Rollback fail: %w", rollbackErr)
@@ -93,6 +103,11 @@ func (s *ServiceSchedule) RemoveRestSchedule(ctx context.Context, cno int64) (er
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;remove;Panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;remove;Rollback fail: %w", rollbackErr)

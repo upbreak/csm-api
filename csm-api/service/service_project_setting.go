@@ -38,6 +38,11 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project_setting/MergeProjectSetting panic error: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				// TODO: 에러 아카이브
@@ -124,6 +129,11 @@ func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project_setting/ModifyProjectSetting panic error: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				// TODO: 에러 아카이브
@@ -252,6 +262,11 @@ func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, m
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project_setting/ModifyProjectSetting panic error: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				// TODO: 에러 아카이브

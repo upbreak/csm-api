@@ -201,6 +201,11 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_site/ModifySite rollback err: %v", rollbackErr)
@@ -297,6 +302,11 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/AddSite panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_site/AddSite rollback err: %v", rollbackErr)
@@ -327,6 +337,11 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSit
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifySiteIsNonUse panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_site/ModifySiteIsNonUse rollback err: %v", rollbackErr)

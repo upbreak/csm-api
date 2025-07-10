@@ -112,6 +112,11 @@ func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) (er
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;AddWorker panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;AddWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -141,6 +146,11 @@ func (s *ServiceWorker) ModifyWorker(ctx context.Context, worker entity.Worker) 
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;ModifyWorker panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -205,6 +215,11 @@ func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;MergeSiteBaseWorker panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;MergeWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -240,6 +255,11 @@ func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;ModifyWorkerDeadline panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -274,6 +294,15 @@ func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				err = fmt.Errorf("service_site/AddSite panic: %v", r)
+				return
+			}
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -313,6 +342,11 @@ func (s *ServiceWorker) ModifyWorkerDeadlineInit(ctx context.Context) (err error
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;ModifyWorkerDeadlineInit panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -351,6 +385,11 @@ func (s *ServiceWorker) ModifyWorkerOverTime(ctx context.Context) (count int, er
 	count = len(*workerOverTimes)
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;ModifyWorkerOverTime panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;ModifyWorker err: %v; rollback err: %v", err, rollbackErr)
@@ -388,6 +427,11 @@ func (s *ServiceWorker) RemoveSiteBaseWorkers(ctx context.Context, workers entit
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker.RemoveSiteBaseWorkers panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker.RemoveSiteBaseWorkers err: %v; rollback err: %v", err, rollbackErr)
@@ -421,6 +465,11 @@ func (s *ServiceWorker) ModifyDeadlineCancel(ctx context.Context, workers entity
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker.ModifyDeadlineCancel panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker.ModifyDeadlineCancel err: %v; rollback err: %v", err, rollbackErr)
@@ -462,6 +511,11 @@ func (s *ServiceWorker) ModifyWorkHours(ctx context.Context, workers entity.Work
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_worker;ModifyWorkHours panic err: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_worker;ModifyWorkHours err: %v; rollback err: %v", err, rollbackErr)

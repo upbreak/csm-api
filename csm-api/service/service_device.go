@@ -68,6 +68,11 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_device/AddDevice Rollback err: %w", rollbackErr)
@@ -97,6 +102,11 @@ func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) 
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_device/ModifyDevice panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				//TODO: 에러 아카이브
@@ -126,6 +136,11 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error)
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_device/RemoveDevice panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_device/RemoveDevice Rollback err: %w", rollbackErr)
