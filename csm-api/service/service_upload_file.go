@@ -44,6 +44,11 @@ func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.Uploa
 		}
 
 		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				err = fmt.Errorf("serviceUploadFile.AddUploadFile panic error: %w", r)
+				return
+			}
 			if err != nil {
 				if rollbackErr := tx.Rollback(); rollbackErr != nil {
 					err = fmt.Errorf("serviceUploadFile.AddUploadFile rollback error: %w", rollbackErr)

@@ -85,6 +85,11 @@ func (s *ServiceExcel) ImportTbm(ctx context.Context, path string, tbm entity.Tb
 			return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
 		}
 		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				err = fmt.Errorf("ImportTbm.failed to panic transaction: %v", r)
+				return
+			}
 			if err != nil {
 				if rollbackErr := tx.Rollback(); rollbackErr != nil {
 					err = fmt.Errorf("ImportTbm.failed to rollback transaction: %w", rollbackErr)
@@ -193,6 +198,11 @@ func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deducti
 		}
 
 		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				err = fmt.Errorf("ImportDeduction: failed to panic transaction: %v", r)
+				return
+			}
 			if err != nil {
 				if rollbackErr := tx.Rollback(); rollbackErr != nil {
 					err = fmt.Errorf("ImportDeduction: failed to rollback transaction: %w", rollbackErr)
@@ -304,6 +314,11 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("ImportAddDailyWorker: failed to panic transaction: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("ImportAddDailyWorker: failed to rollback transaction: %w", rollbackErr)

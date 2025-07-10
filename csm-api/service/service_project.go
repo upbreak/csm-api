@@ -323,6 +323,11 @@ func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProje
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project/AddProject panic error: %w", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_project/AddProject Rollback error: %w", rollbackErr)
@@ -352,6 +357,11 @@ func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entit
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project/ModifyDefaultProject panic error: %w", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_project/ModifyDefaultProject Rollback error: %w", rollbackErr)
@@ -381,6 +391,11 @@ func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.Re
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project/ModifyUseProject panic error: %w", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_project/ModifyUseProject Rollback error: %w", rollbackErr)
@@ -410,6 +425,11 @@ func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_project/RemoveProject panic error: %w", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_project/RemoveProject Rollback error: %w", rollbackErr)

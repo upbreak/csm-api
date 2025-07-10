@@ -56,6 +56,11 @@ func (s *ServiceCode) MergeCode(ctx context.Context, code entity.Code) (err erro
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_code/MergeCode panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_code/MergeCode err: %v\n; rollback err: %w", err, rollbackErr)
@@ -85,6 +90,11 @@ func (s *ServiceCode) RemoveCode(ctx context.Context, idx int64) (err error) {
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_code/RemoveCode panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_code/RemoveCode err: %v\n; rollback err: %w", err, rollbackErr)
@@ -109,7 +119,11 @@ func (s *ServiceCode) RemoveCode(ctx context.Context, idx int64) (err error) {
 func (s *ServiceCode) ModifySortNo(ctx context.Context, codeSorts entity.CodeSorts) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	defer func() {
-
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_code/MergeCode panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				//TODO: 에러 아카이브

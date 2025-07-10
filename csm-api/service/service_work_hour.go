@@ -21,6 +21,11 @@ func (s *ServiceWorkHour) ModifyWorkHourByJno(ctx context.Context, jno int64, us
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_work_hour.ModifyWorkHourByJno panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_work_hour.ModifyWorkHourByJno err: %v; rollback err: %v", err, rollbackErr)
@@ -48,6 +53,11 @@ func (s *ServiceWorkHour) ModifyWorkHour(ctx context.Context, user entity.Base) 
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_work_hour.ModifyWorkHour panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_work_hour.ModifyWorkHour err: %v; rollback err: %v", err, rollbackErr)

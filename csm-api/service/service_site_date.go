@@ -38,6 +38,11 @@ func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDat
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site_date/ModifySiteDate panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_site_date/ModifySiteDate rollback err: %w", rollbackErr)

@@ -102,6 +102,11 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (er
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_notice/AddNotice panic : %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_notice/AddNotice rollback err : %w", rollbackErr)
@@ -130,6 +135,11 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_notice/ModifyNotice panic : %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_notice/ModifyNotice rollback err : %w", rollbackErr)
@@ -159,6 +169,11 @@ func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx null.Int) (err err
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_notice/RemoveNotice panic : %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_notice/RemoveNotice rollback err : %w", rollbackErr)

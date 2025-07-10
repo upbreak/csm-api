@@ -236,6 +236,11 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_weather/SaveWeather panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_weather/SaveWeather rollback err: %v", rollbackErr)
