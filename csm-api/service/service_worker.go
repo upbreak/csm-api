@@ -453,3 +453,35 @@ func (s *ServiceWorker) GetDailyWorkersByJnoAndDate(ctx context.Context, param e
 	}
 	return list, nil
 }
+
+// 현장근로자 일괄 공수 변경
+func (s *ServiceWorker) ModifyWorkHours(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_worker;ModifyWorkHours err: %v", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorkHours err: %v; rollback err: %v", err, rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_worker;ModifyWorkHours err: %v; commit err: %v", err, commitErr)
+			}
+		}
+	}()
+
+	// 공수 변경
+	if err = s.Store.ModifyWorkHours(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker/ModifyWorkHours err: %v", err)
+	}
+
+	// 공수 변경 로그 저장
+	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return fmt.Errorf("service_worker.MergeSiteBaseWorkerLog err: %v", err)
+	}
+
+	return
+}

@@ -849,3 +849,28 @@ func (r *Repository) GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer
 	}
 	return list, nil
 }
+
+// 현장근로자 일괄 공수 변경
+func (r *Repository) ModifyWorkHours(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_WORKER_DAILY_SET
+		SET
+			WORK_HOUR = :1,
+			MOD_DATE = SYSDATE,
+			MOD_AGENT = :2,
+			MOD_USER = :3,
+			MOD_UNO = :4
+		WHERE SNO = :5
+		AND JNO = :6
+		AND USER_ID = :7
+		AND RECORD_DATE = :8`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.WorkHour, agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyWorkHours fail: %w", err)
+		}
+	}
+	return nil
+}
