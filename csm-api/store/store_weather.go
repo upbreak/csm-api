@@ -39,6 +39,7 @@ func (r *Repository) GetWeatherList(ctx context.Context, db Queryer, sno int64, 
 			FROM IRIS_WEATHER
 			WHERE SNO = :1 
 			AND TRUNC(RECOG_TIME) = TO_DATE(TO_CHAR(:2, 'YYYY-MM-DD'), 'YYYY-MM-DD')
+			ORDER BY RECOG_TIME ASC
 		`
 
 	if err := db.SelectContext(ctx, &weathers, query, sno, targetDate); err != nil {

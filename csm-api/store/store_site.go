@@ -45,26 +45,26 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 							SELECT 1
 							FROM IRIS_SCH_REST_SET r
 							WHERE r.JNO = t2.JNO
-							  AND TO_DATE(r.REST_YEAR || LPAD(r.REST_MONTH, 2, '0') || LPAD(r.REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(SYSDATE)
+							  AND TO_DATE(r.REST_YEAR || LPAD(r.REST_MONTH, 2, '0') || LPAD(r.REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:1)
 						) THEN 'H'
 						WHEN (
 							SELECT COUNT(*)
 							FROM IRIS_WORKER_DAILY_SET d
 							WHERE d.SNO = t1.SNO
-							  AND TRUNC(d.RECORD_DATE) = TRUNC(SYSDATE)
+							  AND TRUNC(d.RECORD_DATE) = TRUNC(:2)
 							  AND d.WORK_STATE = '01'
 						) >= 5 THEN 'Y'
 						ELSE 'C'
 					END AS CURRENT_SITE_STATS
 				FROM IRIS_SITE_SET t1
 				INNER JOIN IRIS_SITE_JOB t2 ON t1.SNO = t2.SNO AND t2.IS_DEFAULT = 'Y'
-				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO AND t3.JNO IN (SELECT DISTINCT(JNO) FROM S_JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2)
-				INNER JOIN (SELECT * FROM IRIS_SITE_DATE WHERE TO_DATE(TO_CHAR(:3, 'YYYY-MM-DD'), 'YYYY-MM-DD') BETWEEN NVL(OPENING_DATE, TO_DATE('1025-12-31', 'YYYY-MM-DD')) AND NVL(CLOSING_ACTUAL_DATE, TO_DATE('3025-12-31', 'YYYY-MM-DD'))) t4 ON t1.SNO = t4.SNO
+				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO AND t3.JNO IN (SELECT DISTINCT(M.JNO) FROM S_JOB_MEMBER_LIST M LEFT JOIN JOB_SUBCON_INFO S ON M.JNO = S.JNO WHERE 1 = :3 OR M.UNO = :4 OR S.ID = :5)
+				INNER JOIN (SELECT * FROM IRIS_SITE_DATE WHERE TO_DATE(TO_CHAR(:4, 'YYYY-MM-DD'), 'YYYY-MM-DD') BETWEEN NVL(OPENING_DATE, TO_DATE('1025-12-31', 'YYYY-MM-DD')) AND NVL(CLOSING_ACTUAL_DATE, TO_DATE('3025-12-31', 'YYYY-MM-DD'))) t4 ON t1.SNO = t4.SNO
 				WHERE t1.SNO > -1
 				AND t1.IS_USE = 'Y'
 				ORDER BY t1.SNO DESC`
 
-	if err := db.SelectContext(ctx, &sites, sql, role, uno, targetDate); err != nil {
+	if err := db.SelectContext(ctx, &sites, sql, targetDate, targetDate, role, uno, uno, targetDate); err != nil {
 		//TODO: 에러 아카이브
 		return &sites, fmt.Errorf("getSiteList fail: %w", err)
 	}

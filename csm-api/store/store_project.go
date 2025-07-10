@@ -37,7 +37,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				FROM IRIS_WORKER_DAILY_SET t1
 				LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
 				WHERE t1.SNO > 100
-				AND (:1 IS NULL OR t1.SNO = :2)
+				AND (:1 IS NULL OR t1.SNO = :2) AND t1.RECORD_DATE < :3
 			),
 			worker_counts AS (
 				SELECT
@@ -45,11 +45,11 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 					JNO,
 					COUNT(DISTINCT USER_ID || '-' || RECORD_DATE) AS WORKER_COUNT_ALL,
 					COUNT(DISTINCT CASE 
-									 WHEN RECORD_DATE = TO_CHAR(:3, 'YYYY-MM-DD')
+									 WHEN RECORD_DATE = TO_CHAR(:4, 'YYYY-MM-DD')
 									 THEN USER_ID || '-' || RECORD_DATE
 									 END) AS WORKER_COUNT_DATE,
 					COUNT(DISTINCT CASE 
-									 WHEN RECORD_DATE = TO_CHAR(:4, 'YYYY-MM-DD')
+									 WHEN RECORD_DATE = TO_CHAR(:5, 'YYYY-MM-DD')
 									  AND (INSTR(DEPARTMENT, '하이테크') > 0 
 									   OR INSTR(DEPARTMENT, 'HTENC') > 0 
 									   OR INSTR(DEPARTMENT, 'HTE') > 0
@@ -57,7 +57,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 									 THEN USER_ID || '-' || RECORD_DATE
 									 END) AS WORKER_COUNT_HTENC,
 					COUNT(DISTINCT CASE 
-									 WHEN RECORD_DATE = TO_CHAR(:5, 'YYYY-MM-DD')
+									 WHEN RECORD_DATE = TO_CHAR(:6, 'YYYY-MM-DD')
 									  AND INSTR(DEPARTMENT, '하이테크') = 0
 									  AND INSTR(DEPARTMENT, 'HTENC') = 0
 									  AND INSTR(DEPARTMENT, 'HTE') = 0
@@ -67,7 +67,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 									 THEN USER_ID || '-' || RECORD_DATE
 									 END) AS WORKER_COUNT_MANAGER,
 					COUNT(DISTINCT CASE 
-									 WHEN RECORD_DATE = TO_CHAR(:6, 'YYYY-MM-DD')
+									 WHEN RECORD_DATE = TO_CHAR(:7, 'YYYY-MM-DD')
 									  AND INSTR(DEPARTMENT, '하이테크') = 0
 									  AND INSTR(DEPARTMENT, 'HTENC') = 0
 									  AND INSTR(DEPARTMENT, 'HTE') = 0
@@ -139,9 +139,9 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO AND t1.JNO = wc.JNO
 			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
-			AND (:7 IS NULL OR t1.SNO = :8)
+			AND (:8 IS NULL OR t1.SNO = :9)
 			ORDER BY IS_DEFAULT DESC`
-	if err := db.SelectContext(ctx, &projectInfos, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
+	if err := db.SelectContext(ctx, &projectInfos, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
 		//TODO: 에러 아카이브
 		return &projectInfos, fmt.Errorf("getProjectList fail: %v", err)
 	}
