@@ -27,8 +27,8 @@ func (r *Repository) SaveWeather(ctx context.Context, tx Execer, weather entity.
 			SNO, LGT, PTY, RN1, SKY, T1H, 
 			REH, UUU, VVV, VEC, WSD, RECOG_TIME
 		) VALUES (
-			:1, :3, :4, :5, :6, :7, 
-			:8, :9, :10, :11, :12, :2
+			:3, :4, :5, :6, :7, :8, 
+			:9, :10, :11, :12, :13, :14
 		)
 	`
 
@@ -36,16 +36,18 @@ func (r *Repository) SaveWeather(ctx context.Context, tx Execer, weather entity.
 	if _, err := tx.ExecContext(ctx, query,
 		weather.Sno,       // :1
 		weather.RecogTime, // :2
-		weather.Lgt,       // :3
-		weather.Pty,       // :4
-		weather.Rn1,       // :5
-		weather.Sky,       // :6
-		weather.T1h,       // :7
-		weather.Reh,       // :8
-		weather.Uuu,       // :9
-		weather.Vvv,       // :10
-		weather.Vec,       // :11
-		weather.Wsd,       // :12
+		weather.Sno,       // :3
+		weather.Lgt,       // :4
+		weather.Pty,       // :5
+		weather.Rn1,       // :6
+		weather.Sky,       // :7
+		weather.T1h,       // :8
+		weather.Reh,       // :9
+		weather.Uuu,       // :10
+		weather.Vvv,       // :11
+		weather.Vec,       // :12
+		weather.Wsd,       // :13
+		weather.RecogTime, // :14
 	); err != nil {
 		return fmt.Errorf("SaveWeather err: %w", err)
 	}
