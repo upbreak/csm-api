@@ -114,7 +114,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
 			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] CheckProjectSettings fail: %+v", err))
 		} else if count != 0 {
-			log.Println("[Scheduler] CheckProjectSettings completed")
+			log.Printf("[Scheduler] CheckProjectSettings %d completed \n", count)
 		}
 	})
 	if err != nil {
@@ -138,9 +138,10 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
-	// 8시, 10시, 13시, 15시, 16시, 17시에 시작
-	// 현장별 날씨 저장
-	_, err = s.cron.AddFunc("0 0 8,10,13,15,16,17 * * *", func() {
+
+	// 8시, 10시, 13시, 15시, 17시에 시작
+	_, err = s.cron.AddFunc("0 0 8,10,13,15,17 * * *", func() {
+
 		log.Println("[Scheduler] Running SaveWeather")
 
 		err = s.WeatherService.SaveWeather(ctx)

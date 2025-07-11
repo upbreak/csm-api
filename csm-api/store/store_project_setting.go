@@ -173,6 +173,28 @@ func (r *Repository) GetCheckProjectSetting(ctx context.Context, db Queryer) (pr
 	return
 }
 
+// func: 기본 공수 미설정 정보 조회(스케줄러)
+// @param
+// -
+func (r *Repository) GetCheckProjectManHours(ctx context.Context, db Queryer) (projects *entity.ProjectSettings, err error) {
+	projects = &entity.ProjectSettings{}
+
+	query := `
+				SELECT 
+				    DISTINCT(JNO) 
+				FROM 
+				    IRIS_SITE_JOB 
+				WHERE 
+				    JNO NOT IN (SELECT JNO FROM IRIS_MAN_HOUR)`
+
+	if err = db.SelectContext(ctx, projects, query); err != nil {
+		//TODO: 에러 아카이브
+		return nil, fmt.Errorf("GetCheckProjectSetting err: %w", err)
+	}
+
+	return
+}
+
 // func: 프로젝트 기본 설정 정보 조회
 // @param
 // - jno

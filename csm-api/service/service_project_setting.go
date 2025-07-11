@@ -168,26 +168,35 @@ func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project
 // -
 func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count int, err error) {
 
-	projects := &entity.ProjectSettings{}
-	if projects, err = s.Store.GetCheckProjectSetting(ctx, s.SafeDB); err != nil {
+
+	projectManHours := &entity.ProjectSettings{}
+	if projectManHours, err = s.Store.GetCheckProjectManHours(ctx, s.SafeDB); err != nil {
+		// TODO: 에러 아카이브
+
 		return 0, fmt.Errorf("service_project_setting/CheckProjectSetting error: %w", err)
 	}
-
-	for _, project := range *projects {
-
+	for _, projectManHour := range *projectManHours {
 		// 기본 공수 추가하기
 		manHourMore := &entity.ManHour{}
-		manHourLess := &entity.ManHour{}
 
 		manHourMore.WorkHour = utils.ParseNullInt("8")
 		manHourMore.ManHour = utils.ParseNullFloat("0.5")
-		manHourMore.Jno = project.Jno
-
-		manHours := entity.ManHours{manHourMore, manHourLess}
+		manHourMore.Jno = projectManHour.Jno
+		manHourMore.Message = utils.ParseNullString(fmt.Sprintf("[ADD] jno:[before:N/A, after:%d]|work_hour:[before:N/A, after:8]|man_hour:[before:N/A, after:0.5]|etc:[before:N/A, after:]", projectManHour.Jno.Int64))
+		manHours := entity.ManHours{manHourMore}
 
 		if err = s.MergeManHours(ctx, &manHours); err != nil {
 			return 0, fmt.Errorf("service_manhours/MergeManHours error: %w", err)
 		}
+	}
+
+	projects := &entity.ProjectSettings{}
+	if projects, err = s.Store.GetCheckProjectSetting(ctx, s.SafeDB); err != nil {
+		// TODO: 에러 아카이브
+		return 0, fmt.Errorf("service_project_setting/CheckProjectSetting error: %w", err)
+	}
+
+	for _, project := range *projects {
 
 		// 프로젝트 기본값으로 설정하기
 		setting := &entity.ProjectSetting{}
@@ -198,14 +207,14 @@ func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count 
 		setting.OutTime = null.NewTime(time.Date(2006, 01, 02, 17, 0, 0, 0, loc), true)
 		setting.RespiteTime = utils.ParseNullInt("30")
 		setting.CancelCode = utils.ParseNullString("NO_DAY")
-
+		setting.Message = utils.ParseNullString(fmt.Sprintf("[ADD] jno:[before:N/A, after:%d]|in_time:[before:N/A, after:2006-01-02T08:00:00+09:00]|out_time:[before:N/A, after:2006-01-02T17:00:00+09:00]|respite_time:[before:N/A, after:30]|cancel_code:[before:N/A, after:NO_DAY]", project.Jno.Int64))
 		if err = s.MergeProjectSetting(ctx, *setting); err != nil {
 			return 0, fmt.Errorf("service_project_setting/CheckProjectSetting error: %w", err)
 		}
 
 	}
+	count = (len(*projectManHours) + len(*projects)) / 2
 
-	count = len(*projects)
 	return
 }
 

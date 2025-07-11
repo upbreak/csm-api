@@ -49,7 +49,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 					SELECT 
 						N.IDX,
 						N.JNO, 
-						DECODE(J.JOB_NAME, 'NONE', '전체', J.JOB_NAME) AS JOB_NAME,
+						DECODE(J.JNO, 0, '전체', J.JOB_NAME) AS JOB_NAME,
 						J.JOB_LOC_NAME,
 						N.TITLE, 
 						N.CONTENT, 
@@ -78,7 +78,7 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 						N.IS_USE = 'Y'
 						AND N.POSTING_START_DATE <= SYSDATE
 						AND N.POSTING_END_DATE > SYSDATE
-						AND (N.JNO IN (SELECT DISTINCT(JNO) FROM S_JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0)
+						AND (N.JNO IN (SELECT DISTINCT(M.JNO) FROM S_JOB_MEMBER_LIST M LEFT JOIN JOB_SUBCON_INFO S ON M.JNO = S.JNO WHERE 1 = :1 OR M.UNO = :2 OR S.ID = :3) OR N.JNO = 0)
 				)
 				SELECT * 
 			  	FROM (
@@ -103,12 +103,15 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 							END,
 							POSTING_START_DATE DESC
 						) sorted_data
-					WHERE ROWNUM <= :3
+					WHERE ROWNUM <= :4
 			  	)
-			  	WHERE RNUM > :4`,
+			  	WHERE RNUM > :5`,
 		condition, order)
 
-	if err := db.SelectContext(ctx, &notices, query, role, uno, page.EndNum, page.StartNum); err != nil {
+
+	if err := db.SelectContext(ctx, &notices, query, role, uno, uno, page.EndNum, page.StartNum); err != nil {
+		//TODO: 에러 아카이브 처리
+
 		fmt.Errorf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
@@ -157,7 +160,7 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 					N.IS_USE = 'Y'
 					AND N.POSTING_START_DATE <= SYSDATE
 					AND N.POSTING_END_DATE > SYSDATE
-					AND (N.JNO IN (SELECT DISTINCT(JNO) FROM S_JOB_MEMBER_LIST WHERE 1 = :1 OR UNO = :2) OR N.JNO = 0)
+					AND (N.JNO IN (SELECT DISTINCT(M.JNO) FROM S_JOB_MEMBER_LIST M INNER JOIN JOB_SUBCON_INFO S ON M.JNO = S.JNO WHERE 1 = :1 OR M.UNO = :2 OR S.ID = :3) OR N.JNO = 0)
 			)
 			SELECT COUNT(*) 
 			FROM  Notice
@@ -165,7 +168,10 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 				
 				%s`, condition)
 
-	if err := db.GetContext(ctx, &count, query, role, uno); err != nil {
+
+	if err := db.GetContext(ctx, &count, query, role, uno, uno); err != nil {
+		//TODO: 에러 아카이브 처리
+
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
