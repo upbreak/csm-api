@@ -48,7 +48,6 @@ func (r *Repository) GetProjectDailyContentList(ctx context.Context, db Queryer,
 				NVL(t1.REG_DATE, t1.MOD_DATE) DESC`
 
 	if err := db.SelectContext(ctx, &projectDailys, sql, jnoParam, targetDateParam); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetProjectDailyContentList fail: %w", err)
 	}
 	return &projectDailys, nil

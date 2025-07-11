@@ -50,7 +50,6 @@ func (r *Repository) MergeEquipCnt(ctx context.Context, tx Execer, equips entity
 
 	for _, equip := range equips {
 		if _, err := tx.ExecContext(ctx, query, equip.Sno, equip.Jno, equip.Cnt); err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("MergeEquipCnt ExecContext fail: %v", err)
 		}
 	}

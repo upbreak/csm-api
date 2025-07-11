@@ -44,7 +44,6 @@ func (s *ServiceEquip) MergeEquipCnt(ctx context.Context, equips entity.EquipTem
 		}
 	}()
 	if err = s.Store.MergeEquipCnt(ctx, tx, equips); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service;MergeEquipCnt failed: %v", err)
 	}
 	return

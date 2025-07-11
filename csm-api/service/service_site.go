@@ -58,14 +58,12 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 
 	uno, err := strconv.ParseInt(unoString, 10, 64)
 	if err != nil {
-		// TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site/GetSiteList parseInt err: %w", err)
 	}
 
 	//현장관리 테이블 조회
 	sites, err := s.Store.GetSiteList(ctx, s.SafeDB, targetDate, roleInt, uno)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteList err: %w", err)
 	}
 
@@ -77,7 +75,6 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		// 프로젝트 리스트 조회
 		projectInfos, err := s.ProjectService.GetProjectList(ctx, sno, targetDate)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return &entity.Sites{}, fmt.Errorf("service_site/GetProjectList err: %w", err)
 		}
 		site.ProjectList = projectInfos
@@ -91,7 +88,6 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 				// 작업내용
 				projectDailyList, err := s.ProjectDailyStore.GetProjectDailyContentList(ctx, s.SafeDB, projectInfo.Jno.Int64, targetDate)
 				if err != nil {
-					//TODO: 에러 아카이브
 					return &entity.Sites{}, fmt.Errorf("service_site/GetProjectDailyContentList err: %w", err)
 				}
 				projectInfo.DailyContentList = projectDailyList
@@ -104,7 +100,6 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		// 현장 위치 조회
 		sitePos, err := s.SitePosStore.GetSitePosData(ctx, s.SafeDB, sno)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return &entity.Sites{}, fmt.Errorf("service_site/GetSitePosData err: %w", err)
 		}
 		if sitePos.RoadAddress.String == "" {
@@ -127,7 +122,6 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		//
 		//siteWeather, err := s.WeatherApiService.GetWeatherSrtNcst(baseDate, baseTime, nx, ny)
 		//if err != nil {
-		//	//TODO: 에러 아카이브
 		//	return &entity.Sites{}, fmt.Errorf("service_site/GetWeatherSrt err: %w", err)
 		//}
 		//site.Weather = siteWeather
@@ -135,7 +129,6 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		// 현장 날짜 조회
 		siteDateData, err := s.SiteDateStore.GetSiteDateData(ctx, s.SafeDB, sno)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return &entity.Sites{}, fmt.Errorf("service_site/GetSiteDateData err: %w", err)
 		}
 		site.SiteDate = siteDateData
@@ -151,13 +144,11 @@ func (s *ServiceSite) GetSiteNmList(ctx context.Context, page entity.Page, searc
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site/GetSiteNmList OfPageSql err : %w", err)
 	}
 
 	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB, pageSql, search, nonSite)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
 	}
 
@@ -171,7 +162,6 @@ func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site, no
 
 	count, err := s.Store.GetSiteNmCount(ctx, s.SafeDB, search, nonSite)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
 	}
 
@@ -184,7 +174,6 @@ func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site, no
 func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
 	sites, err := s.Store.GetSiteStatsList(ctx, s.SafeDB, targetDate)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteStatsList err: %w", err)
 	}
 
@@ -218,12 +207,10 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 	}()
 
 	if site.Sno.Int64 == 0 {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("sno parameter is missing")
 	}
 	// 비고 정보 수정
 	if err = s.Store.ModifySite(ctx, tx, site); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site/ModifySite err: %w", err)
 	}
 
@@ -237,7 +224,6 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		},
 	}
 	if err = s.ProjectStore.ModifyDefaultProject(ctx, tx, project); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site/ModifyDefaultProject err: %w", err)
 	}
 
@@ -260,7 +246,6 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 	if site.SiteDate != nil {
 		siteDate := *site.SiteDate
 		if err = s.SiteDateStore.ModifySiteDate(ctx, tx, site.Sno.Int64, siteDate); err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("service_site/ModifySiteDate err: %v\n", err)
 		}
 	}
@@ -270,7 +255,6 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		sitePos := *site.SitePos
 		point, err := s.AddressSearchAPIService.GetAPILatitudeLongtitude(site.SitePos.RoadAddress.String)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("service_site/GetApiLatitudeLongtitude err: %w", err)
 		}
 		if point.Latitude != 0.0 {
@@ -283,7 +267,6 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		}
 
 		if err = s.SitePosStore.ModifySitePosData(ctx, tx, site.Sno.Int64, sitePos); err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("service_site/ModifySitePos err: %v\n", err)
 		}
 	}
@@ -320,7 +303,6 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 
 	err = s.Store.AddSite(ctx, s.SafeDB, tx, jno, user)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site/AddSite err: %w", err)
 	}
 

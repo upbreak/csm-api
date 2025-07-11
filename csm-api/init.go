@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"csm-api/auth"
 	"csm-api/clock"
 	"csm-api/entity"
 	"csm-api/service"
@@ -46,6 +47,8 @@ func NewInit(safeDb *sqlx.DB) (*Init, error) {
 
 func (i *Init) RunInitializations(ctx context.Context) (err error) {
 	eg, ctx := errgroup.WithContext(ctx)
+	auth.SetContext(ctx, auth.UserId{}, "SYSTEM_INIT")
+	auth.SetContext(ctx, auth.Uno{}, "0")
 
 	eg.Go(func() error {
 		// 현장 근로자 마감처리 (당일 이전 날짜 중에서 퇴근을 한 근로자들만 마감처리)
@@ -63,14 +66,14 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 			ModUser: utils.ParseNullString("SYSTEM_INIT"),
 		}
 		if initErr := i.WorkHourService.ModifyWorkHour(ctx, user); initErr != nil {
-			return fmt.Errorf("[init] ModifyWorkHour fail: %w", initErr)
+			return entity.WriteErrorLog(ctx, fmt.Errorf("[init] ModifyWorkHour fail: %w", initErr))
 		}
 		log.Println("[init] ModifyWorkHour completed")
 		return nil
 	})
 
 	if err = eg.Wait(); err != nil {
-		return err
+		return entity.WriteErrorLog(ctx, err)
 	}
 	return
 }

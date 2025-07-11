@@ -19,7 +19,6 @@ type ServiceUser struct {
 func (u *ServiceUser) GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error) {
 	userPeInfos, err := u.Store.GetUserInfoPeList(ctx, u.SafeDB, unoList)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_user/GetUserInfoPeList err: %w", err)
 	}
 
@@ -53,7 +52,6 @@ func (u *ServiceUser) GetAuthorizationList(ctx context.Context, api string) (*en
 
 	list, err := u.Store.GetAuthorizationList(ctx, u.SafeDB, api)
 	if err != nil {
-		// TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_user/GetAuthorizationList err: %w", err)
 	}
 

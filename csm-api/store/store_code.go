@@ -21,7 +21,6 @@ func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) 
 			  ORDER BY t1."ORDER"`
 
 	if err := db.SelectContext(ctx, &list, query, pCode); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetCodeList err: %w", err)
 	}
 
@@ -31,7 +30,7 @@ func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) 
 // 코드트리 조회
 func (r *Repository) GetCodeTree(ctx context.Context, db Queryer, pCode string) (*entity.Codes, error) {
 	codes := entity.Codes{}
-	
+
 	query := fmt.Sprintf(`
 			SELECT 
 			    LEVEL, 
@@ -56,7 +55,6 @@ func (r *Repository) GetCodeTree(ctx context.Context, db Queryer, pCode string) 
 		`, pCode)
 
 	if err := db.SelectContext(ctx, &codes, query); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetCodeTrees err: %w", err)
 	}
 
@@ -134,7 +132,6 @@ func (r *Repository) MergeCode(ctx context.Context, tx Execer, code entity.Code)
 		code.UdfVal03, code.UdfVal04, code.UdfVal05, code.UdfVal06, code.UdfVal07,
 		code.SortNo, code.IsUse, code.Etc, code.RegUno, code.RegUser); err != nil {
 
-		//TODO: 에러 아카이브
 		return fmt.Errorf("MergeCode err: %w", err)
 	}
 

@@ -109,7 +109,6 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 		condition, order)
 
 	if err := db.SelectContext(ctx, &notices, query, role, uno, page.EndNum, page.StartNum); err != nil {
-		//TODO: 에러 아카이브 처리
 		fmt.Errorf("store/notice. NoticeList error %s", err)
 		return nil, err
 	}
@@ -167,7 +166,6 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 				%s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, role, uno); err != nil {
-		//TODO: 에러 아카이브 처리
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}

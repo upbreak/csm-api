@@ -30,7 +30,6 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, sea
 	// 권한 조회
 	list, err := s.UserStore.GetAuthorizationList(ctx, s.SafeDB, "/notice")
 	if err != nil {
-		// TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("service_notice/GetNoticeList GetAuthorizationList err: %w", err)
 	}
 
@@ -46,13 +45,11 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, sea
 	pageSql, err = pageSql.OfPageSql(page)
 
 	if err != nil {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
 	}
 
 	notices, err := s.Store.GetNoticeList(ctx, s.SafeDB, uno, roleInt, pageSql, search)
 	if err != nil {
-		//TODO: 에러 아카이브 처리
 		return &entity.Notices{}, fmt.Errorf("fail to list notice: %w", err)
 	}
 
@@ -71,7 +68,6 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 	// 권한 조회
 	list, err := s.UserStore.GetAuthorizationList(ctx, s.SafeDB, "/notice")
 	if err != nil {
-		// TODO: 에러 아카이브 처리
 		return 0, fmt.Errorf("service_notice/GetNoticeList GetAuthorizationList err: %w", err)
 	}
 
@@ -84,7 +80,6 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 
 	count, err := s.Store.GetNoticeListCount(ctx, s.SafeDB, uno, roleInt, search)
 	if err != nil {
-		//TODO: 에러 아카이브 처리
 		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
 	}
 
@@ -118,7 +113,6 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (er
 		}
 	}()
 	if err = s.Store.AddNotice(ctx, tx, notice); err != nil {
-		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/AddNotice err : %w", err)
 	}
 
@@ -152,7 +146,6 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 	}()
 
 	if err = s.Store.ModifyNotice(ctx, tx, notice); err != nil {
-		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/ModifyNotice err: %w", err)
 	}
 
@@ -186,7 +179,6 @@ func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx null.Int) (err err
 	}()
 
 	if err = s.Store.RemoveNotice(ctx, tx, idx); err != nil {
-		//TODO: 에러 아카이브 처리
 		return fmt.Errorf("service_notice/RemomveNotice err: %w", err)
 	}
 

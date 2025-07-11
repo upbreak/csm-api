@@ -33,7 +33,6 @@ func (r *Repository) GetUserInfoPeList(ctx context.Context, db Queryer, unoList 
 			WHERE t1.UNO IN (%s)`, strings.Join(placeholders, ","))
 
 	if err := db.SelectContext(ctx, &userPeInfos, sql, args...); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetUserInfoPeList fail: %w", err)
 	}
 

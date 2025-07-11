@@ -28,13 +28,11 @@ func (s *ServiceOrganization) GetOrganizationClientList(ctx context.Context, jno
 	clientSql := &entity.OrganizationSqls{}
 	clientSql, err := s.Store.GetOrganizationClientList(ctx, s.TimeSheetDB, jnoSql)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetOrganizationClientList: %w", err)
 	}
 
 	clients := &entity.Organizations{} //  []organization
 	if err := entity.ConvertSliceToRegular(*clientSql, clients); err != nil {
-		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/CovertSliceToRegular: %w", err)
 	}
 
@@ -79,13 +77,11 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 
 	funcNameSqls, err := s.Store.GetFuncNameList(ctx, s.TimeSheetDB)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetFuncNameList: %w", err)
 	}
 
 	funcNames := &entity.FuncNames{}
 	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
-		//TODO: 에러 아카이브
 		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/CovertSliceToRegular: %w", err)
 	}
 
@@ -102,7 +98,6 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 		hitechSql := &entity.OrganizationSqls{}
 		hitechSql, err := s.Store.GetOrganizationHtencList(ctx, s.TimeSheetDB, jnoSql, funcNoSql)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetOrganizationHtencList: %w", err)
 		}
 		if len(*hitechSql) == 0 {
@@ -111,7 +106,6 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 
 		hitech := &entity.Organizations{}
 		if err := entity.ConvertSliceToRegular(*hitechSql, hitech); err != nil {
-			//TODO: 에러 아카이브
 			return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/ConvertSliceToRegular: %w", err)
 		}
 
