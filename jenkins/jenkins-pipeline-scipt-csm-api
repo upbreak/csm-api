@@ -90,8 +90,7 @@ pipeline {
 						  --network "\${DOCKER_NETWORK}" \
 						  --restart=unless-stopped \
 						  -p 8080:8080 \
-						  -v /tmp/data/csm/logs:/tmp/data/csm/logs \
-						  -v /tmp/data/csm/uploads:/tmp/data/csm/uploads \
+						  -v /tmp/data/csm:/tmp/data/csm \
 						  "\${IMAGE_NAME}:latest"
                     '
                     """

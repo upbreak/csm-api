@@ -30,7 +30,6 @@ func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64)
 		if errors.Is(err, sql.ErrNoRows) {
 			return &siteDate, nil
 		}
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetSiteDateData fail: %w", err)
 	}
 	return &siteDate, nil

@@ -28,6 +28,11 @@ func (s *ServiceEquip) MergeEquipCnt(ctx context.Context, equips entity.EquipTem
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;MergeEquipCnt panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;MergeEquipCnt rollback error: %w", rollbackErr)
@@ -39,7 +44,6 @@ func (s *ServiceEquip) MergeEquipCnt(ctx context.Context, equips entity.EquipTem
 		}
 	}()
 	if err = s.Store.MergeEquipCnt(ctx, tx, equips); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service;MergeEquipCnt failed: %v", err)
 	}
 	return

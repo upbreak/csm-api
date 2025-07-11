@@ -24,7 +24,6 @@ func (s *ServiceRestDate) GetRestDelDates(year string, month string) (entity.Res
 
 	body, err := api.CallGetAPI(url)
 	if err != nil {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("call GetRestDelDates API error: %v", err)
 	}
 
@@ -38,7 +37,6 @@ func (s *ServiceRestDate) GetRestDelDates(year string, month string) (entity.Res
 
 	var res RestDelInfo
 	if err = json.Unmarshal([]byte(body), &res); err != nil {
-		//TODO: 에러 아카이브 처리
 		fmt.Println("Unmarshal err or non RestDel Info")
 		return entity.RestDates{}, nil
 	}

@@ -41,6 +41,11 @@ func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.Us
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_user_role/AddUserRole panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_user_role/AddUserRole Rollback error: %w", rollbackErr)
@@ -66,6 +71,11 @@ func (s *ServiceUserRole) RemoveUserRole(ctx context.Context, userRoles []entity
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_user_role/RemoveUserRole panic error: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_user_role/RemoveUserRole Rollback error: %w", rollbackErr)

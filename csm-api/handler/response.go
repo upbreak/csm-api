@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"csm-api/entity"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -68,6 +69,9 @@ func RespondJSON(ctx context.Context, w http.ResponseWriter, body any, status in
 }
 
 func FailResponse(ctx context.Context, w http.ResponseWriter, err error) {
+	//에러 로그 기록
+	_ = entity.WriteErrorLog(ctx, err)
+
 	RespondJSON(
 		ctx,
 		w,

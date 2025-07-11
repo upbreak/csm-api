@@ -30,6 +30,11 @@ func (s *ServiceProjectDaily) AddDailyJob(ctx context.Context, project entity.Pr
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;AddDailyJob panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;AddDailyJob rollback fail: %w", rollbackErr)
@@ -55,6 +60,11 @@ func (s *ServiceProjectDaily) ModifyDailyJob(ctx context.Context, project entity
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;ModifyDailyJob panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;ModifyDailyJob rollback fail: %w", rollbackErr)
@@ -80,6 +90,11 @@ func (s *ServiceProjectDaily) RemoveDailyJob(ctx context.Context, idx int64) (er
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service;RemoveDailyJob panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service;RemoveDailyJob rollback fail: %w", rollbackErr)

@@ -29,7 +29,6 @@ func (s *ServiceSitePos) GetSitePosList(ctx context.Context) ([]entity.SitePos, 
 func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity.SitePos, error) {
 	sitePos, err := s.Store.GetSitePosData(ctx, s.DB, sno)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site_pos/GetSitePosData err: %w", err)
 	}
 
@@ -61,6 +60,11 @@ func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos e
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_site_pos/TRollback err: %w", rollbackErr)
@@ -73,7 +77,6 @@ func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos e
 	}()
 
 	if err := s.Store.ModifySitePosData(ctx, tx, sno, sitePos); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site_pos/ModifySitePosData err: %w", err)
 	}
 

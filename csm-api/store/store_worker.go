@@ -112,7 +112,6 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 				WHERE RNUM > :2`, condition, retryCondition, order, page.RnumOrder)
 
 	if err := db.SelectContext(ctx, &workers, query, page.EndNum, page.StartNum); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetWorkerTotalList err: %v", err)
 	}
 
@@ -150,10 +149,8 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			//TODO: 에러 아카이브
 			return 0, nil
 		}
-		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetWorkerTotalCount fail: %w", err)
 	}
 	return count, nil
@@ -192,7 +189,6 @@ func (r *Repository) GetAbsentWorkerList(ctx context.Context, db Queryer, page e
 				WHERE RNUM > :6`, retryCondition)
 
 	if err := db.SelectContext(ctx, &workers, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetAbsentWorkerList fail: %v", err)
 	}
 
@@ -225,10 +221,8 @@ func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, searc
 
 	if err := db.GetContext(ctx, &count, query, search.Jno, search.Jno, search.SearchStartTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			//TODO: 에러 아카이브
 			return 0, nil
 		}
-		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetAbsentWorkerCount fail: %w", err)
 	}
 	return count, nil
@@ -278,7 +272,6 @@ func (r *Repository) AddWorker(ctx context.Context, tx Execer, worker entity.Wor
 		agent, worker.RegUser, worker.RegUno, worker.RegNo,
 	)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("AddWorker; IRIS_WORKER_SET INSERT fail: %v", err)
 	}
 
@@ -307,17 +300,14 @@ func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.
 	)
 
 	if err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorker fail: %v", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorker RowsAffected fail: %v", err)
 	}
 	if rowsAffected == 0 {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected)
 	}
 
@@ -396,7 +386,6 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 				WHERE RNUM > :5`, condition, retryCondition, order, page.RnumOrder)
 
 	if err := db.SelectContext(ctx, &list, query, search.Jno, search.SearchStartTime, search.SearchEndTime, page.EndNum, page.StartNum); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetWorkerSiteBaseList err: %v", err)
 	}
 
@@ -434,10 +423,8 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 
 	if err := db.GetContext(ctx, &count, query, search.Jno, search.SearchStartTime, search.SearchEndTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			//TODO: 에러 아카이브
 			return 0, nil
 		}
-		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("GetWorkerSiteBaseCount fail: %w", err)
 	}
 	return count, nil
@@ -500,7 +487,6 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 			worker.WorkState, worker.IsOvertime, worker.WorkHour,
 		)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("MergeSiteBaseWorker fail: %w", err)
 		}
 	}
@@ -549,7 +535,6 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, tx Execer, worker
 			worker.UserId, worker.RecordDate,
 		)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("ModifyWorkerDeadline fail: %w", err)
 		}
 	}
@@ -582,7 +567,6 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, tx Execer, workers
 			worker.Jno, worker.UserId, worker.RecordDate,
 		)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return fmt.Errorf("ModifyWorkerProject fail: %w", err)
 		}
 	}
@@ -638,7 +622,6 @@ func (r *Repository) ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) er
 			AND COMPARE_STATE = 'S'`
 
 	if _, err := tx.ExecContext(ctx, query, agent); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorkerDeadlineInit fail: %w", err)
 	}
 
@@ -698,7 +681,6 @@ func (r *Repository) ModifyWorkerOverTime(ctx context.Context, tx Execer, worker
 	`
 
 	if _, err := tx.ExecContext(ctx, query, workerOverTime.OutRecogTime, agent, workerOverTime.BeforeCno); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("ModifyWorkerOverTime fail: %w", err)
 	}
 	return nil
@@ -715,7 +697,6 @@ func (r *Repository) DeleteWorkerOverTime(ctx context.Context, tx Execer, cno nu
 		WHERE  CNO = :1
 		`
 	if _, err := tx.ExecContext(ctx, query, cno); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("DeleteWorkerOverTime fail: %w", err)
 	}
 	return nil
@@ -848,4 +829,29 @@ func (r *Repository) GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer
 		return list, fmt.Errorf("GetDailyWorkersByJnoAndDate fail: %w", err)
 	}
 	return list, nil
+}
+
+// 현장근로자 일괄 공수 변경
+func (r *Repository) ModifyWorkHours(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_WORKER_DAILY_SET
+		SET
+			WORK_HOUR = :1,
+			MOD_DATE = SYSDATE,
+			MOD_AGENT = :2,
+			MOD_USER = :3,
+			MOD_UNO = :4
+		WHERE SNO = :5
+		AND JNO = :6
+		AND USER_ID = :7
+		AND RECORD_DATE = :8`
+
+	for _, worker := range workers {
+		if _, err := tx.ExecContext(ctx, query, worker.WorkHour, agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+			return fmt.Errorf("ModifyWorkHours fail: %w", err)
+		}
+	}
+	return nil
 }

@@ -258,6 +258,11 @@ func (s *ServiceCompare) ModifyWorkerCompareApply(ctx context.Context, workers e
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service.ModifyWorkerCompareApply panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service.ModifyWorkerCompareApply tx rollback error: %w", rollbackErr)

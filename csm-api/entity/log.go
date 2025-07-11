@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"context"
+	"csm-api/auth"
 	"csm-api/config"
 	"encoding/json"
 	"fmt"
@@ -8,9 +10,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
+// 추가/수정/삭제 정상 기록 로그
 type ItemLogEntry struct {
 	Time     string                   `json:"time"`
 	Type     string                   `json:"type"`
@@ -22,6 +26,38 @@ type ItemLogEntry struct {
 	Items    []map[string]interface{} `json:"items"`
 }
 
+// 에러 메세지 기록 로그
+type ItemErrLogEntry struct {
+	Time       string `json:"time"`
+	UserId     string `json:"user_id"`
+	UserUno    int64  `json:"user_uno"`
+	ErrMessage string `json:"err_message"`
+}
+
+type LoggedError struct {
+	Err error
+}
+
+func (e *LoggedError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *LoggedError) Unwrap() error {
+	return e.Err
+}
+
+// Helper: 이미 로그 찍은 에러로 감싸기
+func MarkAsLogged(err error) error {
+	return &LoggedError{Err: err}
+}
+
+// Helper: 이 에러가 이미 로깅된 것인지 확인
+func IsLoggedError(err error) bool {
+	_, ok := err.(*LoggedError)
+	return ok
+}
+
+// 정상 기록 구조체 파싱
 func DecodeItem[T any](r *http.Request, model T) (*ItemLogEntry, T, error) {
 	var itemLog ItemLogEntry
 	var result T
@@ -104,10 +140,91 @@ func WriteLog(itemLog *ItemLogEntry) {
 		log.Printf("로그 파일 열기 실패 (%s): %v\n", logFilePath, err)
 		return
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err = f.Close()
+		if err != nil {
+			log.Printf("로그 파일 닫기 실패: %v\n", err)
+		}
+	}(f)
 
 	if _, err := f.WriteString(string(logJSON) + "\n"); err != nil {
 		log.Printf("로그 쓰기 실패 (%s): %v\n", logFilePath, err)
 		return
 	}
+}
+
+// 에러메세지 에러로그파일에 저장 후 에러 반환
+func WriteErrorLog(ctx context.Context, err error) error {
+	cfg, cfgErr := config.NewConfig()
+	if cfgErr != nil {
+		log.Printf("config.NewConfig() 실패: %v\n", cfgErr)
+		return err // config 실패해도 원래 에러는 그대로 리턴
+	}
+	
+	// 현재 시간
+	now := time.Now()
+	year := now.Format("2006")
+	month := now.Format("01")
+	day := now.Format("20060102")
+
+	// 로그 디렉토리 생성: ex) /tmp/data/csm/error/2025/07
+	logDir := filepath.Join(cfg.ErrLogPath, year, month)
+	if mkErr := os.MkdirAll(logDir, os.ModePerm); mkErr != nil {
+		log.Printf("에러 로그 디렉토리 생성 실패 (%s): %v\n", logDir, mkErr)
+		return err
+	}
+
+	// 파일명: csm_error_YYYYMMDD.log
+	logFileName := fmt.Sprintf("csm_error_%s.log", day)
+	logFilePath := filepath.Join(logDir, logFileName)
+
+	// context에서 사용자 정보 추출
+	userId, ok := auth.GetContext(ctx, auth.UserId{})
+	if !ok {
+		userId = "unknown"
+	}
+	unoStr, ok := auth.GetContext(ctx, auth.Uno{})
+	if !ok {
+		unoStr = "0"
+	}
+	userUno, parseErr := strconv.ParseInt(unoStr, 10, 64)
+	if parseErr != nil {
+		userUno = 0
+	}
+
+	// 로그 데이터 생성
+	item := &ItemErrLogEntry{
+		Time:       now.Format("2006-01-02 15:04:05"),
+		UserId:     userId,
+		UserUno:    userUno,
+		ErrMessage: err.Error(),
+	}
+
+	// JSON 직렬화
+	logJSON, marshalErr := json.MarshalIndent(item, "", "\t")
+	if marshalErr != nil {
+		log.Printf("에러 로그 직렬화 실패: %v\n", marshalErr)
+		return err
+	}
+
+	// 파일에 이어쓰기
+	f, openErr := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if openErr != nil {
+		log.Printf("에러 로그 파일 열기 실패 (%s): %v\n", logFilePath, openErr)
+		return err
+	}
+	defer func(f *os.File) {
+		if closeErr := f.Close(); closeErr != nil {
+			log.Printf("에러 로그 파일 닫기 실패: %v\n", closeErr)
+		}
+	}(f)
+
+	if _, writeErr := f.WriteString(string(logJSON) + "\n"); writeErr != nil {
+		log.Printf("에러 로그 쓰기 실패 (%s): %v\n", logFilePath, writeErr)
+		return err
+	}
+
+	log.Printf("userId: %s, userUno: %d, err: %v\n", userId, userUno, err)
+
+	return MarkAsLogged(err)
 }

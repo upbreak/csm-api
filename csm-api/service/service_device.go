@@ -32,13 +32,11 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
 
 	list, err := s.Store.GetDeviceList(ctx, s.SafeDB, pageSql, search, retry)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
 	}
 
@@ -51,7 +49,6 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device, retry string) (int, error) {
 	count, err := s.Store.GetDeviceListCount(ctx, s.SafeDB, search, retry)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return 0, fmt.Errorf("service_device/GetDeviceListCount err: %w", err)
 	}
 
@@ -68,6 +65,11 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_device/AddDevice Rollback err: %w", rollbackErr)
@@ -80,7 +82,6 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 	}()
 
 	if err = s.Store.AddDevice(ctx, tx, device); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/AddDevice err: %w", err)
 	}
 	return
@@ -92,14 +93,17 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/ModifyDevice BeginTx fail err: %w", err)
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_device/ModifyDevice panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				//TODO: 에러 아카이브
 				err = fmt.Errorf("service_device/ModifyDevice Rollback err: %w", rollbackErr)
 			}
 		} else {
@@ -110,7 +114,6 @@ func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) 
 	}()
 
 	if err = s.Store.ModifyDevice(ctx, tx, device); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/UpdateDevice err: %w", err)
 	}
 	return
@@ -126,6 +129,11 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error)
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_device/RemoveDevice panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_device/RemoveDevice Rollback err: %w", rollbackErr)
@@ -145,7 +153,6 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error)
 	}
 
 	if err = s.Store.RemoveDevice(ctx, tx, dnoSql); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_device/RemoveDevice err: %w", err)
 	}
 	return
@@ -166,7 +173,6 @@ func (s *ServiceDevice) GetCheckRegisteredDevices(ctx context.Context) ([]string
 	// iris_recd_log 테이블의 iris_data값인 json에 들어온 deviceName을 파싱해서 deviceList 얻기
 	for _, device := range *devices {
 		if err = json.Unmarshal([]byte(device.IrisData.String), &log); err != nil {
-			//TODO: 에러 아카이브 처리
 			return nil, fmt.Errorf("GetDeviceList JSON parse err: %v\n", err)
 		}
 
@@ -183,7 +189,6 @@ func (s *ServiceDevice) GetCheckRegisteredDevices(ctx context.Context) ([]string
 	for deviceName, _ := range deviceList {
 		check, err = s.Store.GetCheckRegistered(ctx, s.SafeDB, deviceName)
 		if err != nil {
-			//TODO: 에러 아카이브
 			return nil, fmt.Errorf("service_device/GetCheckRegisteredDevices err: %v\n", err)
 		}
 		if check == 0 {

@@ -49,7 +49,6 @@ func (s *ServiceWeather) GetWeatherSrtNcst(date string, time string, nx int, ny 
 	// api call
 	body, err := api.CallGetAPI(url)
 	if err != nil {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("call GetWeatherSrtNcst API error: %v", err)
 	}
 
@@ -65,7 +64,6 @@ func (s *ServiceWeather) GetWeatherSrtNcst(date string, time string, nx int, ny 
 	// response parse
 	var res Weather
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("WeatherSrt api JSON parse err: %v", err)
 	}
 
@@ -115,7 +113,6 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 	// api call
 	body, err := api.CallGetAPI(url)
 	if err != nil {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("call GetWeatherWrnMsgList API error: %v", err)
 	}
 
@@ -141,12 +138,10 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 	// response parse
 	var res Weather
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("WeatherWrnMsg api JSON parse err: %v", err)
 	}
 
 	if res.Response.Header.ResultCode != "00" {
-		//TODO: 에러 아카이브 처리
 		return nil, fmt.Errorf("WeatherWrnMsg api response err : %s", res.Response.Header.ResultMsg)
 	}
 
@@ -236,6 +231,11 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 	}
 
 	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_weather/SaveWeather panic: %v", r)
+			return
+		}
 		if err != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				err = fmt.Errorf("service_weather/SaveWeather rollback err: %v", rollbackErr)
@@ -269,7 +269,6 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 		// 초단기예보 조회
 		res, weatherErr := s.GetWeatherSrtNcst(baseDate, baseTime, nx, ny)
 		if weatherErr != nil {
-			// TODO: 에러 아카이브
 			err = fmt.Errorf("service_weather/Fail GetWeatherSrtNcst: %w", weatherErr)
 		}
 
@@ -277,7 +276,6 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 		weather, convertErr := s.convertWeather(res)
 
 		if convertErr != nil {
-			// TODO: 에러 아카이브
 			err = fmt.Errorf("service_weather/ConvertError: %w", convertErr)
 		}
 
@@ -291,7 +289,6 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 
 		// weather 저장
 		if err = s.Store.SaveWeather(ctx, tx, *weather); err != nil {
-			// TODO: 에러 아카이브
 			err = fmt.Errorf("service_weather/SaveWeather err: %w", err)
 		}
 	}

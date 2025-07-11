@@ -36,4 +36,14 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to set LOG_PATH: %v", err)
 	}
+
+	err = os.Setenv("ERR_LOG_PATH", "/tmp/data/csm/logs/error")
+	if err != nil {
+		log.Fatalf("Failed to set LOG_PATH: %v", err)
+	}
+
+	err = os.Setenv("EXCEL_PATH", "/tmp/data/csm/resources/excel")
+	if err != nil {
+		log.Fatalf("Failed to set EXCEL_PATH: %v", err)
+	}
 }
