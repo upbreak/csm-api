@@ -36,6 +36,9 @@ func (s *HandlerSite) List(w http.ResponseWriter, r *http.Request) {
 		BadRequestResponse(ctx, w)
 		return
 	}
+	if targetDateString == "-" {
+		targetDateString = time.Now().Format("2006-01-02")
+	}
 	targetDate, err := time.Parse("2006-01-02", targetDateString)
 	if err != nil {
 		FailResponse(ctx, w, err)
