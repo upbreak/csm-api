@@ -90,6 +90,8 @@ pipeline {
 						  --network "\${DOCKER_NETWORK}" \
 						  --restart=unless-stopped \
 						  -p 8080:8080 \
+						  -v /etc/localtime:/etc/localtime:ro \
+                          -v /etc/timezone:/etc/timezone:ro \
 						  -v /tmp/data/csm:/tmp/data/csm \
 						  "\${IMAGE_NAME}:latest"
                     '
