@@ -9,19 +9,45 @@ import (
 
 // func: weather 저장
 func (r *Repository) SaveWeather(ctx context.Context, tx Execer, weather entity.Weather) error {
-	query := `	
-		INSERT INTO IRIS_WEATHER (
-		    SNO, LGT, PTY, RN1, SKY, T1H, 
-		    REH, UUU, VVV, VEC, WSD, RECOG_TIME
-		)
-		VALUES (
-		    :1, :2, :3, :4, :5, :6, 
-		    :7, :8, :9, :10, :11, :12
-		)
-		`
+	if weather.RecogTime.Valid {
+		weather.RecogTime.Time = weather.RecogTime.Time.Truncate(time.Hour)
+	}
 
-	if _, err := tx.ExecContext(ctx, query, weather.Sno, weather.Lgt, weather.Pty, weather.Rn1, weather.Sky, weather.T1h, weather.Reh, weather.Uuu, weather.Vvv, weather.Vec, weather.Wsd, weather.RecogTime); err != nil {
-		return fmt.Errorf("IRIS_WEATHER INSERT failed: %w", err)
+	query := `
+		MERGE INTO IRIS_WEATHER target
+		USING (
+			SELECT :1 AS SNO, :2 AS RECOG_TIME FROM DUAL
+		) source
+		ON (
+			target.SNO = source.SNO AND
+			TO_CHAR(target.RECOG_TIME, 'YYYY-MM-DD HH24') = TO_CHAR(source.RECOG_TIME, 'YYYY-MM-DD HH24')
+		)
+		WHEN NOT MATCHED THEN
+		INSERT (
+			SNO, LGT, PTY, RN1, SKY, T1H, 
+			REH, UUU, VVV, VEC, WSD, RECOG_TIME
+		) VALUES (
+			:1, :3, :4, :5, :6, :7, 
+			:8, :9, :10, :11, :12, :2
+		)
+	`
+
+	// 3. 실행
+	if _, err := tx.ExecContext(ctx, query,
+		weather.Sno,       // :1
+		weather.RecogTime, // :2
+		weather.Lgt,       // :3
+		weather.Pty,       // :4
+		weather.Rn1,       // :5
+		weather.Sky,       // :6
+		weather.T1h,       // :7
+		weather.Reh,       // :8
+		weather.Uuu,       // :9
+		weather.Vvv,       // :10
+		weather.Vec,       // :11
+		weather.Wsd,       // :12
+	); err != nil {
+		return fmt.Errorf("SaveWeather err: %w", err)
 	}
 
 	return nil
