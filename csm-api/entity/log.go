@@ -160,7 +160,7 @@ func WriteErrorLog(ctx context.Context, err error) error {
 		log.Printf("config.NewConfig() 실패: %v\n", cfgErr)
 		return err // config 실패해도 원래 에러는 그대로 리턴
 	}
-
+	
 	// 현재 시간
 	now := time.Now()
 	year := now.Format("2006")
