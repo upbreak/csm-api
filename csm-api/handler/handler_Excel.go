@@ -199,8 +199,8 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(r.Context(), w)
 }
 
-// excel 자료 export
-func (h *HandlerExcel) ExportExcel(w http.ResponseWriter, r *http.Request) {
+// upload excel 자료 export
+func (h *HandlerExcel) UploadExportExcel(w http.ResponseWriter, r *http.Request) {
 	jno := r.URL.Query().Get("jno")
 	workDate := r.URL.Query().Get("work_date")
 	fileType := r.URL.Query().Get("file_type")
@@ -570,6 +570,60 @@ func (h *HandlerExcel) DailyWorkerRecordExcelExport(w http.ResponseWriter, r *ht
 	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition, File-Name")
 	if err := f.Write(w); err != nil {
 		FailResponse(r.Context(), w, fmt.Errorf("excel file write error: %v", err))
+		return
+	}
+}
+
+// 양식 엑셀 다운로드 핸들러
+// file_name: 다운받을 파일명 (확장자 제외)
+func (h *HandlerExcel) DownloadFormExcel(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Query().Get("file_name")
+	if fileName == "" {
+		FailResponse(r.Context(), w, fmt.Errorf("missing 'file_name' query parameter"))
+		return
+	}
+
+	// config 로드
+	cfg, cfgErr := config.NewConfig()
+	if cfgErr != nil {
+		log.Printf("config.NewConfig() 실패: %v\n", cfgErr)
+		FailResponse(r.Context(), w, fmt.Errorf("internal configuration error"))
+		return
+	}
+
+	// 전체 파일 경로 구성 (확장자는 무조건 .xlsx)
+	fullFileName := fileName + ".xlsx"
+	filePath := filepath.Join(cfg.ExcelPath, fullFileName)
+
+	// 파일 존재 확인
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		FailResponse(r.Context(), w, fmt.Errorf("file does not exist: %v", filePath))
+		return
+	}
+
+	// 파일 열기
+	f, err := os.Open(filePath)
+	if err != nil {
+		FailResponse(r.Context(), w, fmt.Errorf("failed to open file: %v", err))
+		return
+	}
+	defer func(f *os.File) {
+		if err := f.Close(); err != nil {
+			log.Printf("file close error: %v", err)
+		}
+	}(f)
+
+	// 다운로드용 응답 헤더 설정
+	encodedName := url.PathEscape(fullFileName)
+	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename*=UTF-8''%s", encodedName))
+	w.Header().Set("File-Name", fullFileName)
+	w.Header().Set("Content-Transfer-Encoding", "binary")
+	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition, File-Name")
+
+	// 7. 파일 스트림 복사
+	if _, err := io.Copy(w, f); err != nil {
+		FailResponse(r.Context(), w, fmt.Errorf("failed to copy file stream: %v", err))
 		return
 	}
 }
