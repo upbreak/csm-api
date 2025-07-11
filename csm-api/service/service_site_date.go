@@ -19,7 +19,6 @@ type ServiceSiteDate struct {
 func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*entity.SiteDate, error) {
 	siteDate, err := s.Store.GetSiteDateData(ctx, s.DB, sno)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("service_site_date/GetSiteDateData err: %w", err)
 	}
 
@@ -55,7 +54,6 @@ func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDat
 	}()
 
 	if err := s.Store.ModifySiteDate(ctx, tx, sno, siteDate); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("service_site_date/ModifySiteDate err: %w", err)
 	}
 

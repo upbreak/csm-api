@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"csm-api/auth"
 	"csm-api/config"
+	"csm-api/entity"
 	"csm-api/store"
 	"fmt"
 	"golang.org/x/sync/errgroup"
@@ -15,8 +17,20 @@ import (
 )
 
 func main() {
-	if err := run(context.Background()); err != nil {
-		fmt.Printf("failed to terminate server: %v", err)
+	defer func() {
+		if r := recover(); r != nil {
+			_ = entity.WriteErrorLog(context.Background(), fmt.Errorf("panic recovered: %v", r))
+		}
+	}()
+
+	ctx := context.Background()
+	ctx = auth.SetContext(ctx, auth.UserId{}, "SYSTEM_MAIN")
+	ctx = auth.SetContext(ctx, auth.Uno{}, "0")
+
+	if err := run(ctx); err != nil {
+		if !entity.IsLoggedError(err) {
+			_ = entity.WriteErrorLog(ctx, fmt.Errorf("main() run 실패: %w", err))
+		}
 	}
 }
 

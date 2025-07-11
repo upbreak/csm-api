@@ -21,7 +21,6 @@ func (r *Repository) SaveWeather(ctx context.Context, tx Execer, weather entity.
 		`
 
 	if _, err := tx.ExecContext(ctx, query, weather.Sno, weather.Lgt, weather.Pty, weather.Rn1, weather.Sky, weather.T1h, weather.Reh, weather.Uuu, weather.Vvv, weather.Vec, weather.Wsd, weather.RecogTime); err != nil {
-		// TODO: 에러 아카이브
 		return fmt.Errorf("IRIS_WEATHER INSERT failed: %w", err)
 	}
 
@@ -42,7 +41,6 @@ func (r *Repository) GetWeatherList(ctx context.Context, db Queryer, sno int64, 
 		`
 
 	if err := db.SelectContext(ctx, &weathers, query, sno, targetDate); err != nil {
-		// TODO: 에러 아카이브
 		return nil, fmt.Errorf("IRIS_WEATHER LIST failed: %w", err)
 	}
 

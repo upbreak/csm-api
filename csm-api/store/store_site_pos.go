@@ -64,7 +64,6 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 		if errors.Is(err, sql.ErrNoRows) {
 			return &sitePos, nil
 		}
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("GetSitePosData fail: %v", err)
 	}
 
@@ -168,7 +167,6 @@ func (r *Repository) ModifySitePosData(ctx context.Context, tx Execer, sno int64
 		sitePosSql.RoadAddress,
 		sitePosSql.ZoneCode,
 		sitePosSql.BuildingName); err != nil {
-		//TODO: 에러 아카이브
 		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", err)
 	}
 

@@ -11,6 +11,7 @@ type Config struct {
 	Domain     string `env:"DOMAIN" envDefault:"localhost"`
 	UploadPath string `env:"UPLOAD_PATH" envDefault:"uploads"`
 	LogPath    string `env:"LOG_PATH" envDefault:"logs"`
+	ErrLogPath string `env:"ERR_LOG_PATH" envDefault:"logs/error"`
 }
 
 // caarlos0/env 패키지를 사용하여 struct의 envDefault값을 환경변수로 넘겨준다.

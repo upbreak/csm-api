@@ -30,7 +30,6 @@ type ServiceAddressSearch struct {
 func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error) {
 
 	if roadAddress == "" {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("roadAddress parameter is missing")
 	}
 	// apiUrl주소
@@ -51,7 +50,6 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 	// api 호출
 	body, err := api.CallGetAPI(apiUrl)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("call GetWhetherSrtNcst API error: %v", err)
 	}
 
@@ -88,12 +86,10 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 	// api response parse
 	var res AddressSearching
 	if err = json.Unmarshal([]byte(body), &res); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("AddressSearch api JSON parse err: %v", err)
 	}
 
 	if res.Response.Status != "OK" {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("AddressSearch api response err: %s", res.Response.Error.Text)
 
 	} else {
@@ -112,7 +108,6 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 //   - roadAddress : 도로명 주소
 func (s *ServiceAddressSearch) GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error) {
 	if roadAddress == "" {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("roadAddress parameter is missing")
 	}
 	if roadAddress == "undefined" {
@@ -153,19 +148,16 @@ func (s *ServiceAddressSearch) GetAPISiteMapPoint(roadAddress string) (*entity.M
 	// api 호출
 	body, err := api.CallGetAPI(apiUrl)
 	if err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("call GetWhetherSrtNcst API error: %v", err)
 	}
 
 	// 응답 json으로 변환
 	var res SiteMapPoint
 	if err = json.Unmarshal([]byte(body), &res); err != nil {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("SiteMapPoint api JSON parse err: %v", err)
 	}
 
 	if res.Response.Status != "OK" {
-		//TODO: 에러 아카이브
 		return nil, fmt.Errorf("SiteMapPoint api response err: %s", res.Response.Error.Text)
 	}
 

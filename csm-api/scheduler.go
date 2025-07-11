@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"csm-api/auth"
 	"csm-api/clock"
 	"csm-api/config"
 	"csm-api/entity"
@@ -57,7 +58,6 @@ func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error)
 			SafeTDB:       safeDb,
 			Store:         &r,
 			WorkHourStore: &r,
-
 		},
 		WeatherService: &service.ServiceWeather{
 			ApiKey:       apiCfg,
@@ -65,7 +65,6 @@ func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error)
 			SafeTDB:      safeDb,
 			Store:        &r,
 			SitePosStore: &r,
-
 		},
 
 		cron: c,
@@ -75,19 +74,22 @@ func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error)
 }
 
 func (s *Scheduler) Run(ctx context.Context) error {
+	auth.SetContext(ctx, auth.UserId{}, "SYSTEM_SCHEDULER")
+	auth.SetContext(ctx, auth.Uno{}, "0")
+
 	// 0시 0분 0초에 실행
 	// 근로자 마감 처리 (퇴근한 근로자만 처리)
 	_, err := s.cron.AddFunc("0 0 0 * * *", func() {
 		log.Println("[Scheduler] Running ModifyWorkerDeadlineSchedule")
 
 		if err := s.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
-			log.Printf("[Scheduler] ModifyWorkerDeadlineSchedule fail: %+v", err)
+			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] ModifyWorkerDeadlineSchedule fail: %+v", err))
 		} else {
 			log.Println("[Scheduler] ModifyWorkerDeadlineSchedule completed")
 		}
 	})
 	if err != nil {
-		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
 	// 1분마다 실행
@@ -95,14 +97,14 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	_, err = s.cron.AddFunc("0 0/1 * * * *", func() {
 		var count int
 		if count, err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
-			log.Printf("[Scheduler] ModifyWorkerOverTime fail: %+v", err)
+			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] ModifyWorkerOverTime fail: %+v", err))
 		} else if count != 0 {
 			log.Println("[Scheduler] ModifyWorkerOverTime completed")
 		}
 	})
 	if err != nil {
 		// TODO: 에러아카이브
-		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
 	// 5분 마다 실행
@@ -110,14 +112,13 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
 		var count int
 		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
-			log.Printf("[Scheduler] CheckProjectSettings fail: %+v", err)
+			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] CheckProjectSettings fail: %+v", err))
 		} else if count != 0 {
 			log.Println("[Scheduler] CheckProjectSettings completed")
 		}
 	})
 	if err != nil {
-		// TODO: 에러아카이브
-		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
 	// 0시 1분 0초에 실행
@@ -128,29 +129,30 @@ func (s *Scheduler) Run(ctx context.Context) error {
 			ModUser: utils.ParseNullString("SYSTEM_BATCH"),
 		}
 		if err = s.WorkHourService.ModifyWorkHour(ctx, user); err != nil {
-			log.Printf("[Scheduler] ModifyWorkHour fail: %+v", err)
+			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] ModifyWorkHour fail: %+v", err))
 		} else {
 			log.Println("[Scheduler] ModifyWorkHour completed")
 		}
 	})
 	if err != nil {
-		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
 	// 8시, 10시, 13시, 15시, 16시, 17시에 시작
+	// 현장별 날씨 저장
 	_, err = s.cron.AddFunc("0 0 8,10,13,15,16,17 * * *", func() {
 		log.Println("[Scheduler] Running SaveWeather")
 
 		err = s.WeatherService.SaveWeather(ctx)
 		if err != nil {
-			log.Printf("[Scheduler] SaveWeather fail: %w", err)
+			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] SaveWeather fail: %w", err))
 		} else {
 			log.Printf("[Scheduler] SaveWeather completed")
 		}
 
 	})
 	if err != nil {
-		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
 	// ... 추가 job 등록
