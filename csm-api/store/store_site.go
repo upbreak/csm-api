@@ -301,3 +301,54 @@ func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, site ent
 
 	return nil
 }
+
+// func: 공정률 전날 수치로 세팅
+func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, error) {
+	query := `
+		INSERT INTO IRIS_JOB_WORK_RATE (SNO, JNO, RECORD_DATE, WORK_RATE)
+		SELECT 
+			t1.SNO,
+			t1.JNO,
+			SYSDATE,
+			NVL((SELECT MAX(WORK_RATE) FROM IRIS_JOB_WORK_RATE r WHERE r.SNO= t1.SNO AND r.JNO = t1.JNO AND TRUNC(r.RECORD_DATE) = TRUNC(SYSDATE - 1)), 0) -- 어제의 데이터 중 가장 큰 공정률 조회, 없으면 0
+		FROM IRIS_SITE_JOB t1
+		WHERE NOT EXISTS (
+			SELECT 1 
+			FROM IRIS_JOB_WORK_RATE t2
+			 WHERE t1.JNO = t2.JNO
+				AND TRUNC(t2.RECORD_DATE) = TRUNC(SYSDATE)
+		)`
+	result, err := tx.ExecContext(ctx, query)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return 0, fmt.Errorf("store/site. SettingWorkRate fail: %w", err)
+	}
+	count, _ := result.RowsAffected()
+
+	return count, nil
+
+}
+
+func (r *Repository) ModifyWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error {
+	agent := utils.GetAgent()
+
+	query :=
+		` 
+			UPDATE IRIS_JOB_WORK_RATE 
+			SET 
+				WORK_RATE = :1,
+				MOD_DATE = SYSDATE,
+				MOD_UNO = :2,
+				MOD_USER = :3,
+				MOD_AGENT = :4,
+				SNO = :5 
+			WHERE
+				JNO = :6
+				AND TRUNC(RECORD_DATE) = TRUNC(SYSDATE)
+			`
+	if _, err := tx.ExecContext(ctx, query, workRate.WorkRate, workRate.ModUno, workRate.ModUser, agent, workRate.Sno, workRate.Jno); err != nil {
+		// TODO: 에러 아카이브
+		return fmt.Errorf("store/site. ModifyWorkRate fail: %w", err)
+	}
+	return nil
+}

@@ -52,3 +52,12 @@ type ReqSite struct {
 	Sno null.Int `json:"sno" db:"SNO"`
 	Base
 }
+
+// 공정률 저장
+type SiteWorkRate struct {
+	Sno        null.Int  `json:"sno" db:"SNO"`
+	Jno        null.Int  `json:"jno" db:"JNO"`
+	RecordDate null.Time `json:"record_date" db:"RECORD_DATE"`
+	WorkRate   null.Int  `json:"work_rate" db:"WORK_RATE"`
+	Base
+}
