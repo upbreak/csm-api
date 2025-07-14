@@ -30,10 +30,11 @@ type Scheduler struct {
 	ProjectService        service.ProjectService
 	ProjectSettingService service.ProjectSettingService
 	WeatherService        service.WeatherApiService
+	SiteService           service.SiteService
 	cron                  *cron.Cron
 }
 
-func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error) {
+func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig, timesheetDb *sqlx.DB) (*Scheduler, error) {
 	r := store.Repository{Clocker: clock.RealClock{}}
 	c := cron.New(cron.WithSeconds())
 
@@ -65,6 +66,20 @@ func NewScheduler(safeDb *sqlx.DB, apiCfg *config.ApiConfig) (*Scheduler, error)
 			SafeTDB:      safeDb,
 			Store:        &r,
 			SitePosStore: &r,
+		},
+		SiteService: &service.ServiceSite{
+			SafeDB:            safeDb,
+			SafeTDB:           safeDb,
+			Store:             &r,
+			ProjectStore:      &r,
+			ProjectDailyStore: &r,
+			SitePosStore:      &r,
+			SiteDateStore:     &r,
+			UserService: &service.ServiceUser{
+				SafeDB:      safeDb,
+				TimeSheetDB: timesheetDb,
+				Store:       &r,
+			},
 		},
 
 		cron: c,
@@ -138,8 +153,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
-
 	// 8시, 10시, 13시, 15시, 17시에 시작
+	// 날씨 저장
 	_, err = s.cron.AddFunc("0 0 8,10,13,15,17 * * *", func() {
 
 		log.Println("[Scheduler] Running SaveWeather")
@@ -154,6 +169,22 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	})
 	if err != nil {
 		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
+	}
+
+	// 0, 1, 2, 3, 4, 5 시에 시작
+	// 공정률 기록
+	_, err = s.cron.AddFunc("0 0 0,1,2,3,4,5 * * *", func() {
+		log.Println("[Scheduler] Running SettingWorkRate")
+		var count int64
+		count, err = s.SiteService.SettingWorkRate(ctx)
+		if err != nil {
+			log.Printf("[Scheduler] SettingWorkRate fail: %w", err)
+		} else if count > 0 {
+			log.Printf("[Scheduler] SettingWorkRate success: %d", count)
+		}
+	})
+	if err != nil {
+		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
 	}
 
 	// ... 추가 job 등록

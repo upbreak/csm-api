@@ -93,6 +93,9 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 				projectInfo.DailyContentList = projectDailyList
 			}
 		}
+		if projectCnt == 0 {
+			projectCnt++
+		}
 
 		// 공정률
 		site.WorkRate = null.NewFloat(float64(sumWorkRate)/float64(projectCnt), true)
@@ -240,6 +243,19 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		if err = s.ProjectStore.ModifyProject(ctx, tx, newPrj); err != nil {
 			return fmt.Errorf("service_site/ModifyProject err: %w", err)
 		}
+
+		workRate := entity.SiteWorkRate{
+			Sno:      prj.Sno,
+			Jno:      prj.Jno,
+			WorkRate: prj.WorkRate,
+			Base: entity.Base{
+				ModUno:  prj.ModUno,
+				ModUser: prj.ModUser,
+			},
+		}
+		if err = s.Store.ModifyWorkRate(ctx, tx, workRate); err != nil {
+			return fmt.Errorf("service_site/ModifyWorkRate err: %w", err)
+		}
 	}
 
 	// 날짜 수정 정보가 있는 경우만 실행
@@ -315,6 +331,7 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSite) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
+		// TODO: 에러 아카이브
 		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
 	}
 
@@ -356,4 +373,32 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSit
 	}
 
 	return
+}
+
+// func: 공정률 전날 수치로 세팅
+// @param
+// -
+func (s *ServiceSite) SettingWorkRate(ctx context.Context) (int64, error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		// TODO: 에러 아카이브
+		return 0, fmt.Errorf("service_site/SettingWorkRate err: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_site/SettingWorkRate rollback err: %v", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_site/SettingWorkRate commit err: %v", commitErr)
+			}
+		}
+	}()
+	count, err := s.Store.SettingWorkRate(ctx, tx)
+	if err != nil {
+		return 0, fmt.Errorf("service_site/SettingWorkRate err: %w", err)
+	}
+
+	return count, nil
 }

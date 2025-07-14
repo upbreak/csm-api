@@ -280,7 +280,7 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 		}
 
 		// 값이 없는 경우 저장하지 않음
-		if !weather.Lgt.Valid && !weather.Pty.Valid && !weather.Sky.Valid && !weather.Rn1.Valid && !weather.T1h.Valid && !weather.Wsd.Valid && weather.Vec.Valid {
+		if !weather.Lgt.Valid && !weather.Pty.Valid && !weather.Sky.Valid && !weather.Rn1.Valid && !weather.T1h.Valid && !weather.Wsd.Valid && !weather.Vec.Valid {
 			continue
 		}
 

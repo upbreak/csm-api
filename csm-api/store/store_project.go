@@ -94,7 +94,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				t1.MOD_DATE,
 				t1.MOD_USER,
 				t1.MOD_UNO,
-				t1.WORK_RATE,
+				NVL(t7.WORK_RATE, 0) AS WORK_RATE,
 				t2.JOB_TYPE AS PROJECT_TYPE,
 				t6.CD_NM AS PROJECT_TYPE_NM,
 				t2.JOB_NO AS PROJECT_NO,
@@ -136,13 +136,14 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 			INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
 			INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE AND t6.major_cd = 'JOB_TYPE' 
+			LEFT JOIN (SELECT MAX(WORK_RATE) AS WORK_RATE, JNO FROM IRIS_JOB_WORK_RATE WHERE TRUNC(RECORD_DATE) = TRUNC(:8) GROUP BY JNO) t7 ON t1.JNO = t7.JNO 
 			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO AND t1.JNO = wc.JNO
 			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
-			AND (:8 IS NULL OR t1.SNO = :9)
+			AND (:9 IS NULL OR t1.SNO = :10)
 			ORDER BY IS_DEFAULT DESC`
 
-	if err := db.SelectContext(ctx, &projectInfos, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
+	if err := db.SelectContext(ctx, &projectInfos, sql, snoParam, snoParam, targetDate, targetDate, targetDate, targetDate, targetDate, targetDate, snoParam, snoParam); err != nil {
 		//TODO: 에러 아카이브
 
 		return &projectInfos, fmt.Errorf("getProjectList fail: %v", err)

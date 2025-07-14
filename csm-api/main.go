@@ -107,7 +107,7 @@ func run(ctx context.Context) error {
 	server := NewServer(l, mux)
 
 	// scheduler 생성
-	scheduler, err := NewScheduler(safeDb, apiCfg)
+	scheduler, err := NewScheduler(safeDb, apiCfg, timesheetDb)
 	if err != nil {
 		return fmt.Errorf("NewScheduler fail: %w", err)
 	}
