@@ -171,7 +171,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
 	}
 
-	// 0, 1, 2, 3, 4, 5 시에 시작
+	// 00:00부터 05:00까지 1시간 단위
 	// 공정률 기록
 	_, err = s.cron.AddFunc("0 0 0,1,2,3,4,5 * * *", func() {
 		log.Println("[Scheduler] Running SettingWorkRate")

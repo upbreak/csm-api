@@ -232,25 +232,15 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 
 	// 프로젝트 정보 수정
 	for _, prj := range *site.ProjectList {
-		newPrj := entity.ReqProject{
-			Jno:      prj.Jno,
-			WorkRate: prj.WorkRate,
-			Base: entity.Base{
-				ModUno:  prj.ModUno,
-				ModUser: prj.ModUser,
-			},
-		}
-		if err = s.ProjectStore.ModifyProject(ctx, tx, newPrj); err != nil {
-			return fmt.Errorf("service_site/ModifyProject err: %w", err)
-		}
-
+		// 공정률 수정
 		workRate := entity.SiteWorkRate{
-			Sno:      prj.Sno,
-			Jno:      prj.Jno,
-			WorkRate: prj.WorkRate,
+			Sno:        prj.Sno,
+			Jno:        prj.Jno,
+			WorkRate:   prj.WorkRate,
+			SearchDate: site.SelectDate,
 			Base: entity.Base{
-				ModUno:  prj.ModUno,
-				ModUser: prj.ModUser,
+				ModUno:  site.ModUno,
+				ModUser: site.ModUser,
 			},
 		}
 		if err = s.Store.ModifyWorkRate(ctx, tx, workRate); err != nil {

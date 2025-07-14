@@ -37,6 +37,7 @@ type Site struct {
 	DefaultProjectName null.String `json:"default_project_name" db:"DEFAULT_PROJECT_NAME"`
 	DefaultProjectNo   null.String `json:"default_project_no" db:"DEFAULT_PROJECT_NO"`
 	CurrentSiteStats   null.String `json:"current_site_stats" db:"CURRENT_SITE_STATS"`
+	SelectDate         null.String `json:"select_date" db:"SELECT_DATE"`
 	Base
 
 	ProjectList *ProjectInfos       `json:"project_list"`
@@ -55,9 +56,10 @@ type ReqSite struct {
 
 // 공정률 저장
 type SiteWorkRate struct {
-	Sno        null.Int  `json:"sno" db:"SNO"`
-	Jno        null.Int  `json:"jno" db:"JNO"`
-	RecordDate null.Time `json:"record_date" db:"RECORD_DATE"`
-	WorkRate   null.Int  `json:"work_rate" db:"WORK_RATE"`
+	Sno        null.Int    `json:"sno" db:"SNO"`
+	Jno        null.Int    `json:"jno" db:"JNO"`
+	RecordDate null.Time   `json:"record_date" db:"RECORD_DATE"`
+	WorkRate   null.Int    `json:"work_rate" db:"WORK_RATE"`
+	SearchDate null.String `json:"search_date" db:"SEARCH_DATE"`
 	Base
 }
