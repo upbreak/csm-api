@@ -73,7 +73,6 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				AND t1.IS_USE = 'Y'
 				ORDER BY t1.SNO DESC`
 
-
 	if err := db.SelectContext(ctx, &sites, sql, role, uno, uno, targetDate, targetDate, targetDate, targetDate, targetDate); err != nil {
 		//TODO: 에러 아카이브
 
@@ -305,18 +304,32 @@ func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, site ent
 // func: 공정률 전날 수치로 세팅
 func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, error) {
 	query := `
-		INSERT INTO IRIS_JOB_WORK_RATE (SNO, JNO, RECORD_DATE, WORK_RATE)
+		INSERT INTO IRIS_JOB_WORK_RATE (
+			SNO, JNO, RECORD_DATE, WORK_RATE, MOD_DATE, MOD_USER, MOD_UNO
+		)
 		SELECT 
-			t1.SNO,
-			t1.JNO,
+			T1.SNO,
+			T1.JNO,
 			SYSDATE,
-			NVL((SELECT MAX(WORK_RATE) FROM IRIS_JOB_WORK_RATE r WHERE r.SNO= t1.SNO AND r.JNO = t1.JNO AND TRUNC(r.RECORD_DATE) = TRUNC(SYSDATE - 1)), 0) -- 어제의 데이터 중 가장 큰 공정률 조회, 없으면 0
-		FROM IRIS_SITE_JOB t1
+			NVL(T2.WORK_RATE, 0),
+			SYSDATE,
+			'SYSTEM',
+			0
+		FROM IRIS_SITE_JOB T1
+		LEFT JOIN (
+			SELECT T2.SNO, T2.JNO, T2.WORK_RATE
+			FROM IRIS_JOB_WORK_RATE T2
+			WHERE (T2.SNO, T2.JNO, T2.MOD_DATE) IN (
+				SELECT R2.SNO, R2.JNO, MAX(R2.MOD_DATE)
+				FROM IRIS_JOB_WORK_RATE R2
+				GROUP BY R2.SNO, R2.JNO
+			)
+		) T2 ON T2.SNO = T1.SNO AND T2.JNO = T1.JNO
 		WHERE NOT EXISTS (
 			SELECT 1 
-			FROM IRIS_JOB_WORK_RATE t2
-			 WHERE t1.JNO = t2.JNO
-				AND TRUNC(t2.RECORD_DATE) = TRUNC(SYSDATE)
+			FROM IRIS_JOB_WORK_RATE T3
+			WHERE T3.JNO = T1.JNO
+			AND TRUNC(T3.RECORD_DATE) = TRUNC(SYSDATE)
 		)`
 	result, err := tx.ExecContext(ctx, query)
 	if err != nil {
@@ -329,6 +342,7 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, err
 
 }
 
+// 공정률 수정
 func (r *Repository) ModifyWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error {
 	agent := utils.GetAgent()
 
@@ -342,11 +356,11 @@ func (r *Repository) ModifyWorkRate(ctx context.Context, tx Execer, workRate ent
 				MOD_USER = :3,
 				MOD_AGENT = :4,
 				SNO = :5 
-			WHERE
-				JNO = :6
-				AND TRUNC(RECORD_DATE) = TRUNC(SYSDATE)
+			WHERE SNO = :6
+			AND JNO = :7
+			AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :8
 			`
-	if _, err := tx.ExecContext(ctx, query, workRate.WorkRate, workRate.ModUno, workRate.ModUser, agent, workRate.Sno, workRate.Jno); err != nil {
+	if _, err := tx.ExecContext(ctx, query, workRate.WorkRate, workRate.ModUno, workRate.ModUser, agent, workRate.Sno, workRate.Sno, workRate.Jno, workRate.SearchDate); err != nil {
 		// TODO: 에러 아카이브
 		return fmt.Errorf("store/site. ModifyWorkRate fail: %w", err)
 	}
