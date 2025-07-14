@@ -52,9 +52,11 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 	}
 
 	// 공개 라우팅
-	mux.Mount("/login", route.LoginRoute(jwt, safeDb, &r)) // 로그인
-	mux.Mount("/logout", route.LogoutRoute())              // 로그아웃
-	mux.Mount("/jwt-validation", route.JwtVaildRout(jwt))  // jwt 유효성 검사
+	mux.Mount("/login", route.LoginRoute(jwt, safeDb, &r))                  // 로그인
+	mux.Mount("/logout", route.LogoutRoute())                               // 로그아웃
+	mux.Mount("/jwt-validation", route.JwtVaildRoute(jwt))                  // jwt 유효성 검사
+	mux.Mount("/init", route.InitApiRoute(safeDb, timesheetDb, apiCfg, &r)) // api로 초기 세팅
+
 	// 인증 라우팅
 	mux.Group(func(router chi.Router) {
 		router.Use(handler.AuthMiddleware(jwt)) // jwt 인증

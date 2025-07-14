@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func JwtVaildRout(jwt *auth.JWTUtils) chi.Router {
+func JwtVaildRoute(jwt *auth.JWTUtils) chi.Router {
 	router := chi.NewRouter()
 
 	jwtVaildHandler := &handler.JwtValidHandler{
