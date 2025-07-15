@@ -392,3 +392,44 @@ func (s *ServiceSite) SettingWorkRate(ctx context.Context) (int64, error) {
 
 	return count, nil
 }
+
+// 공정률 수정
+func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_site/ModifyWorkRate err: %w", err)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifyWorkRate panic: %v", r)
+			return
+		}
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_site/ModifyWorkRate rollback err: %v", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_site/ModifyWorkRate commit err: %v", commitErr)
+			}
+		}
+	}()
+
+	err = s.Store.ModifyWorkRate(ctx, tx, workRate)
+	if err != nil {
+		return fmt.Errorf("service_site/ModifyWorkRate err: %w", err)
+	}
+
+	return
+}
+
+// 날짜별 공정률 조회
+func (s *ServiceSite) GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (int64, error) {
+	data, err := s.Store.GetSiteWorkRateByDate(ctx, s.SafeDB, jno, month)
+	if err != nil {
+		return 0, fmt.Errorf("service_site/GetSiteWorkRateByDate err: %w", err)
+	}
+	return data, nil
+}
