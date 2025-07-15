@@ -86,46 +86,33 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				FROM IRIS_EQUIP_TEMP
 			),
 			work_rate_info AS (
-				SELECT WORK_RATE, IS_WORK_RATE, JNO
-				FROM (
-					SELECT R1.WORK_RATE, 'Y' AS IS_WORK_RATE, R1.JNO, 1 AS PRIORITY
+				SELECT WORK_RATE, IS_WORK_RATE, JNO FROM (
+					SELECT R1.WORK_RATE, 'Y' AS IS_WORK_RATE, R1.JNO
 					FROM IRIS_JOB_WORK_RATE R1
-					JOIN (
-						SELECT JNO, MAX(MOD_DATE) AS MAX_MOD_DATE
-						FROM IRIS_JOB_WORK_RATE
-						WHERE RECORD_DATE = TO_DATE(:8, 'YYYY-MM-DD')
-						GROUP BY JNO
-					) R2 ON R1.JNO = R2.JNO AND R1.MOD_DATE = R2.MAX_MOD_DATE
-					WHERE R1.RECORD_DATE = TO_DATE(:9, 'YYYY-MM-DD')
+					WHERE R1.RECORD_DATE = TO_DATE(:8, 'YYYY-MM-DD')
 					UNION ALL
-					SELECT R3.WORK_RATE, 'N' AS IS_WORK_RATE, R3.JNO, 2 AS PRIORITY
+					SELECT R3.WORK_RATE, 'N' AS IS_WORK_RATE, R3.JNO
 					FROM IRIS_JOB_WORK_RATE R3
 					JOIN (
-						SELECT JNO, MAX(RECORD_DATE) AS MAX_REC_DATE
+						SELECT JNO, MAX(RECORD_DATE) AS MAX_RECORD_DATE
 						FROM IRIS_JOB_WORK_RATE
-						WHERE RECORD_DATE < TO_DATE(:10, 'YYYY-MM-DD')
+						WHERE RECORD_DATE < TO_DATE(:9, 'YYYY-MM-DD')
 						GROUP BY JNO
-					) R4 ON R3.JNO = R4.JNO AND R3.RECORD_DATE = R4.MAX_REC_DATE
-					JOIN (
-						SELECT JNO, RECORD_DATE, MAX(MOD_DATE) AS MAX_MOD_DATE
-						FROM IRIS_JOB_WORK_RATE
-						WHERE RECORD_DATE < TO_DATE(:11, 'YYYY-MM-DD')
-						GROUP BY JNO, RECORD_DATE
-					) R5 ON R3.JNO = R5.JNO AND R3.RECORD_DATE = R5.RECORD_DATE AND R3.MOD_DATE = R5.MAX_MOD_DATE
+					) R4 ON R3.JNO = R4.JNO AND R3.RECORD_DATE = R4.MAX_RECORD_DATE
 					WHERE NOT EXISTS (
 						SELECT 1
 						FROM IRIS_JOB_WORK_RATE R6
-						WHERE R6.RECORD_DATE = TO_DATE(:12, 'YYYY-MM-DD')
+						WHERE R6.RECORD_DATE = TO_DATE(:10, 'YYYY-MM-DD')
 						AND R6.JNO = R3.JNO
 					)
 					UNION ALL
-					SELECT 0 AS WORK_RATE, 'N' AS IS_WORK_RATE, R7.JNO, 3 AS PRIORITY
+					SELECT 0 AS WORK_RATE, 'N' AS IS_WORK_RATE, R7.JNO
 					FROM (SELECT DISTINCT JNO FROM IRIS_JOB_WORK_RATE) R7
 					WHERE NOT EXISTS (
 						SELECT 1
 						FROM IRIS_JOB_WORK_RATE R8
 						WHERE R8.JNO = R7.JNO
-						AND R8.RECORD_DATE <= TO_DATE(:13, 'YYYY-MM-DD')
+						AND R8.RECORD_DATE <= TO_DATE(:11, 'YYYY-MM-DD')
 					)
 				)
 			)
@@ -187,13 +174,13 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO AND t1.JNO = wc.JNO
 			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
-			AND (:14 IS NULL OR t1.SNO = :15)
+			AND (:12 IS NULL OR t1.SNO = :13)
 			ORDER BY IS_DEFAULT DESC`
 
 	if err := db.SelectContext(ctx, &projectInfos, sql,
 		snoParam, snoParam, targetDate, targetDate, targetDate,
 		targetDate, targetDate, formattedDate, formattedDate, formattedDate,
-		formattedDate, formattedDate, formattedDate, snoParam, snoParam,
+		formattedDate, snoParam, snoParam,
 	); err != nil {
 		return &projectInfos, fmt.Errorf("getProjectList fail: %v", err)
 	}
