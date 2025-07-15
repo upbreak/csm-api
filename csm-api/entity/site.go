@@ -60,6 +60,7 @@ type SiteWorkRate struct {
 	Jno        null.Int    `json:"jno" db:"JNO"`
 	RecordDate null.Time   `json:"record_date" db:"RECORD_DATE"`
 	WorkRate   null.Int    `json:"work_rate" db:"WORK_RATE"`
+	IsWorkRate null.String `json:"is_work_rate" db:"IS_WORK_RATE"`
 	SearchDate null.String `json:"search_date" db:"SEARCH_DATE"`
 	Base
 }

@@ -217,3 +217,36 @@ func (h *HandlerSite) ModifyNonUse(w http.ResponseWriter, r *http.Request) {
 
 	SuccessResponse(ctx, w)
 }
+
+// 공정률 수정
+func (h *HandlerSite) ModifyWorkRate(w http.ResponseWriter, r *http.Request) {
+	var workRate entity.SiteWorkRate
+	if err := json.NewDecoder(r.Body).Decode(&workRate); err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+
+	if err := h.Service.ModifyWorkRate(r.Context(), workRate); err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessResponse(r.Context(), w)
+}
+
+// 날짜별 공정률 조회
+func (h *HandlerSite) SiteWorkRateByDate(w http.ResponseWriter, r *http.Request) {
+	searchDate := r.URL.Query().Get("search_date")
+	jnoString := r.URL.Query().Get("jno")
+	if searchDate == "" || jnoString == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	jno, _ := strconv.ParseInt(jnoString, 10, 64)
+	data, err := h.Service.GetSiteWorkRateByDate(r.Context(), jno, searchDate)
+	if err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessValuesResponse(r.Context(), w, data)
+}

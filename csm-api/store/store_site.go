@@ -4,6 +4,8 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/utils"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -310,7 +312,7 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, err
 		SELECT 
 			T1.SNO,
 			T1.JNO,
-			SYSDATE,
+			TRUNC(SYSDATE),
 			NVL(T2.WORK_RATE, 0),
 			SYSDATE,
 			'SYSTEM',
@@ -365,4 +367,29 @@ func (r *Repository) ModifyWorkRate(ctx context.Context, tx Execer, workRate ent
 		return fmt.Errorf("store/site. ModifyWorkRate fail: %w", err)
 	}
 	return nil
+}
+
+// 날짜별 공정률 조회
+func (r *Repository) GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno int64, searchDate string) (int64, error) {
+	var workRate int64
+
+	query := `
+		SELECT 
+			WORK_RATE
+		FROM IRIS_JOB_WORK_RATE
+		WHERE (SNO, JNO, MOD_DATE) IN (
+			SELECT R1.SNO, R1.JNO, MAX(R1.MOD_DATE)
+			FROM IRIS_JOB_WORK_RATE R1
+			GROUP BY R1.SNO, R1.JNO
+		)
+		AND TO_CHAR(RECORD_DATE, 'yyyy-mm-dd') = :1
+		AND JNO = :2`
+
+	if err := db.GetContext(ctx, &workRate, query, searchDate, jno); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return -1, nil
+		}
+		return workRate, err
+	}
+	return workRate, nil
 }
