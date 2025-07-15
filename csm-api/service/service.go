@@ -24,7 +24,7 @@ type SiteService interface {
 	ModifySite(ctx context.Context, site entity.Site) error
 	AddSite(ctx context.Context, jno int64, user entity.User) error
 	ModifySiteIsNonUse(ctx context.Context, site entity.ReqSite) error
-	SettingWorkRate(ctx context.Context) (int64, error)
+	SettingWorkRate(ctx context.Context, targetDate time.Time) (int64, error)
 	ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) error
 	GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (entity.SiteWorkRate, error)
 }
@@ -67,6 +67,7 @@ type ProjectSettingService interface {
 	MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) error
 	CheckProjectSetting(ctx context.Context) (count int, err error)
 	DeleteManHour(ctx context.Context, mhno int64, manhour entity.ManHour) error
+	AddManHour(ctx context.Context, manhour entity.ManHour) error
 }
 
 type OrganizationService interface {

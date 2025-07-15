@@ -13,6 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"log"
+	"time"
 )
 
 /**
@@ -176,7 +177,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	_, err = s.cron.AddFunc("0 0 0,1,2,3,4,5 * * *", func() {
 		log.Println("[Scheduler] Running SettingWorkRate")
 		var count int64
-		count, err = s.SiteService.SettingWorkRate(ctx)
+		now := time.Now()
+		count, err = s.SiteService.SettingWorkRate(ctx, now)
 		if err != nil {
 			log.Printf("[Scheduler] SettingWorkRate fail: %w", err)
 		} else if count > 0 {

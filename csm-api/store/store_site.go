@@ -304,7 +304,7 @@ func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, site ent
 }
 
 // func: 공정률 전날 수치로 세팅
-func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, error) {
+func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer, targetDate time.Time) (int64, error) {
 	query := `
 		INSERT INTO IRIS_JOB_WORK_RATE (
 			SNO, JNO, RECORD_DATE, WORK_RATE, MOD_DATE, MOD_USER, MOD_UNO
@@ -312,7 +312,7 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, err
 		SELECT 
 			T1.SNO,
 			T1.JNO,
-			TRUNC(SYSDATE),
+			TRUNC(:1),
 			NVL(T2.WORK_RATE, 0),
 			SYSDATE,
 			'SYSTEM',
@@ -321,9 +321,10 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, err
 		LEFT JOIN (
 			SELECT T2.SNO, T2.JNO, T2.WORK_RATE
 			FROM IRIS_JOB_WORK_RATE T2
-			WHERE (T2.SNO, T2.JNO, T2.MOD_DATE) IN (
-				SELECT R2.SNO, R2.JNO, MAX(R2.MOD_DATE)
+			WHERE (T2.SNO, T2.JNO, T2.RECORD_DATE) IN (
+				SELECT R2.SNO, R2.JNO, MAX(R2.RECORD_DATE)
 				FROM IRIS_JOB_WORK_RATE R2
+				WHERE TRUNC(RECORD_DATE) < TRUNC(:2)
 				GROUP BY R2.SNO, R2.JNO
 			)
 		) T2 ON T2.SNO = T1.SNO AND T2.JNO = T1.JNO
@@ -331,9 +332,10 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer) (int64, err
 			SELECT 1 
 			FROM IRIS_JOB_WORK_RATE T3
 			WHERE T3.JNO = T1.JNO
-			AND TRUNC(T3.RECORD_DATE) = TRUNC(SYSDATE)
+			AND TRUNC(T3.RECORD_DATE) = TRUNC(:3)
 		)`
-	result, err := tx.ExecContext(ctx, query)
+	result, err := tx.ExecContext(ctx, query, targetDate, targetDate, targetDate)
+
 	if err != nil {
 		// TODO: 에러 아카이브
 		return 0, fmt.Errorf("store/site. SettingWorkRate fail: %w", err)

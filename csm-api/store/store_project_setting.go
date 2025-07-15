@@ -35,7 +35,7 @@ func (r *Repository) GetManHourList(ctx context.Context, db Queryer, jno int64) 
 	return &manHours, nil
 }
 
-// func: 공수 수정 및 추가
+// func: 공수 수정 및 추가(시스템 관리자)
 // @param
 // - manHour: 공수 정보
 func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity.ManHour) (count int64, err error) {

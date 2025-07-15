@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 type InitApiHandler struct {
@@ -62,9 +63,12 @@ func (h *InitApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 당일 공정률 기록
-	if count, err := h.SiteService.SettingWorkRate(ctx); err != nil {
+	now := time.Now()
+	if count, err := h.SiteService.SettingWorkRate(ctx, now); err != nil {
 		log.Printf("[InitApi] SettingWorkRate fail: %w", err)
 	} else if count > 0 {
 		log.Printf("[InitApi] SettingWorkRate success: %d", count)
 	}
+
+	SuccessResponse(ctx, w)
 }
