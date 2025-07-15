@@ -26,7 +26,7 @@ type SiteStore interface {
 	ModifySite(ctx context.Context, tx Execer, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tx Execer, jno int64, user entity.User) error
 	ModifySiteIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
-	SettingWorkRate(ctx context.Context, tx Execer) (int64, error)
+	SettingWorkRate(ctx context.Context, tx Execer, targetDate time.Time) (int64, error)
 	ModifyWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error
 	GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno int64, month string) (entity.SiteWorkRate, error)
 }

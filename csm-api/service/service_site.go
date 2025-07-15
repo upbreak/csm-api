@@ -368,7 +368,7 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSit
 // func: 공정률 전날 수치로 세팅
 // @param
 // -
-func (s *ServiceSite) SettingWorkRate(ctx context.Context) (int64, error) {
+func (s *ServiceSite) SettingWorkRate(ctx context.Context, targetDate time.Time) (int64, error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
 		// TODO: 에러 아카이브
@@ -385,7 +385,7 @@ func (s *ServiceSite) SettingWorkRate(ctx context.Context) (int64, error) {
 			}
 		}
 	}()
-	count, err := s.Store.SettingWorkRate(ctx, tx)
+	count, err := s.Store.SettingWorkRate(ctx, tx, targetDate)
 	if err != nil {
 		return 0, fmt.Errorf("service_site/SettingWorkRate err: %w", err)
 	}
