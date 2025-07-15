@@ -426,10 +426,10 @@ func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWo
 }
 
 // 날짜별 공정률 조회
-func (s *ServiceSite) GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (int64, error) {
+func (s *ServiceSite) GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (entity.SiteWorkRate, error) {
 	data, err := s.Store.GetSiteWorkRateByDate(ctx, s.SafeDB, jno, month)
 	if err != nil {
-		return 0, fmt.Errorf("service_site/GetSiteWorkRateByDate err: %w", err)
+		return data, fmt.Errorf("service_site/GetSiteWorkRateByDate err: %w", err)
 	}
 	return data, nil
 }

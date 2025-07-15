@@ -370,24 +370,39 @@ func (r *Repository) ModifyWorkRate(ctx context.Context, tx Execer, workRate ent
 }
 
 // 날짜별 공정률 조회
-func (r *Repository) GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno int64, searchDate string) (int64, error) {
-	var workRate int64
+func (r *Repository) GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno int64, searchDate string) (entity.SiteWorkRate, error) {
+	workRate := entity.SiteWorkRate{
+		WorkRate:   utils.ParseNullInt("0"),
+		IsWorkRate: utils.ParseNullString("N"),
+	}
 
 	query := `
 		SELECT 
-			WORK_RATE
-		FROM IRIS_JOB_WORK_RATE
-		WHERE (SNO, JNO, MOD_DATE) IN (
-			SELECT R1.SNO, R1.JNO, MAX(R1.MOD_DATE)
-			FROM IRIS_JOB_WORK_RATE R1
-			GROUP BY R1.SNO, R1.JNO
+			WORK_RATE, IS_WORK_RATE
+		FROM (
+			SELECT WORK_RATE, 'Y' AS IS_WORK_RATE
+			FROM IRIS_JOB_WORK_RATE
+			WHERE JNO = :1
+			AND RECORD_DATE = TO_DATE(:2, 'YYYY-MM-DD')
+			UNION ALL
+			SELECT WORK_RATE, 'N' AS IS_WORK_RATE
+			FROM IRIS_JOB_WORK_RATE
+			WHERE JNO = :3
+			AND RECORD_DATE = (
+				SELECT MAX(RECORD_DATE)
+				FROM IRIS_JOB_WORK_RATE
+				WHERE JNO = :4
+				AND RECORD_DATE < TO_DATE(:5, 'YYYY-MM-DD')
+			)
+			UNION ALL
+			SELECT 0 AS WORK_RATE, 'N' AS IS_WORK_RATE FROM DUAL
 		)
-		AND TO_CHAR(RECORD_DATE, 'yyyy-mm-dd') = :1
-		AND JNO = :2`
+		WHERE ROWNUM = 1
+`
 
-	if err := db.GetContext(ctx, &workRate, query, searchDate, jno); err != nil {
+	if err := db.GetContext(ctx, &workRate, query, jno, searchDate, jno, jno, searchDate); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return -1, nil
+			return workRate, nil
 		}
 		return workRate, err
 	}
