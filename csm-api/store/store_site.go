@@ -78,7 +78,7 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 	if err := db.SelectContext(ctx, &sites, sql, role, uno, uno, targetDate, targetDate, targetDate, targetDate, targetDate); err != nil {
 		//TODO: 에러 아카이브
 
-		return &sites, fmt.Errorf("getSiteList fail: %w", err)
+		return &sites, utils.CustomErrorf(err)
 	}
 
 	return &sites, nil

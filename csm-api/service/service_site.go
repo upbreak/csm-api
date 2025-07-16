@@ -58,13 +58,13 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 
 	uno, err := strconv.ParseInt(unoString, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("service_site/GetSiteList parseInt err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	//현장관리 테이블 조회
 	sites, err := s.Store.GetSiteList(ctx, s.SafeDB, targetDate, roleInt, uno)
 	if err != nil {
-		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteList err: %w", err)
+		return &entity.Sites{}, utils.CustomErrorf(err)
 	}
 
 	for _, site := range *sites {
@@ -75,7 +75,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		// 프로젝트 리스트 조회
 		projectInfos, err := s.ProjectService.GetProjectList(ctx, sno, targetDate)
 		if err != nil {
-			return &entity.Sites{}, fmt.Errorf("service_site/GetProjectList err: %w", err)
+			return &entity.Sites{}, utils.CustomErrorf(err)
 		}
 		site.ProjectList = projectInfos
 
@@ -88,7 +88,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 				// 작업내용
 				projectDailyList, err := s.ProjectDailyStore.GetProjectDailyContentList(ctx, s.SafeDB, projectInfo.Jno.Int64, targetDate)
 				if err != nil {
-					return &entity.Sites{}, fmt.Errorf("service_site/GetProjectDailyContentList err: %w", err)
+					return &entity.Sites{}, utils.CustomErrorf(err)
 				}
 				projectInfo.DailyContentList = projectDailyList
 			}
@@ -103,7 +103,7 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		// 현장 위치 조회
 		sitePos, err := s.SitePosStore.GetSitePosData(ctx, s.SafeDB, sno)
 		if err != nil {
-			return &entity.Sites{}, fmt.Errorf("service_site/GetSitePosData err: %w", err)
+			return &entity.Sites{}, utils.CustomErrorf(err)
 		}
 		if sitePos.RoadAddress.String == "" {
 			depthArray := []string{sitePos.RoadAddressNameDepth1.String, sitePos.RoadAddressNameDepth2.String, sitePos.RoadAddressNameDepth3.String, sitePos.RoadAddressNameDepth4.String, sitePos.RoadAddressNameDepth5.String}
@@ -125,14 +125,14 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		//
 		//siteWeather, err := s.WeatherApiService.GetWeatherSrtNcst(baseDate, baseTime, nx, ny)
 		//if err != nil {
-		//	return &entity.Sites{}, fmt.Errorf("service_site/GetWeatherSrt err: %w", err)
+		//	return &entity.Sites{}, utils.CustomErrorf(err)
 		//}
 		//site.Weather = siteWeather
 
 		// 현장 날짜 조회
 		siteDateData, err := s.SiteDateStore.GetSiteDateData(ctx, s.SafeDB, sno)
 		if err != nil {
-			return &entity.Sites{}, fmt.Errorf("service_site/GetSiteDateData err: %w", err)
+			return &entity.Sites{}, utils.CustomErrorf(err)
 		}
 		site.SiteDate = siteDateData
 	}
@@ -290,22 +290,7 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 		return fmt.Errorf("service_site/AddSite err: %w", err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/AddSite panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site/AddSite rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site/AddSite commit err: %v", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.AddSite(ctx, s.SafeDB, tx, jno, user)
 	if err != nil {
