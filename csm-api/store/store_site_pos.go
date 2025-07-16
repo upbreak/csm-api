@@ -58,7 +58,7 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 				IRIS_SITE_POS t1
 			WHERE
 				t1.SNO = :1
-				AND t1.IS_USE = 'Y'`
+-- 				AND t1.IS_USE = 'Y'`
 
 	if err := db.GetContext(ctx, &sitePos, query, sno); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -190,6 +190,27 @@ func (r *Repository) ModifySitePosIsNonUse(ctx context.Context, tx Execer, site 
 			WHERE SNO = :1`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
 		return fmt.Errorf("store/site_pos. ModifySitePosIsNonUse fail: %w", err)
+	}
+
+	return nil
+}
+
+// func: 현장 위치 사용으로 변경
+// @param
+// -
+func (r *Repository) ModifySitePosIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error {
+	agent := utils.GetAgent()
+	query := `
+			UPDATE IRIS_SITE_POS
+			SET 
+			    IS_USE = 'Y',
+				MOD_AGENT = :1,
+				MOD_USER = :2,
+				MOD_UNO = :3,
+				MOD_DATE = SYSDATE
+			WHERE SNO = :1`
+	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
+		return fmt.Errorf("store/site_pos. ModifySitePosIsUse fail: %w", err)
 	}
 
 	return nil

@@ -26,6 +26,7 @@ type SiteStore interface {
 	ModifySite(ctx context.Context, tx Execer, site entity.Site) error
 	AddSite(ctx context.Context, db Queryer, tx Execer, jno int64, user entity.User) error
 	ModifySiteIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
+	ModifySiteIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error
 	SettingWorkRate(ctx context.Context, tx Execer, targetDate time.Time) (int64, error)
 	ModifyWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error
 	GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno int64, month string) (entity.SiteWorkRate, error)
@@ -36,12 +37,14 @@ type SitePosStore interface {
 	GetSitePosData(ctx context.Context, db Queryer, sno int64) (*entity.SitePos, error)
 	ModifySitePosData(ctx context.Context, tx Execer, sno int64, sitePosSql entity.SitePos) error
 	ModifySitePosIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
+	ModifySitePosIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error
 }
 
 type SiteDateStore interface {
 	GetSiteDateData(ctx context.Context, db Queryer, sno int64) (*entity.SiteDate, error)
 	ModifySiteDate(ctx context.Context, tx Execer, sno int64, siteDateSql entity.SiteDate) error
 	ModifySiteDateIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
+	ModifySiteDateIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error
 }
 
 type ProjectStore interface {
@@ -64,6 +67,7 @@ type ProjectStore interface {
 	ModifyUseProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	RemoveProject(ctx context.Context, tx Execer, sno int64, jno int64) error
 	ModifyProjectIsNonUse(ctx context.Context, tx Execer, site entity.ReqSite) error
+	ModifyProjectIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error
 	ModifyProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 }
 type ProjectSettingStore interface {

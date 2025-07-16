@@ -361,7 +361,54 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSit
 	if err = s.SiteDateStore.ModifySiteDateIsNonUse(ctx, tx, site); err != nil {
 		return fmt.Errorf("service_site/ModifySiteDateIsNonUse err: %w", err)
 	}
+	return
+}
 
+// func: 현장 사용안함 변경
+// @param
+// -
+func (s *ServiceSite) ModifySiteIsUse(ctx context.Context, site entity.ReqSite) (err error) {
+	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("service_site/ModifySiteIsUse panic: %v", r)
+			return
+		}
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = fmt.Errorf("service_site/ModifySiteIsUse rollback err: %v", rollbackErr)
+			}
+		} else {
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = fmt.Errorf("service_site/ModifySiteIsUse commit err: %v", commitErr)
+			}
+		}
+	}()
+
+	// 현장
+	if err = s.Store.ModifySiteIsUse(ctx, tx, site); err != nil {
+		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+	}
+
+	// 프로젝트
+	if err = s.ProjectStore.ModifyProjectIsUse(ctx, tx, site); err != nil {
+		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+	}
+
+	// 위치
+	if err = s.SitePosStore.ModifySitePosIsUse(ctx, tx, site); err != nil {
+		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+	}
+
+	// 날짜
+	if err = s.SiteDateStore.ModifySiteDateIsUse(ctx, tx, site); err != nil {
+		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+	}
 	return
 }
 
