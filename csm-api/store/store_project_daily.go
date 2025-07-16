@@ -41,8 +41,9 @@ func (r *Repository) GetProjectDailyContentList(ctx context.Context, db Queryer,
 			FROM
 				IRIS_DAILY_JOB t1
 			WHERE
-				t1.IS_USE = 'Y'
-				AND t1.JNO = :2
+-- 				t1.IS_USE = 'Y'
+-- 				AND 
+			    t1.JNO = :2
 				AND TO_CHAR(t1.TARGET_DATE, 'YYYY-MM-DD') = TO_CHAR(:2 , 'YYYY-MM-DD')
 			ORDER BY
 				NVL(t1.REG_DATE, t1.MOD_DATE) DESC`

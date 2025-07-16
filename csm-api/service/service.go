@@ -24,6 +24,7 @@ type SiteService interface {
 	ModifySite(ctx context.Context, site entity.Site) error
 	AddSite(ctx context.Context, jno int64, user entity.User) error
 	ModifySiteIsNonUse(ctx context.Context, site entity.ReqSite) error
+	ModifySiteIsUse(ctx context.Context, site entity.ReqSite) error
 	SettingWorkRate(ctx context.Context, targetDate time.Time) (int64, error)
 	ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) error
 	GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (entity.SiteWorkRate, error)

@@ -984,6 +984,27 @@ func (r *Repository) ModifyProjectIsNonUse(ctx context.Context, tx Execer, site 
 	return nil
 }
 
+// func: 현장 프로젝트 사용으로 변경
+// @param
+// -
+func (r *Repository) ModifyProjectIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error {
+	agent := utils.GetAgent()
+
+	query := `
+			UPDATE IRIS_SITE_JOB
+			SET IS_USE = 'Y',
+			MOD_AGENT = :1,
+		    MOD_USER = :2,
+		    MOD_UNO = :3,
+		    MOD_DATE = SYSDATE
+			WHERE SNO = :4`
+	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
+		return fmt.Errorf("ModifyProjectIsUse. Failed to modify default project: %w", err)
+	}
+
+	return nil
+}
+
 // func: 현장 프로젝트 수정
 // @param
 // -

@@ -218,6 +218,29 @@ func (h *HandlerSite) ModifyNonUse(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(ctx, w)
 }
 
+// func: 현장 사용으로 변경
+// @param
+// -
+func (h *HandlerSite) ModifyUse(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	reqSite := entity.ReqSite{}
+	if err := json.NewDecoder(r.Body).Decode(&reqSite); err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	if reqSite.Sno.Valid == false {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	if err := h.Service.ModifySiteIsUse(ctx, reqSite); err != nil {
+		FailResponse(ctx, w, err)
+	}
+
+	SuccessResponse(ctx, w)
+}
+
 // 공정률 수정
 func (h *HandlerSite) ModifyWorkRate(w http.ResponseWriter, r *http.Request) {
 	var workRate entity.SiteWorkRate

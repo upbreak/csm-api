@@ -72,7 +72,7 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				INNER JOIN S_JOB_INFO t3 ON t2.JNO = t3.JNO AND t3.JNO IN (SELECT * FROM USER_IN_JNO)
 				INNER JOIN (SELECT * FROM IRIS_SITE_DATE WHERE (:6 BETWEEN OPENING_DATE AND CLOSING_ACTUAL_DATE) OR (:7 >= OPENING_DATE AND CLOSING_ACTUAL_DATE IS NULL) OR (:8 <= CLOSING_ACTUAL_DATE AND OPENING_DATE IS NULL)) t4 ON t1.SNO = t4.SNO
 				WHERE t1.SNO > -1
-				AND t1.IS_USE = 'Y'
+				--AND t1.IS_USE = 'Y'
 				ORDER BY t1.SNO DESC`
 
 	if err := db.SelectContext(ctx, &sites, sql, role, uno, uno, targetDate, targetDate, targetDate, targetDate, targetDate); err != nil {
@@ -303,6 +303,28 @@ func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, site ent
 	return nil
 }
 
+// func: 현장 사용으로 변경
+// @param
+// -
+func (r *Repository) ModifySiteIsUse(ctx context.Context, tx Execer, site entity.ReqSite) error {
+	agent := utils.GetAgent()
+
+	query := `
+			UPDATE IRIS_SITE_SET
+			SET 
+			    IS_USE = 'Y',
+				MOD_AGENT = :1,
+				MOD_USER = :2,
+				MOD_UNO = :3,
+				MOD_DATE = SYSDATE
+			WHERE SNO = :4`
+	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
+		return fmt.Errorf("store/site. ModifySiteIsUse fail: %w", err)
+	}
+
+	return nil
+}
+
 // func: 공정률 전날 수치로 세팅
 func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer, targetDate time.Time) (int64, error) {
 	query := `
@@ -333,7 +355,8 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer, targetDate 
 			FROM IRIS_JOB_WORK_RATE T3
 			WHERE T3.JNO = T1.JNO
 			AND TRUNC(T3.RECORD_DATE) = TRUNC(:3)
-		)`
+		)
+		AND T1.IS_USE = 'Y'`
 	result, err := tx.ExecContext(ctx, query, targetDate, targetDate, targetDate)
 
 	if err != nil {

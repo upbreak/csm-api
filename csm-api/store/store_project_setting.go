@@ -164,7 +164,8 @@ func (r *Repository) GetCheckProjectSetting(ctx context.Context, db Queryer) (pr
 				FROM 
 				    IRIS_SITE_JOB 
 				WHERE 
-				    JNO NOT IN (SELECT JNO FROM IRIS_JOB_SET)`
+				    JNO NOT IN (SELECT JNO FROM IRIS_JOB_SET)
+				AND IS_USE = 'Y'`
 
 	if err = db.SelectContext(ctx, projects, query); err != nil {
 		return nil, fmt.Errorf("GetCheckProjectSetting err: %w", err)
