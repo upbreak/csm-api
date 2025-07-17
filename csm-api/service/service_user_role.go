@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 )
 
@@ -35,12 +36,12 @@ func (s *ServiceUserRole) GetUserRoleListByCodeAndJno(ctx context.Context, code 
 
 // 사용자 권한 추가
 func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.UserRoleMap) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
-		err = utils.CustomErrorf(err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.AddUserRole(ctx, tx, userRoles); err != nil {
 		err = utils.CustomErrorf(err)
@@ -50,12 +51,12 @@ func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.Us
 
 // 사용자 권한 삭제
 func (s *ServiceUserRole) RemoveUserRole(ctx context.Context, userRoles []entity.UserRoleMap) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
-		err = utils.CustomErrorf(err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.RemoveUserRole(ctx, tx, userRoles); err != nil {
 		err = utils.CustomErrorf(err)

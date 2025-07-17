@@ -6,6 +6,7 @@ import (
 	"csm-api/config"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 	"encoding/json"
 	"fmt"
@@ -225,12 +226,12 @@ func (s *ServiceWeather) GetWeatherList(ctx context.Context, sno int64, targetDa
 // params:
 // -
 func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// IRIS_SITE_POS에 등록된 값들 불러오기
 	list, err := s.SitePosStore.GetSitePosList(ctx, s.SafeDB)

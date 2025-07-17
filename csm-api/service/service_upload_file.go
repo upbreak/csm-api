@@ -6,6 +6,7 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
+	"fmt"
 	"strconv"
 )
 
@@ -42,7 +43,22 @@ func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.Uploa
 			return utils.CustomErrorf(err)
 		}
 
-		defer utils.DeferTxx(tx, &err)
+		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				err = utils.CustomMessageErrorf("panic", fmt.Errorf("%v", r))
+				return
+			}
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					err = utils.CustomMessageErrorf("rollback", rollbackErr)
+				}
+			} else {
+				if commitErr := tx.Commit(); commitErr != nil {
+					err = utils.CustomMessageErrorf("commit", commitErr)
+				}
+			}
+		}()
 	}
 
 	// 차수

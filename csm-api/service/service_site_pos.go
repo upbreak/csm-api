@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 	"strings"
 )
@@ -53,12 +54,12 @@ func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity
 //     ROAD_ADDRESS_NAME_DEPTH1, ROAD_ADDRESS_NAME_DEPTH2, ROAD_ADDRESS_NAME_DEPTH3, ROAD_ADDRESS_NAME_DEPTH4, ROAD_ADDRESS_NAME_DEPTH5,
 //     ROAD_ADDRESS, ZONE_CODE, BUILDING_NAME)
 func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) (err error) {
-	tx, err := s.TDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.TDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err := s.Store.ModifySitePosData(ctx, tx, sno, sitePos); err != nil {
 		return utils.CustomErrorf(err)

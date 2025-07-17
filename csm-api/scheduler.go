@@ -109,17 +109,17 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 1분마다 실행
 	// 철야 확인 작업
-	_, err = s.cron.AddFunc("0 0/1 * * * *", func() {
-		var count int
-		if count, err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
-			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] ModifyWorkerOverTime", err))
-		} else if count != 0 {
-			log.Println("[Scheduler] ModifyWorkerOverTime completed")
-		}
-	})
-	if err != nil {
-		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
-	}
+	//_, err = s.cron.AddFunc("0 0/1 * * * *", func() {
+	//	var count int
+	//	if count, err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
+	//		_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] ModifyWorkerOverTime", err))
+	//	} else if count != 0 {
+	//		log.Println("[Scheduler] ModifyWorkerOverTime completed")
+	//	}
+	//})
+	//if err != nil {
+	//	return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
+	//}
 
 	// 5분 마다 실행
 	// 프로젝트 정보 업데이트(초기 세팅)

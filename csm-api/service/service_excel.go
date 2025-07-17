@@ -5,6 +5,7 @@ import (
 	"csm-api/ctxutil"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 	"fmt"
 	"github.com/xuri/excelize/v2"
@@ -84,7 +85,22 @@ func (s *ServiceExcel) ImportTbm(ctx context.Context, path string, tbm entity.Tb
 		if err != nil {
 			return utils.CustomErrorf(err)
 		}
-		defer utils.DeferTxx(tx, &err)
+		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				err = utils.CustomMessageErrorf("panic", fmt.Errorf("%v", r))
+				return
+			}
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					err = utils.CustomMessageErrorf("rollback", rollbackErr)
+				}
+			} else {
+				if commitErr := tx.Commit(); commitErr != nil {
+					err = utils.CustomMessageErrorf("commit", commitErr)
+				}
+			}
+		}()
 	}
 
 	// db 저장
@@ -177,12 +193,12 @@ func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deducti
 
 	tx, ok := ctxutil.GetTx(ctx)
 	if !ok || tx == nil {
-		tx, err := s.SafeTDB.BeginTx(ctx, nil)
+		tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 		if err != nil {
 			return utils.CustomErrorf(err)
 		}
 
-		defer utils.DeferTx(tx, &err)
+		defer txutil.DeferTx(tx, &err)
 	}
 
 	if err = s.Store.AddDeductionExcel(ctx, tx, deductionList); err != nil {
@@ -278,12 +294,12 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 		workers = append(workers, temp)
 	}
 
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	var list entity.WorkerDailys
 	if list, err = s.WorkerStore.AddDailyWorkers(ctx, s.SafeDB, tx, workers); err != nil {

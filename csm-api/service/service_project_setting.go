@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 	"fmt"
 	"github.com/guregu/null"
@@ -35,12 +36,12 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 // @param
 // - manHours: 공수 정보 배열
 func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	jno := (*manHours)[0].Jno.Int64
 	user := (*manHours)[0].Base
@@ -103,12 +104,12 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 // @param
 // - ProjectSetting
 func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if !project.Message.Valid {
 		return
@@ -215,12 +216,12 @@ func (s *ServiceProjectSetting) GetProjectSetting(ctx context.Context, jno int64
 // @param
 // - mhno: 공수pk
 func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, manhour entity.ManHour) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 공수 삭제
 	if err = s.Store.DeleteManHour(ctx, tx, mhno); err != nil {
@@ -243,12 +244,12 @@ func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, m
 
 // 공수 추가(삭제 없이 추가만)
 func (s *ServiceProjectSetting) AddManHour(ctx context.Context, manhour entity.ManHour) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.AddManHour(ctx, tx, manhour); err != nil {
 		return utils.CustomErrorf(err)

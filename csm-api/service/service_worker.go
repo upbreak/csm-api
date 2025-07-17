@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 )
 
@@ -100,12 +101,12 @@ func (s *ServiceWorker) GetWorkerDepartList(ctx context.Context, jno int64) ([]s
 // @param
 // -
 func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.AddWorker(ctx, tx, worker)
 	if err != nil {
@@ -118,12 +119,12 @@ func (s *ServiceWorker) AddWorker(ctx context.Context, worker entity.Worker) (er
 // @param
 // -
 func (s *ServiceWorker) ModifyWorker(ctx context.Context, worker entity.Worker) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.ModifyWorker(ctx, tx, worker)
 	if err != nil {
@@ -168,12 +169,12 @@ func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entit
 // @param
 // -
 func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 추가/수정
 	if err = s.Store.MergeSiteBaseWorker(ctx, tx, workers); err != nil {
@@ -192,12 +193,12 @@ func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 마감처리
 	if err = s.Store.ModifyWorkerDeadline(ctx, tx, workers); err != nil {
@@ -215,12 +216,12 @@ func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 전체 근로자 프로젝트 변경
 	if err = s.Store.ModifyWorkerDefaultProject(ctx, tx, workers); err != nil {
@@ -244,12 +245,12 @@ func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerDeadlineInit(ctx context.Context) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.ModifyWorkerDeadlineInit(ctx, tx); err != nil {
 		return utils.CustomErrorf(err)
@@ -261,10 +262,12 @@ func (s *ServiceWorker) ModifyWorkerDeadlineInit(ctx context.Context) (err error
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerOverTime(ctx context.Context) (count int, err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return 0, utils.CustomErrorf(err)
 	}
+
+	defer txutil.DeferTx(tx, &err)
 
 	// 철야 근로자 존재 여부 확인
 	workerOverTimes := &entity.WorkerOverTimes{}
@@ -273,8 +276,6 @@ func (s *ServiceWorker) ModifyWorkerOverTime(ctx context.Context) (count int, er
 		return 0, utils.CustomErrorf(err)
 	}
 	count = len(*workerOverTimes)
-
-	defer utils.DeferTx(tx, &err)
 
 	for _, workerOverTime := range *workerOverTimes {
 
@@ -293,12 +294,12 @@ func (s *ServiceWorker) ModifyWorkerOverTime(ctx context.Context) (count int, er
 
 // 현장 근로자 삭제
 func (s *ServiceWorker) RemoveSiteBaseWorkers(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 현장 근로자 삭제
 	if err = s.Store.RemoveSiteBaseWorkers(ctx, tx, workers); err != nil {
@@ -315,12 +316,12 @@ func (s *ServiceWorker) RemoveSiteBaseWorkers(ctx context.Context, workers entit
 
 // 마감 취소
 func (s *ServiceWorker) ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 마감 취소
 	if err = s.Store.ModifyDeadlineCancel(ctx, tx, workers); err != nil {
@@ -346,12 +347,12 @@ func (s *ServiceWorker) GetDailyWorkersByJnoAndDate(ctx context.Context, param e
 
 // 현장근로자 일괄 공수 변경
 func (s *ServiceWorker) ModifyWorkHours(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	// 공수 변경
 	if err = s.Store.ModifyWorkHours(ctx, tx, workers); err != nil {

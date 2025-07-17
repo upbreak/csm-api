@@ -35,7 +35,7 @@ func ScheduleRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	router.Get("/daily-job", dailyJobHandler.List)               // 작업내용 조회
 	router.Post("/daily-job", dailyJobHandler.Add)               // 작업내용 추가
 	router.Put("/daily-job", dailyJobHandler.Modify)             // 작업내용 수정
-	router.Delete("/daily-job/{cno}", dailyJobHandler.Remove)    // 작업내용 삭제
+	router.Delete("/daily-job/{idx}", dailyJobHandler.Remove)    // 작업내용 삭제
 
 	return router
 }
