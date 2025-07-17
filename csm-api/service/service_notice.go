@@ -7,6 +7,7 @@ import (
 	"csm-api/store"
 	"csm-api/txutil"
 	"csm-api/utils"
+	"fmt"
 	"github.com/guregu/null"
 )
 
@@ -99,7 +100,7 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (er
 	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.AddNotice(ctx, tx, notice); err != nil {
-		return utils.CustomErrorf(err)
+		return fmt.Errorf("service_notice/AddNotice err : %w", err)
 	}
 
 	return

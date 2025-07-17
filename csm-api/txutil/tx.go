@@ -10,6 +10,10 @@ import (
 )
 
 func DeferTx(tx *sql.Tx, err *error) {
+	if tx == nil {
+		return
+	}
+
 	if r := recover(); r != nil {
 		_ = tx.Rollback()
 		*err = utils.CustomMessageErrorfDepth(2, "panic", fmt.Errorf("%v", r))
@@ -29,10 +33,11 @@ func DeferTx(tx *sql.Tx, err *error) {
 
 func BeginTxWithMode(ctx context.Context, db store.Beginner, readOnly bool) (*sql.Tx, error) {
 	opts := &sql.TxOptions{
-		ReadOnly: readOnly,
+		ReadOnly: false,
 	}
 
-	tx, err := db.BeginTx(ctx, opts)
+	conn, err := db.Conn(ctx)
+	tx, err := conn.BeginTx(ctx, opts)
 	if err != nil {
 		return nil, utils.CustomMessageErrorfDepth(2, "begin tx", err)
 	}

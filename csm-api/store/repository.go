@@ -19,7 +19,7 @@ func New(ctx context.Context, cfg *config.DBConfig) (*sqlx.DB, func(), error) {
 	var P godror.ConnectionParams
 	P.Username = cfg.UserName
 	P.Password = godror.NewPassword(cfg.Password)
-	P.ConnectString = fmt.Sprintf("%s:%s/%s", cfg.Host, cfg.Port, cfg.OracleSid)
+	P.ConnectString = fmt.Sprintf("%s:%s/%s?_enableTxReadWrite=0", cfg.Host, cfg.Port, cfg.OracleSid)
 	P.Timezone = time.FixedZone("Asia/Seoul", 9*60*60) // 애플리케이션 타임존 설정
 	P.SetSessionParamOnInit("TIME_ZONE", "Asia/Seoul") // 세션 타임존 설정
 
@@ -54,6 +54,7 @@ type Repository struct {
 type Beginner interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 	BeginTxx(ctx context.Context, opts *sql.TxOptions) (*sqlx.Tx, error)
+	Conn(ctx context.Context) (*sql.Conn, error)
 }
 
 type Preparer interface {
