@@ -182,7 +182,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 		targetDate, targetDate, formattedDate, formattedDate, formattedDate,
 		formattedDate, snoParam, snoParam,
 	); err != nil {
-		return &projectInfos, fmt.Errorf("getProjectList fail: %v", err)
+		return &projectInfos, utils.CustomErrorf(err)
 	}
 
 	return &projectInfos, nil
@@ -267,7 +267,7 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 				WHERE t1.SNO > 100`
 
 	if err := db.SelectContext(ctx, &list, query, targetDate, targetDate, targetDate, targetDate); err != nil {
-		return nil, fmt.Errorf("GetProjectWorkerCountList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -328,7 +328,7 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 				LEFT JOIN cnt t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO`
 
 	if err := db.SelectContext(ctx, &list, query, targetDate); err != nil {
-		return nil, fmt.Errorf("GetProjectSafeWorkerCountList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -355,7 +355,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 			ORDER BY
 				t1.IS_DEFAULT DESC`
 	if err := db.SelectContext(ctx, &projectInfos, sql); err != nil {
-		return &projectInfos, fmt.Errorf("GetProjectNmList fail: %v", err)
+		return &projectInfos, utils.CustomErrorf(err)
 	}
 
 	return &projectInfos, nil
@@ -422,7 +422,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 				WHERE RNUM > :2`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &list, query, pageSql.EndNum, pageSql.StartNum); err != nil {
-		return nil, fmt.Errorf("GetUsedProjectList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -467,7 +467,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetUsedProjectCount err: %v", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -556,7 +556,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 				WHERE RNUM > :3`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &list, query, isAll, pageSql.EndNum, pageSql.StartNum); err != nil {
-		return nil, fmt.Errorf("GetAllProjectList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -601,7 +601,7 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 				WHERE %s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
-		return 0, fmt.Errorf("GetAllProjectCount err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -670,7 +670,7 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 			WHERE RNUM > :3`, condition, order)
 
 	if err := db.SelectContext(ctx, &list, query, uno, pageSql.EndNum, pageSql.StartNum); err != nil {
-		return nil, fmt.Errorf("GetStaffProjectList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -708,7 +708,7 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 				WHERE %s`, condition)
 
 	if err := db.GetContext(ctx, &count, query, uno); err != nil {
-		return 0, fmt.Errorf("GetStaffProjectCount err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -735,7 +735,7 @@ func (r *Repository) GetProjectNmUnoList(ctx context.Context, db Queryer, uno sq
 			      JNO DESC`
 
 	if err := db.SelectContext(ctx, &projectInfos, query, role, uno); err != nil {
-		return &projectInfos, fmt.Errorf("GetProjectNmList fail: %v", err)
+		return &projectInfos, utils.CustomErrorf(err)
 	}
 
 	return &projectInfos, nil
@@ -804,7 +804,7 @@ func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page
 								WHERE RNUM > :2`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &nonProjects, query, page.EndNum, page.StartNum); err != nil {
-		return &nonProjects, fmt.Errorf("GetNonUsedProjectList fail: %v", err)
+		return &nonProjects, utils.CustomErrorf(err)
 	}
 
 	return &nonProjects, nil
@@ -848,7 +848,7 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetNonUsedProjectCount fail: %v", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -868,7 +868,7 @@ func (r *Repository) GetProjectBySite(ctx context.Context, db Queryer, sno int64
 		WHERE T1.SNO = :1`
 
 	if err := db.SelectContext(ctx, &list, query, sno); err != nil {
-		return nil, fmt.Errorf("GetProjectBySite fail: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -889,7 +889,7 @@ func (r *Repository) AddProject(ctx context.Context, tx Execer, project entity.R
 			)`
 
 	if _, err := tx.ExecContext(ctx, query, project.Sno, project.Jno, agent, project.RegUser, project.RegUno); err != nil {
-		return fmt.Errorf("AddProject. Failed to add project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -909,7 +909,7 @@ func (r *Repository) ModifyDefaultProject(ctx context.Context, tx Execer, projec
 		    MOD_DATE = SYSDATE
 		WHERE SNO = :4`
 	if _, err := tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.Sno); err != nil {
-		return fmt.Errorf("ModifyDefaultProject; IS_DEFAULT 'N'. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	query = `
@@ -922,7 +922,7 @@ func (r *Repository) ModifyDefaultProject(ctx context.Context, tx Execer, projec
 		WHERE SNO = :4
 		AND JNO = :5`
 	if _, err := tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.Sno, project.Jno); err != nil {
-		return fmt.Errorf("ModifyDefaultProject IS_DEFAULT 'Y'. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -944,7 +944,7 @@ func (r *Repository) ModifyUseProject(ctx context.Context, tx Execer, project en
 		WHERE SNO = :5
 		AND JNO = :6`
 	if _, err := tx.ExecContext(ctx, query, project.IsUsed, agent, project.ModUser, project.ModUno, project.Sno, project.Jno); err != nil {
-		return fmt.Errorf("ModifyUseProject. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -958,7 +958,7 @@ func (r *Repository) RemoveProject(ctx context.Context, tx Execer, sno int64, jn
 		WHERE SNO = :1
 		AND JNO = :2`
 	if _, err := tx.ExecContext(ctx, query, sno, jno); err != nil {
-		return fmt.Errorf("RemoveProject. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -978,7 +978,7 @@ func (r *Repository) ModifyProjectIsNonUse(ctx context.Context, tx Execer, site 
 		    MOD_DATE = SYSDATE
 			WHERE SNO = :4`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("ModifyProjectIsNonUse. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -999,7 +999,7 @@ func (r *Repository) ModifyProjectIsUse(ctx context.Context, tx Execer, site ent
 		    MOD_DATE = SYSDATE
 			WHERE SNO = :4`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("ModifyProjectIsUse. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -1020,7 +1020,7 @@ func (r *Repository) ModifyProject(ctx context.Context, tx Execer, project entit
 				WORK_RATE = :4
 			WHERE JNO = :5`
 	if _, err := tx.ExecContext(ctx, query, agent, project.ModUser, project.ModUno, project.WorkRate, project.Jno); err != nil {
-		return fmt.Errorf("ModifyProject. Failed to modify default project: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil

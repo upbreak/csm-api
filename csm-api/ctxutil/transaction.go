@@ -2,7 +2,7 @@ package ctxutil
 
 import (
 	"context"
-	"fmt"
+	"csm-api/utils"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -33,11 +33,11 @@ func DeferTx(ctx context.Context, handler string, errRef *error) func() {
 	return func() {
 		if *errRef != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				*errRef = fmt.Errorf("%s: failed to rollback transaction: %w", handler, rollbackErr)
+				*errRef = utils.CustomMessageErrorfDepth(2, "failed to rollback transaction", rollbackErr)
 			}
 		} else {
 			if commitErr := tx.Commit(); commitErr != nil {
-				*errRef = fmt.Errorf("%s: failed to commit transaction: %w", handler, commitErr)
+				*errRef = utils.CustomMessageErrorfDepth(2, "failed to commit transaction", commitErr)
 			}
 		}
 	}

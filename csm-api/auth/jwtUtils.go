@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/clock"
 	"csm-api/config"
+	"csm-api/utils"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -94,7 +95,7 @@ func (j *JWTUtils) GenerateToken(jwtClaims *JWTClaims) (string, error) {
 	// 비밀 키로 서명
 	tokenString, err := parseToken.SignedString(secretKey)
 	if err != nil {
-		return "", fmt.Errorf("jwtUtils.go/GenerateToken() err: %w", err)
+		return "", utils.CustomErrorf(err)
 	}
 
 	jwtClaims.Token = tokenString
@@ -107,7 +108,7 @@ func (j *JWTUtils) ValidateJWT(r *http.Request) (*JWTClaims, error) {
 	// 쿠키 읽기
 	cookie, err := r.Cookie("jwt")
 	if err != nil {
-		return nil, fmt.Errorf("jwtUtils.go/validateJWT() err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	tokenString := cookie.Value
 
@@ -115,13 +116,13 @@ func (j *JWTUtils) ValidateJWT(r *http.Request) (*JWTClaims, error) {
 	parseToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// 서명 방법 확인
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, utils.CustomMessageErrorf("unexpected signing method", fmt.Errorf("%v", token.Header["alg"]))
 		}
 
 		// "아이디 저장" 여부 확인 후 적절한 키 반환
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			return nil, fmt.Errorf("invalid token claims")
+			return nil, utils.CustomErrorf(fmt.Errorf("invalid token claims"))
 		}
 
 		if isSaved, ok := claims["isSaved"].(bool); ok && isSaved {
@@ -130,13 +131,13 @@ func (j *JWTUtils) ValidateJWT(r *http.Request) (*JWTClaims, error) {
 		return []byte(j.Cfg.SecretKey), nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("jwtUtils.go/invalid token: %v", err)
+		return nil, utils.CustomMessageErrorf("jwtUtils.go/invalid token", err)
 	}
 
 	// 클레임 확인
 	claims, ok := parseToken.Claims.(jwt.MapClaims)
 	if !ok || !parseToken.Valid {
-		return nil, fmt.Errorf("invalid token")
+		return nil, utils.CustomErrorf(fmt.Errorf("invalid token"))
 	}
 
 	// JWTClaims 매핑

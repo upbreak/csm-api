@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
-	"fmt"
+	"csm-api/utils"
 )
 
 func (r *Repository) GetEquipList(ctx context.Context, db Queryer) (entity.EquipTemps, error) {
@@ -20,7 +20,7 @@ func (r *Repository) GetEquipList(ctx context.Context, db Queryer) (entity.Equip
 			LEFT JOIN S_JOB_INFO T3 ON T1.JNO = T3.JNO`
 
 	if err := db.SelectContext(ctx, &list, query); err != nil {
-		return list, fmt.Errorf("GetEquipList fail: %w", err)
+		return list, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -50,7 +50,7 @@ func (r *Repository) MergeEquipCnt(ctx context.Context, tx Execer, equips entity
 
 	for _, equip := range equips {
 		if _, err := tx.ExecContext(ctx, query, equip.Sno, equip.Jno, equip.Cnt); err != nil {
-			return fmt.Errorf("MergeEquipCnt ExecContext fail: %v", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 

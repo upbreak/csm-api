@@ -4,7 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"fmt"
+	"csm-api/utils"
 )
 
 type ServiceSchedule struct {
@@ -19,7 +19,7 @@ type ServiceSchedule struct {
 func (s *ServiceSchedule) GetRestScheduleList(ctx context.Context, jno int64, year string, month string) (entity.RestSchedules, error) {
 	list, err := s.Store.GetRestScheduleList(ctx, s.SafeDB, jno, year, month)
 	if err != nil {
-		return entity.RestSchedules{}, fmt.Errorf("service;GetRestScheduleList: %w", err)
+		return entity.RestSchedules{}, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -31,29 +31,14 @@ func (s *ServiceSchedule) GetRestScheduleList(ctx context.Context, jno int64, ye
 func (s *ServiceSchedule) AddRestSchedule(ctx context.Context, schedule entity.RestSchedules) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service;add;BeginTx fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service;add;Panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service;add;Rollback fail: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service;add;Commit fail: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.AddRestSchedule(ctx, tx, schedule)
 	if err != nil {
-		return fmt.Errorf("service;Add fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -65,29 +50,14 @@ func (s *ServiceSchedule) AddRestSchedule(ctx context.Context, schedule entity.R
 func (s *ServiceSchedule) ModifyRestSchedule(ctx context.Context, schedule entity.RestSchedule) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service;modify;BeginTx fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service;modify;Panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service;modify;Rollback fail: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service;modify;Commit fail: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.ModifyRestSchedule(ctx, tx, schedule)
 	if err != nil {
-		return fmt.Errorf("service;Modify fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -99,29 +69,14 @@ func (s *ServiceSchedule) ModifyRestSchedule(ctx context.Context, schedule entit
 func (s *ServiceSchedule) RemoveRestSchedule(ctx context.Context, cno int64) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service;remove;BeginTx fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service;remove;Panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service;remove;Rollback fail: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service;remove;Commit fail: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.RemoveRestSchedule(ctx, tx, cno)
 	if err != nil {
-		return fmt.Errorf("service;Remove fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }

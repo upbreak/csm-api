@@ -108,12 +108,8 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 			  	WHERE RNUM > :5`,
 		condition, order)
 
-
 	if err := db.SelectContext(ctx, &notices, query, role, uno, uno, page.EndNum, page.StartNum); err != nil {
-		//TODO: 에러 아카이브 처리
-
-		fmt.Errorf("store/notice. NoticeList error %s", err)
-		return nil, err
+		return nil, utils.CustomErrorf(err)
 	}
 	return &notices, nil
 }
@@ -168,14 +164,11 @@ func (r *Repository) GetNoticeListCount(ctx context.Context, db Queryer, uno nul
 				
 				%s`, condition)
 
-
 	if err := db.GetContext(ctx, &count, query, role, uno, uno); err != nil {
-		//TODO: 에러 아카이브 처리
-
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("store/notice. GetNoticeListCount fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	return count, nil
 
@@ -227,7 +220,7 @@ func (r *Repository) AddNotice(ctx context.Context, tx Execer, notice entity.Not
 	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.RegUno, notice.RegUser, notice.PostingStartDate, notice.PostingEndDate, notice.RegUno)
 
 	if err != nil {
-		return fmt.Errorf("store/notice. AddNotice fail %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -259,7 +252,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, tx Execer, notice entity.
 	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
 
 	if err != nil {
-		return fmt.Errorf("store/notice. ModifyNotice fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -279,7 +272,7 @@ func (r *Repository) RemoveNotice(ctx context.Context, tx Execer, idx null.Int) 
 
 	_, err := tx.ExecContext(ctx, query, idx)
 	if err != nil {
-		return fmt.Errorf("store/notice. RemoveNotice fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil

@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
-	"fmt"
+	"csm-api/utils"
 )
 
 // 직원 로그인
@@ -26,7 +26,7 @@ func (r *Repository) GetUserValid(ctx context.Context, db Queryer, userId string
 		AND t1.USER_PWD = :2`
 
 	if err := db.GetContext(ctx, &user, sql, userId, userPwd); err != nil {
-		return user, fmt.Errorf("GetUserValid fail: %w", err)
+		return user, utils.CustomErrorf(err)
 	}
 	return user, nil
 }
@@ -49,7 +49,7 @@ func (r *Repository) GetCompanyUserValid(ctx context.Context, db Queryer, userId
 		AND S.PW = :2`
 
 	if err := db.GetContext(ctx, &company, sql, userId, userPwd); err != nil {
-		return company, fmt.Errorf("GetCompanyUserValid fail: %w", err)
+		return company, utils.CustomErrorf(err)
 	}
 	return company, nil
 }

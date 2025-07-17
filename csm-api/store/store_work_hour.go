@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"fmt"
 	"strings"
 )
@@ -116,7 +117,7 @@ func (r *Repository) ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int
 				T1.MOD_UNO  = :%d`, modUserIndex, modUnoIndex))
 
 	if _, err := tx.ExecContext(ctx, query.String(), args...); err != nil {
-		return fmt.Errorf("ModifyWorkHourByJno fail %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -188,7 +189,7 @@ func (r *Repository) ModifyWorkHour(ctx context.Context, tx Execer, user entity.
 				T1.MOD_UNO  = :2`
 
 	if _, err := tx.ExecContext(ctx, query, user.ModUser, user.ModUno); err != nil {
-		return fmt.Errorf("ModifyWorkHour fail %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }

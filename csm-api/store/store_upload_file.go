@@ -6,7 +6,6 @@ import (
 	"csm-api/utils"
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 // 업로드할 파일 차수
@@ -25,7 +24,7 @@ func (r *Repository) GetUploadRound(ctx context.Context, db Queryer, file entity
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetUploadRound: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	if !maxRound.Valid {
@@ -57,7 +56,7 @@ func (r *Repository) GetUploadFileList(ctx context.Context, db Queryer, file ent
 		) T2 ON T1.FILE_TYPE = T2.FILE_TYPE AND T1.FILE_PATH = T2.FILE_PATH AND T1.UPLOAD_ROUND = T2.UPLOAD_ROUND`
 
 	if err := db.SelectContext(ctx, &uploadFileList, query, file.Jno, file.WorkDate); err != nil {
-		return nil, fmt.Errorf("GetUploadFileList: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return uploadFileList, nil
 }
@@ -78,9 +77,9 @@ func (r *Repository) GetUploadFile(ctx context.Context, db Queryer, file entity.
 
 	if err := db.GetContext(ctx, &uploadFile, query, file.Jno, file.WorkDate, file.FileType); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return uploadFile, fmt.Errorf("GetUploadFile: %w", err)
+			return uploadFile, utils.CustomErrorf(err)
 		}
-		return uploadFile, fmt.Errorf("GetUploadFile: %w", err)
+		return uploadFile, utils.CustomErrorf(err)
 	}
 	return uploadFile, nil
 }
@@ -95,7 +94,7 @@ func (r *Repository) AddUploadFile(ctx context.Context, tx Execer, file entity.U
 
 	_, err := tx.ExecContext(ctx, query, file.FileType, file.FilePath, file.FileName, file.UploadRound, file.WorkDate, file.Jno, file.RegUser, file.RegUno, agent)
 	if err != nil {
-		return fmt.Errorf("AddUploadFile: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil

@@ -24,7 +24,7 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 
 	manhours, err := s.Store.GetManHourList(ctx, s.SafeDB, jno)
 	if err != nil {
-		return &entity.ManHours{}, fmt.Errorf("service_manHour/GetManHourList err: %w", err)
+		return &entity.ManHours{}, utils.CustomErrorf(err)
 	}
 
 	return manhours, nil
@@ -36,22 +36,11 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 // - manHours: 공수 정보 배열
 func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project_setting/MergeProjectSetting panic error: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project_setting/MergeProjectSetting Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project_setting/MergeProjectSetting Commit error: %w", commitErr)
-			}
-		}
-	}()
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	defer utils.DeferTx(tx, &err)
 
 	jno := (*manHours)[0].Jno.Int64
 	user := (*manHours)[0].Base
@@ -59,7 +48,7 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 	// jno에 해당하는 공수 찾기
 	deleteManhours, err := s.Store.GetManHourList(ctx, s.SafeDB, jno)
 	if err != nil {
-		return fmt.Errorf("MergeManHours/GetManHourList err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// jno에 해당하는 공수 모두 삭제
@@ -74,7 +63,7 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 
 			// 삭제
 			if err = s.DeleteManHour(ctx, deleteManhour.Mhno.Int64, *deleteManhour); err != nil {
-				return fmt.Errorf("MergeManHours err: %w", err)
+				return utils.CustomErrorf(err)
 			}
 		}
 	}
@@ -88,12 +77,12 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 		// 추가
 		err = s.Store.AddManHour(ctx, tx, *manHour)
 		if err != nil {
-			return fmt.Errorf("service_project_setting/AddManHour error: %w", err)
+			return utils.CustomErrorf(err)
 		}
 
 		// 로그 남기기
 		if err = s.Store.ManHourLog(ctx, tx, *manHour); err != nil {
-			return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -104,7 +93,7 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 
 	// 공수에 맞춰 근로자 업데이트
 	if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
-		return fmt.Errorf("service_project_setting/WorkHourStore/: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -116,25 +105,10 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project entity.ProjectSetting) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project_setting/ModifyProjectSetting BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project_setting/ModifyProjectSetting panic error: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project_setting/ModifyProjectSetting Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project_setting/ModifyProjectSetting Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if !project.Message.Valid {
 		return
@@ -142,7 +116,7 @@ func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project
 
 	count, err := s.Store.MergeProjectSetting(ctx, tx, project)
 	if err != nil {
-		return fmt.Errorf("service_project_setting/ModifyProjectSetting error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	if count <= 0 {
@@ -152,12 +126,12 @@ func (s *ServiceProjectSetting) MergeProjectSetting(ctx context.Context, project
 		jno := project.Jno.Int64
 		user := project.Base
 		if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
-			return fmt.Errorf("service_project_setting/WorkHourStore error: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
 	if err = s.Store.ProjectSettingLog(ctx, tx, project); err != nil {
-		return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -170,9 +144,7 @@ func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count 
 
 	projectManHours := &entity.ProjectSettings{}
 	if projectManHours, err = s.Store.GetCheckProjectManHours(ctx, s.SafeDB); err != nil {
-		// TODO: 에러 아카이브
-
-		return 0, fmt.Errorf("service_project_setting/CheckProjectSetting error: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	for _, projectManHour := range *projectManHours {
 		// 기본 공수 추가하기
@@ -185,14 +157,13 @@ func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count 
 		manHours := entity.ManHours{manHourMore}
 
 		if err = s.MergeManHours(ctx, &manHours); err != nil {
-			return 0, fmt.Errorf("service_manhours/MergeManHours error: %w", err)
+			return 0, utils.CustomErrorf(err)
 		}
 	}
 
 	projects := &entity.ProjectSettings{}
 	if projects, err = s.Store.GetCheckProjectSetting(ctx, s.SafeDB); err != nil {
-		// TODO: 에러 아카이브
-		return 0, fmt.Errorf("service_project_setting/CheckProjectSetting error: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	for _, project := range *projects {
@@ -208,7 +179,7 @@ func (s *ServiceProjectSetting) CheckProjectSetting(ctx context.Context) (count 
 		setting.CancelCode = utils.ParseNullString("NO_DAY")
 		setting.Message = utils.ParseNullString(fmt.Sprintf("[ADD] jno:[before:N/A, after:%d]|in_time:[before:N/A, after:2006-01-02T08:00:00+09:00]|out_time:[before:N/A, after:2006-01-02T17:00:00+09:00]|respite_time:[before:N/A, after:30]|cancel_code:[before:N/A, after:NO_DAY]", project.Jno.Int64))
 		if err = s.MergeProjectSetting(ctx, *setting); err != nil {
-			return 0, fmt.Errorf("service_project_setting/CheckProjectSetting error: %w", err)
+			return 0, utils.CustomErrorf(err)
 		}
 
 	}
@@ -224,12 +195,12 @@ func (s *ServiceProjectSetting) GetProjectSetting(ctx context.Context, jno int64
 
 	setting, err := s.Store.GetProjectSetting(ctx, s.SafeDB, jno)
 	if err != nil {
-		return &entity.ProjectSettings{}, fmt.Errorf("service_project_setting/GetProjectSetting: %w", err)
+		return &entity.ProjectSettings{}, utils.CustomErrorf(err)
 	}
 
 	manHours, err := s.GetManHourList(ctx, jno)
 	if err != nil {
-		return &entity.ProjectSettings{}, fmt.Errorf("service_project_setting/GetProjectSetting: %w", err)
+		return &entity.ProjectSettings{}, utils.CustomErrorf(err)
 	}
 
 	if len(*setting) > 0 {
@@ -243,74 +214,44 @@ func (s *ServiceProjectSetting) GetProjectSetting(ctx context.Context, jno int64
 // func: 공수 삭제
 // @param
 // - mhno: 공수pk
-func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, manhour entity.ManHour) error {
+func (s *ServiceProjectSetting) DeleteManHour(ctx context.Context, mhno int64, manhour entity.ManHour) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project_setting/ModifyProjectSetting BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project_setting/ModifyProjectSetting panic error: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project_setting/ModifyProjectSetting Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project_setting/ModifyProjectSetting Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	// 공수 삭제
 	if err = s.Store.DeleteManHour(ctx, tx, mhno); err != nil {
-		return fmt.Errorf("service_project_setting/DeleteManHour error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 공수 삭제 시 근로자 업데이트
 	jno := manhour.Jno.Int64
 	user := manhour.Base
 	if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
-		return fmt.Errorf("service_project_setting/WorkHourStore error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 로그 기록
 	if err = s.Store.ManHourLog(ctx, tx, manhour); err != nil {
-		return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+		return utils.CustomErrorf(err)
 	}
-	return nil
+	return
 }
 
 // 공수 추가(삭제 없이 추가만)
-func (s *ServiceProjectSetting) AddManHour(ctx context.Context, manhour entity.ManHour) error {
+func (s *ServiceProjectSetting) AddManHour(ctx context.Context, manhour entity.ManHour) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project_setting/MergeManHour BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project_setting/MergeManHour panic error: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project_setting/MergeManHour Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project_setting/MergeManHour Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err = s.Store.AddManHour(ctx, tx, manhour); err != nil {
-		return fmt.Errorf("service_project_setting/MergeManHour err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	manhour.Message = utils.ParseNullString(fmt.Sprintf("[ADD] jno:[before:N/A, after:%d]|work_hour:[before:N/A, after:%d]|man_hour:[before:N/A, after:%f]|etc:[before:N/A, after:%s]", manhour.Jno.Int64, manhour.WorkHour.Int64, manhour.ManHour.Float64, manhour.Etc.String))
@@ -318,9 +259,9 @@ func (s *ServiceProjectSetting) AddManHour(ctx context.Context, manhour entity.M
 	// 로그 기록
 	if manhour.Message.Valid {
 		if err = s.Store.ManHourLog(ctx, tx, manhour); err != nil {
-			return fmt.Errorf("service_project_setting/MergeManHour error: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
-	return nil
+	return
 }

@@ -147,12 +147,12 @@ func (s *ServiceSite) GetSiteNmList(ctx context.Context, page entity.Page, searc
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return nil, fmt.Errorf("service_site/GetSiteNmList OfPageSql err : %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	sites, err := s.Store.GetSiteNmList(ctx, s.SafeDB, pageSql, search, nonSite)
 	if err != nil {
-		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
+		return &entity.Sites{}, utils.CustomErrorf(err)
 	}
 
 	return sites, nil
@@ -165,7 +165,7 @@ func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site, no
 
 	count, err := s.Store.GetSiteNmCount(ctx, s.SafeDB, search, nonSite)
 	if err != nil {
-		return 0, fmt.Errorf("service_site/GetSiteNmList err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -177,7 +177,7 @@ func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site, no
 func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
 	sites, err := s.Store.GetSiteStatsList(ctx, s.SafeDB, targetDate)
 	if err != nil {
-		return &entity.Sites{}, fmt.Errorf("service_site/GetSiteStatsList err: %w", err)
+		return &entity.Sites{}, utils.CustomErrorf(err)
 	}
 
 	return sites, nil
@@ -189,32 +189,17 @@ func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time
 func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_site/ModifySite err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site/ModifySite rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site/ModifySite commit err: %v", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if site.Sno.Int64 == 0 {
-		return fmt.Errorf("sno parameter is missing")
+		return utils.CustomErrorf(fmt.Errorf("sno parameter is missing"))
 	}
 	// 비고 정보 수정
 	if err = s.Store.ModifySite(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySite err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 기본 프로젝트 변경
@@ -227,7 +212,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		},
 	}
 	if err = s.ProjectStore.ModifyDefaultProject(ctx, tx, project); err != nil {
-		return fmt.Errorf("service_site/ModifyDefaultProject err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 프로젝트 정보 수정
@@ -244,7 +229,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 			},
 		}
 		if err = s.Store.ModifyWorkRate(ctx, tx, workRate); err != nil {
-			return fmt.Errorf("service_site/ModifyWorkRate err: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -252,7 +237,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 	if site.SiteDate != nil {
 		siteDate := *site.SiteDate
 		if err = s.SiteDateStore.ModifySiteDate(ctx, tx, site.Sno.Int64, siteDate); err != nil {
-			return fmt.Errorf("service_site/ModifySiteDate err: %v\n", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -261,7 +246,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		sitePos := *site.SitePos
 		point, err := s.AddressSearchAPIService.GetAPILatitudeLongtitude(site.SitePos.RoadAddress.String)
 		if err != nil {
-			return fmt.Errorf("service_site/GetApiLatitudeLongtitude err: %w", err)
+			return utils.CustomErrorf(err)
 		}
 		if point.Latitude != 0.0 {
 			sitePos.Latitude.Float64 = point.Latitude
@@ -273,7 +258,7 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 		}
 
 		if err = s.SitePosStore.ModifySitePosData(ctx, tx, site.Sno.Int64, sitePos); err != nil {
-			return fmt.Errorf("service_site/ModifySitePos err: %v\n", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -287,14 +272,14 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_site/AddSite err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.AddSite(ctx, s.SafeDB, tx, jno, user)
 	if err != nil {
-		return fmt.Errorf("service_site/AddSite err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -306,45 +291,29 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSite) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		// TODO: 에러 아카이브
-		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/ModifySiteIsNonUse panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site/ModifySiteIsNonUse rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site/ModifySiteIsNonUse commit err: %v", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	// 현장
 	if err = s.Store.ModifySiteIsNonUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 프로젝트
 	if err = s.ProjectStore.ModifyProjectIsNonUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 위치
 	if err = s.SitePosStore.ModifySitePosIsNonUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsNonUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 날짜
 	if err = s.SiteDateStore.ModifySiteDateIsNonUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteDateIsNonUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -355,44 +324,29 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSit
 func (s *ServiceSite) ModifySiteIsUse(ctx context.Context, site entity.ReqSite) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/ModifySiteIsUse panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site/ModifySiteIsUse rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site/ModifySiteIsUse commit err: %v", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	// 현장
 	if err = s.Store.ModifySiteIsUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 프로젝트
 	if err = s.ProjectStore.ModifyProjectIsUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 위치
 	if err = s.SitePosStore.ModifySitePosIsUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 날짜
 	if err = s.SiteDateStore.ModifySiteDateIsUse(ctx, tx, site); err != nil {
-		return fmt.Errorf("service_site/ModifySiteIsUse err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -400,58 +354,33 @@ func (s *ServiceSite) ModifySiteIsUse(ctx context.Context, site entity.ReqSite) 
 // func: 공정률 전날 수치로 세팅
 // @param
 // -
-func (s *ServiceSite) SettingWorkRate(ctx context.Context, targetDate time.Time) (int64, error) {
+func (s *ServiceSite) SettingWorkRate(ctx context.Context, targetDate time.Time) (count int64, err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		// TODO: 에러 아카이브
-		return 0, fmt.Errorf("service_site/SettingWorkRate err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
-	defer func() {
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site/SettingWorkRate rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site/SettingWorkRate commit err: %v", commitErr)
-			}
-		}
-	}()
-	count, err := s.Store.SettingWorkRate(ctx, tx, targetDate)
+	defer utils.DeferTx(tx, &err)
+
+	count, err = s.Store.SettingWorkRate(ctx, tx, targetDate)
 	if err != nil {
-		return 0, fmt.Errorf("service_site/SettingWorkRate err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
-	return count, nil
+	return
 }
 
 // 공정률 수정
 func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_site/ModifyWorkRate err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/ModifyWorkRate panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site/ModifyWorkRate rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site/ModifyWorkRate commit err: %v", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.ModifyWorkRate(ctx, tx, workRate)
 	if err != nil {
-		return fmt.Errorf("service_site/ModifyWorkRate err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -461,7 +390,7 @@ func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWo
 func (s *ServiceSite) GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (entity.SiteWorkRate, error) {
 	data, err := s.Store.GetSiteWorkRateByDate(ctx, s.SafeDB, jno, month)
 	if err != nil {
-		return data, fmt.Errorf("service_site/GetSiteWorkRateByDate err: %w", err)
+		return data, utils.CustomErrorf(err)
 	}
 	return data, nil
 }

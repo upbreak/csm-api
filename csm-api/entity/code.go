@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"csm-api/utils"
 	"fmt"
 	"github.com/guregu/null"
 )
@@ -49,7 +50,7 @@ func ConvertCodesToCodeTree(codes Codes, pCode string) (codeTrees CodeTrees, err
 
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("entity/ConvertCodesToCodeTree: %v", r)
+			err = utils.CustomErrorf(fmt.Errorf("entity/ConvertCodesToCodeTree: %v", r))
 		}
 	}()
 	if len(codes) == 0 {

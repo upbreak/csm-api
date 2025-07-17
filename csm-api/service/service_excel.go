@@ -27,12 +27,12 @@ func mustGet(f *excelize.File, sheet, cell string) string {
 func (s *ServiceExcel) ImportTbm(ctx context.Context, path string, tbm entity.Tbm) (err error) {
 	f, err := excelize.OpenFile(path)
 	if err != nil {
-		return fmt.Errorf("ImportTbm.failed to open Excel file: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	order, err := s.Store.GetTbmOrder(ctx, s.SafeDB, tbm)
 	if err != nil {
-		return fmt.Errorf("ImportTbm.failed to GetTbm Order: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	var tbmList []entity.Tbm
@@ -82,29 +82,14 @@ func (s *ServiceExcel) ImportTbm(ctx context.Context, path string, tbm entity.Tb
 	if !ok || tx == nil {
 		tx, err = s.SafeTDB.BeginTxx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
+			return utils.CustomErrorf(err)
 		}
-		defer func() {
-			if r := recover(); r != nil {
-				_ = tx.Rollback()
-				err = fmt.Errorf("ImportTbm.failed to panic transaction: %v", r)
-				return
-			}
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					err = fmt.Errorf("ImportTbm.failed to rollback transaction: %w", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					err = fmt.Errorf("ImportTbm.failed to commit transaction: %w", commitErr)
-				}
-			}
-		}()
+		defer utils.DeferTxx(tx, &err)
 	}
 
 	// db 저장
 	if err = s.Store.AddTbmExcel(ctx, tx, tbmList); err != nil {
-		return fmt.Errorf("ImportTbm.failed to add tbm sheet: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -114,17 +99,17 @@ func (s *ServiceExcel) ImportTbm(ctx context.Context, path string, tbm entity.Tb
 func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deduction entity.Deduction) (err error) {
 	f, err := excelize.OpenFile(path)
 	if err != nil {
-		return fmt.Errorf("ImportDeduction: failed to open Excel file: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	order, err := s.Store.GetDeductionOrder(ctx, s.SafeDB, deduction)
 	if err != nil {
-		return fmt.Errorf("ImportDeduction: failed to GetDeductionOrder: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	siteNm, err := s.Store.GetDeductionSiteNameBySno(ctx, s.SafeDB, deduction.Sno.Int64)
 	if err != nil {
-		return fmt.Errorf("ImportDeduction: failed to GetDeductionSiteNameBySno: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	sheetName := f.GetSheetName(0)
@@ -194,29 +179,14 @@ func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deducti
 	if !ok || tx == nil {
 		tx, err := s.SafeTDB.BeginTx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("ImportDeduction: failed to begin transaction: %w", err)
+			return utils.CustomErrorf(err)
 		}
 
-		defer func() {
-			if r := recover(); r != nil {
-				_ = tx.Rollback()
-				err = fmt.Errorf("ImportDeduction: failed to panic transaction: %v", r)
-				return
-			}
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					err = fmt.Errorf("ImportDeduction: failed to rollback transaction: %w", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					err = fmt.Errorf("ImportDeduction: failed to commit transaction: %w", commitErr)
-				}
-			}
-		}()
+		defer utils.DeferTx(tx, &err)
 	}
 
 	if err = s.Store.AddDeductionExcel(ctx, tx, deductionList); err != nil {
-		return fmt.Errorf("ImportDeduction: failed to add deduction sheet: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -225,7 +195,7 @@ func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deducti
 func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, worker entity.WorkerDaily) (err error) {
 	f, err := excelize.OpenFile(path)
 	if err != nil {
-		return fmt.Errorf("ImportAddDailyWorker: failed to open Excel file: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	sheet := f.GetSheetName(0)
@@ -255,7 +225,7 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 		// F, G열 (출근/퇴근시간) → 시간 서식으로 저장됨
 		inTimeRaw, err := f.GetCellValue(sheet, fmt.Sprintf("F%d", row))
 		if err != nil {
-			return fmt.Errorf("failed to get InTime at row %d: %w", row, err)
+			return utils.CustomErrorf(err)
 		}
 		inTime := inTimeRaw
 		if timeVal, err := f.GetCellValue(sheet, fmt.Sprintf("F%d", row), excelize.Options{RawCellValue: false}); err == nil {
@@ -264,7 +234,7 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 
 		outTimeRaw, err := f.GetCellValue(sheet, fmt.Sprintf("G%d", row))
 		if err != nil {
-			return fmt.Errorf("failed to get OutTime at row %d: %w", row, err)
+			return utils.CustomErrorf(err)
 		}
 		outTime := outTimeRaw
 		if timeVal, err := f.GetCellValue(sheet, fmt.Sprintf("G%d", row), excelize.Options{RawCellValue: false}); err == nil {
@@ -310,33 +280,18 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("ImportAddDailyWorker: failed to begin transaction: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("ImportAddDailyWorker: failed to panic transaction: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("ImportAddDailyWorker: failed to rollback transaction: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("ImportAddDailyWorker: failed to commit transaction: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	var list entity.WorkerDailys
 	if list, err = s.WorkerStore.AddDailyWorkers(ctx, s.SafeDB, tx, workers); err != nil {
-		return fmt.Errorf("ImportAddDailyWorker: failed to add daily workers: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	if err = s.WorkerStore.MergeSiteBaseWorkerLog(ctx, tx, list); err != nil {
-		return fmt.Errorf("ImportAddDailyWorker: failed to merge site base worker log: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return

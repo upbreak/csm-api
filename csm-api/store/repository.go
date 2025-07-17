@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/clock"
 	"csm-api/config"
+	"csm-api/utils"
 	"database/sql"
 	"fmt"
 	"github.com/godror/godror"
@@ -33,7 +34,7 @@ func New(ctx context.Context, cfg *config.DBConfig) (*sqlx.DB, func(), error) {
 
 	// 연결 확인
 	if err := db.PingContext(ctx); err != nil {
-		return nil, func() { _ = db.Close() }, fmt.Errorf("failed to connect to DB: %w", err)
+		return nil, func() { _ = db.Close() }, utils.CustomErrorf(err)
 	}
 
 	// sqlx.DB 생성

@@ -17,7 +17,7 @@ func (h *HandlerDeadline) UploadFileList(w http.ResponseWriter, r *http.Request)
 	jno := r.URL.Query().Get("jno")
 	workDate := r.URL.Query().Get("work_date")
 	if jno == "" || workDate == "" {
-		FailResponse(r.Context(), w, fmt.Errorf("jno or work_date is empty"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("jno or work_date is empty")))
 		return
 	}
 

@@ -4,9 +4,9 @@ import "C"
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 /**
@@ -49,7 +49,7 @@ func (r *Repository) GetJobInfo(ctx context.Context, db Queryer, jno sql.NullInt
 		if errors.Is(err, sql.ErrNoRows) {
 			return &data, nil
 		}
-		return nil, fmt.Errorf("GetJobInfo fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &data, nil
@@ -78,7 +78,7 @@ func (r *Repository) GetSiteManagerList(ctx context.Context, db Queryer, jno sql
 				AND M.JNO = :1
 				AND M.IS_USE = 'Y'`
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetSiteManagerList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }
@@ -107,7 +107,7 @@ func (r *Repository) GetSafeManagerList(ctx context.Context, db Queryer, jno sql
 						 U.JOIN_DATE, 
 						 U.USER_NAME`
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetSafeManagerList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }
@@ -149,7 +149,7 @@ func (r *Repository) GetSupervisorList(ctx context.Context, db Queryer, jno sql.
 					 U.JOIN_DATE, 
 					 U.USER_NAME`
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetSupervisorList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }
@@ -184,7 +184,7 @@ func (r *Repository) GetConstruction(ctx context.Context, db Queryer, jno int64)
 			 U.USER_NAME`
 
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetConstruction err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }
@@ -202,7 +202,7 @@ func (r *Repository) GetWorkInfoList(ctx context.Context, db Queryer) (*entity.W
 				   WHERE IS_USE = 'Y'
 				ORDER BY SORT_NO`
 	if err := db.SelectContext(ctx, &list, query); err != nil {
-		return nil, fmt.Errorf("GetWorkInfoList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }
@@ -229,7 +229,7 @@ func (r *Repository) GetCompanyInfoList(ctx context.Context, db Queryer, jno sql
 				 AND S.JNO = :1
 				ORDER BY S.CNO`
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetCompanyInfoList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }
@@ -252,7 +252,7 @@ func (r *Repository) GetCompanyWorkInfoList(ctx context.Context, db Queryer, jno
 				 AND C.IS_USE = 'Y'
 				 AND F.JNO = :1`
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetCompanyWorkInfoList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &list, nil
 }

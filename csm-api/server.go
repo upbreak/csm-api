@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"csm-api/utils"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net"
@@ -24,7 +24,7 @@ func (s *Server) Run(ctx context.Context) error {
 		log.Println("HTTP server starting...")
 		if err := s.srv.Serve(s.l); err != nil && err != http.ErrServerClosed {
 			log.Printf("failed to close: %+v", err)
-			return fmt.Errorf("server error: %w", err)
+			return utils.CustomErrorf(err)
 		}
 		log.Println("HTTP server closed normally.")
 		return nil

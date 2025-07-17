@@ -5,7 +5,6 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
-	"fmt"
 	"strings"
 )
 
@@ -18,7 +17,7 @@ type ServiceSitePos struct {
 func (s *ServiceSitePos) GetSitePosList(ctx context.Context) ([]entity.SitePos, error) {
 	list, err := s.Store.GetSitePosList(ctx, s.DB)
 	if err != nil {
-		return nil, fmt.Errorf("service;GetSitePosList: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -29,7 +28,7 @@ func (s *ServiceSitePos) GetSitePosList(ctx context.Context) ([]entity.SitePos, 
 func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity.SitePos, error) {
 	sitePos, err := s.Store.GetSitePosData(ctx, s.DB, sno)
 	if err != nil {
-		return nil, fmt.Errorf("service_site_pos/GetSitePosData err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	if sitePos.RoadAddress.String == "" {
@@ -56,29 +55,14 @@ func (s *ServiceSitePos) GetSitePosData(ctx context.Context, sno int64) (*entity
 func (s *ServiceSitePos) ModifySitePos(ctx context.Context, sno int64, sitePos entity.SitePos) (err error) {
 	tx, err := s.TDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_site_pos/TBeginTx err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site_pos/TRollback err: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site_pos/TXCommit err: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err := s.Store.ModifySitePosData(ctx, tx, sno, sitePos); err != nil {
-		return fmt.Errorf("service_site_pos/ModifySitePosData err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	return nil
+	return
 }

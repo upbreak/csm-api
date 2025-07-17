@@ -5,7 +5,6 @@ import (
 	"csm-api/service"
 	"csm-api/utils"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -25,7 +24,7 @@ func (h *SystemHandler) WorkerDeadline(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := h.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("ModifyWorkerDeadlineInit fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(err))
 		FailResponse(ctx, w, err)
 		return
 
@@ -41,7 +40,7 @@ func (h *SystemHandler) WorkerOverTime(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if count, err := h.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("ModifyWorkerOverTime fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(err))
 		FailResponse(ctx, w, err)
 		return
 
@@ -57,7 +56,7 @@ func (h *SystemHandler) ProjectInitSetting(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 
 	if count, err := h.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("CheckProjectSettings fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(err))
 		FailResponse(ctx, w, err)
 		return
 
@@ -77,7 +76,7 @@ func (h *SystemHandler) UpdateWorkHour(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.WorkHourService.ModifyWorkHour(ctx, user); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("ModifyWorkHour fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(err))
 		FailResponse(ctx, w, err)
 		return
 

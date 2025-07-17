@@ -6,7 +6,6 @@ import (
 	"csm-api/utils"
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 func (r *Repository) GetSitePosList(ctx context.Context, db Queryer) ([]entity.SitePos, error) {
@@ -32,7 +31,7 @@ func (r *Repository) GetSitePosList(ctx context.Context, db Queryer) ([]entity.S
 			WHERE t1.IS_USE = 'Y'`
 
 	if err := db.SelectContext(ctx, &list, query); err != nil {
-		return nil, fmt.Errorf("GetSitePosList fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -64,7 +63,7 @@ func (r *Repository) GetSitePosData(ctx context.Context, db Queryer, sno int64) 
 		if errors.Is(err, sql.ErrNoRows) {
 			return &sitePos, nil
 		}
-		return nil, fmt.Errorf("GetSitePosData fail: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &sitePos, nil
@@ -167,7 +166,7 @@ func (r *Repository) ModifySitePosData(ctx context.Context, tx Execer, sno int64
 		sitePosSql.RoadAddress,
 		sitePosSql.ZoneCode,
 		sitePosSql.BuildingName); err != nil {
-		return fmt.Errorf("store/site_pos. ModifySitePosData fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -189,7 +188,7 @@ func (r *Repository) ModifySitePosIsNonUse(ctx context.Context, tx Execer, site 
 				MOD_DATE = SYSDATE
 			WHERE SNO = :1`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("store/site_pos. ModifySitePosIsNonUse fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -210,7 +209,7 @@ func (r *Repository) ModifySitePosIsUse(ctx context.Context, tx Execer, site ent
 				MOD_DATE = SYSDATE
 			WHERE SNO = :1`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("store/site_pos. ModifySitePosIsUse fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil

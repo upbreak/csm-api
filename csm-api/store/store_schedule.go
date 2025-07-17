@@ -4,7 +4,6 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/utils"
-	"fmt"
 )
 
 // func: 휴무일 조회
@@ -34,7 +33,7 @@ func (r *Repository) GetRestScheduleList(ctx context.Context, db Queryer, jno in
 			)`
 
 	if err := db.SelectContext(ctx, &list, query, month, month, year, month, month, jno, jno); err != nil {
-		return nil, fmt.Errorf("GetRestScheduleList fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -60,7 +59,7 @@ func (r *Repository) AddRestSchedule(ctx context.Context, tx Execer, schedule en
 			rest.Jno, rest.IsEveryYear, rest.RestYear, rest.RestMonth, rest.RestDay,
 			rest.Reason /*SYSDATE*/, agent, rest.RegUno, rest.RegUser,
 		); err != nil {
-			return fmt.Errorf("AddRestSchedule fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -89,7 +88,7 @@ func (r *Repository) ModifyRestSchedule(ctx context.Context, tx Execer, schedule
 			WHERE CNO = :10`
 
 	if _, err := tx.ExecContext(ctx, query, schedule.Jno, schedule.IsEveryYear, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Reason, agent, schedule.ModUno, schedule.ModUser, schedule.Cno); err != nil {
-		return fmt.Errorf("ModifyRestSchedule fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -102,7 +101,7 @@ func (r *Repository) RemoveRestSchedule(ctx context.Context, tx Execer, cno int6
 	query := `DELETE FROM IRIS_SCH_REST_SET WHERE CNO = :1`
 
 	if _, err := tx.ExecContext(ctx, query, cno); err != nil {
-		return fmt.Errorf("RemoveRestSchedule fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }

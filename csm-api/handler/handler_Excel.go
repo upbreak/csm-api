@@ -40,27 +40,27 @@ type HandlerExcel struct {
 func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20) // 최대 10MB
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to parse multipart form: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to parse multipart form: %v", err)))
 		return
 	}
 
 	// 파일 받기
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to receive the file: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to receive the file: %v", err)))
 		return
 	}
 	defer func(file multipart.File) {
 		err = file.Close()
 		if err != nil {
-			FailResponse(r.Context(), w, fmt.Errorf("failed to file Close: %v", err))
+			FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to file Close: %v", err)))
 			return
 		}
 	}(file)
 
 	// 엑셀 파일 확장자 검사
 	if !(len(header.Filename) > 5 && (header.Filename[len(header.Filename)-5:] == ".xlsx" || header.Filename[len(header.Filename)-4:] == ".xls")) {
-		FailResponse(r.Context(), w, fmt.Errorf("only Excel files (.xlsx, .xls) are allowed"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("only Excel files (.xlsx, .xls) are allowed")))
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	// 추가 파일 경로
 	addDir := r.FormValue("add_dir")
 	if workDate == "" || fileType == "" || jnoString == "" {
-		FailResponse(r.Context(), w, fmt.Errorf("missing 'file_date' or 'jno' or 'file_type' field"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("missing 'file_date' or 'jno' or 'file_type' field")))
 		return
 	}
 	regUser := r.FormValue("reg_user")
@@ -85,7 +85,7 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 
 	dates := strings.Split(workDate, "-")
 	if len(dates) != 3 {
-		FailResponse(r.Context(), w, fmt.Errorf("invalid 'file_date' format (expected: YYYY-MM-DD)"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("invalid 'file_date' format (expected: YYYY-MM-DD)")))
 		return
 	}
 
@@ -102,20 +102,20 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	}
 	err = os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to create upload directory: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to create upload directory: %v", err)))
 		return
 	}
 
 	tempFilePath := filepath.Join(dir, header.Filename)
 	outFile, err := os.Create(tempFilePath)
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to create a temporary file: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to create a temporary file: %v", err)))
 		return
 	}
 	defer func(outFile *os.File) {
 		err = outFile.Close()
 		if err != nil {
-			FailResponse(r.Context(), w, fmt.Errorf("failed to outFile Close: %v", err))
+			FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to outFile Close: %v", err)))
 			return
 		}
 	}(outFile)
@@ -123,14 +123,14 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	// 파일 복사(저장)
 	_, err = io.Copy(outFile, file)
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to save the uploaded file: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to save the uploaded file: %v", err)))
 		return
 	}
 
 	// context 안에 트랜잭션 저장
 	ctx, err := ctxutil.WithTx(r.Context(), h.DB)
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to begin transaction: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to begin transaction: %v", err)))
 		return
 	}
 	defer ctxutil.DeferTx(ctx, "ImportExcel", &err)()
@@ -205,7 +205,7 @@ func (h *HandlerExcel) UploadExportExcel(w http.ResponseWriter, r *http.Request)
 	workDate := r.URL.Query().Get("work_date")
 	fileType := r.URL.Query().Get("file_type")
 	if workDate == "" || fileType == "" || jno == "" {
-		FailResponse(r.Context(), w, fmt.Errorf("missing 'work_date' or 'file_type' or 'jno' field"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("missing 'work_date' or 'file_type' or 'jno' field")))
 		return
 	}
 
@@ -226,20 +226,20 @@ func (h *HandlerExcel) UploadExportExcel(w http.ResponseWriter, r *http.Request)
 
 	// 파일 존재 확인
 	if _, err = os.Stat(filePath); os.IsNotExist(err) {
-		FailResponse(r.Context(), w, fmt.Errorf("file does not exist: %v", filePath))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("file does not exist: %v", filePath)))
 		return
 	}
 
 	// 파일 열기
 	f, err := os.Open(filePath)
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to file open: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to file open: %v", err)))
 		return
 	}
 	defer func(f *os.File) {
 		err = f.Close()
 		if err != nil {
-			FailResponse(r.Context(), w, fmt.Errorf("failed to close file: %v", err))
+			FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to close file: %v", err)))
 			return
 		}
 	}(f)
@@ -255,7 +255,7 @@ func (h *HandlerExcel) UploadExportExcel(w http.ResponseWriter, r *http.Request)
 
 	// 파일 스트림 복사
 	if _, err = io.Copy(w, f); err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to copy file stream: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to copy file stream: %v", err)))
 		return
 	}
 }
@@ -361,7 +361,7 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 
 	// 파일 출력
 	if err := f.Write(w); err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("excel file write error: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("excel file write error: %v", err)))
 		return
 	}
 }
@@ -569,7 +569,7 @@ func (h *HandlerExcel) DailyWorkerRecordExcelExport(w http.ResponseWriter, r *ht
 	w.Header().Set("Content-Transfer-Encoding", "binary")
 	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition, File-Name")
 	if err := f.Write(w); err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("excel file write error: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("excel file write error: %v", err)))
 		return
 	}
 }
@@ -579,7 +579,7 @@ func (h *HandlerExcel) DailyWorkerRecordExcelExport(w http.ResponseWriter, r *ht
 func (h *HandlerExcel) DownloadFormExcel(w http.ResponseWriter, r *http.Request) {
 	fileName := r.URL.Query().Get("file_name")
 	if fileName == "" {
-		FailResponse(r.Context(), w, fmt.Errorf("missing 'file_name' query parameter"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("missing 'file_name' query parameter")))
 		return
 	}
 
@@ -587,7 +587,7 @@ func (h *HandlerExcel) DownloadFormExcel(w http.ResponseWriter, r *http.Request)
 	cfg, cfgErr := config.NewConfig()
 	if cfgErr != nil {
 		log.Printf("config.NewConfig() 실패: %v\n", cfgErr)
-		FailResponse(r.Context(), w, fmt.Errorf("internal configuration error"))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("internal configuration error")))
 		return
 	}
 
@@ -597,14 +597,14 @@ func (h *HandlerExcel) DownloadFormExcel(w http.ResponseWriter, r *http.Request)
 
 	// 파일 존재 확인
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		FailResponse(r.Context(), w, fmt.Errorf("file does not exist: %v", filePath))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("file does not exist: %v", filePath)))
 		return
 	}
 
 	// 파일 열기
 	f, err := os.Open(filePath)
 	if err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to open file: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to open file: %v", err)))
 		return
 	}
 	defer func(f *os.File) {
@@ -623,7 +623,7 @@ func (h *HandlerExcel) DownloadFormExcel(w http.ResponseWriter, r *http.Request)
 
 	// 7. 파일 스트림 복사
 	if _, err := io.Copy(w, f); err != nil {
-		FailResponse(r.Context(), w, fmt.Errorf("failed to copy file stream: %v", err))
+		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to copy file stream: %v", err)))
 		return
 	}
 }

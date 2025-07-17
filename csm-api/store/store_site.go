@@ -133,7 +133,7 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.
 				) WHERE RNUM > :3`, condition, order)
 
 	if err := db.SelectContext(ctx, &sites, query, nonSite, page.EndNum, page.StartNum); err != nil {
-		return &sites, fmt.Errorf("getSiteNmList fail: %w", err)
+		return &sites, utils.CustomErrorf(err)
 	}
 	return &sites, nil
 }
@@ -161,7 +161,7 @@ func (r *Repository) GetSiteNmCount(ctx context.Context, db Queryer, search enti
 				    `, condition)
 
 	if err := db.GetContext(ctx, &count, query, nonSite); err != nil {
-		return 0, fmt.Errorf("getSiteNmList fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	return count, nil
 }
@@ -194,7 +194,7 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 					GROUP BY SNO
 				) T3 ON T1.SNO = T3.SNO`
 	if err := db.SelectContext(ctx, &sites, query, targetDate, targetDate); err != nil {
-		return &sites, fmt.Errorf("getSiteStatsList fail: %w", err)
+		return &sites, utils.CustomErrorf(err)
 	}
 	return &sites, nil
 }
@@ -218,7 +218,7 @@ func (r *Repository) ModifySite(ctx context.Context, tx Execer, site entity.Site
 			    SNO = :6
 			`
 	if _, err := tx.ExecContext(ctx, query, site.SiteNm, site.Etc, site.ModUno, site.ModUser, agent, site.Sno); err != nil {
-		return fmt.Errorf("store/site. ModifySite fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -233,7 +233,7 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tx Execer, jno int
 	// sno 생성
 	query := `SELECT SEQ_IRIS_SITE_SET.NEXTVAL FROM DUAL`
 	if err := db.GetContext(ctx, &generatedSNO, query); err != nil {
-		return fmt.Errorf("store/site. Failed to get generated SITE_SET_SEQ.NEXTVAL: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	// IRIS_SITE_SET 생성
 	query = `
@@ -247,7 +247,7 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tx Execer, jno int
 			FROM s_job_info 
 			WHERE JNO = :5`
 	if _, err := tx.ExecContext(ctx, query, generatedSNO, user.Agent, user.UserName, user.Uno, jno); err != nil {
-		return fmt.Errorf("IRIS_SITE_SET INSERT failed: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// IRIS_SITE_JOB 생성
@@ -260,7 +260,7 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tx Execer, jno int
 				:3, :4, :5
 			)`
 	if _, err := tx.ExecContext(ctx, query, generatedSNO, jno, user.Agent, user.UserName, user.Uno); err != nil {
-		return fmt.Errorf("IRIS_SITE_JOB INSERT failed: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// IRIS_SITE_DATE 생성
@@ -275,7 +275,7 @@ func (r *Repository) AddSite(ctx context.Context, db Queryer, tx Execer, jno int
 			FROM s_job_info
 			WHERE JNO = :5`
 	if _, err := tx.ExecContext(ctx, query, generatedSNO, user.Agent, user.UserName, user.Uno, jno); err != nil {
-		return fmt.Errorf("IRIS_SITE_DATE INSERT failed: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -297,7 +297,7 @@ func (r *Repository) ModifySiteIsNonUse(ctx context.Context, tx Execer, site ent
 				MOD_DATE = SYSDATE
 			WHERE SNO = :4`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("store/site. ModifySiteIsNonUse fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -319,7 +319,7 @@ func (r *Repository) ModifySiteIsUse(ctx context.Context, tx Execer, site entity
 				MOD_DATE = SYSDATE
 			WHERE SNO = :4`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("store/site. ModifySiteIsUse fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -360,8 +360,7 @@ func (r *Repository) SettingWorkRate(ctx context.Context, tx Execer, targetDate 
 	result, err := tx.ExecContext(ctx, query, targetDate, targetDate, targetDate)
 
 	if err != nil {
-		// TODO: 에러 아카이브
-		return 0, fmt.Errorf("store/site. SettingWorkRate fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	count, _ := result.RowsAffected()
 
@@ -388,8 +387,7 @@ func (r *Repository) ModifyWorkRate(ctx context.Context, tx Execer, workRate ent
 			AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :8
 			`
 	if _, err := tx.ExecContext(ctx, query, workRate.WorkRate, workRate.ModUno, workRate.ModUser, agent, workRate.Sno, workRate.Sno, workRate.Jno, workRate.SearchDate); err != nil {
-		// TODO: 에러 아카이브
-		return fmt.Errorf("store/site. ModifyWorkRate fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }

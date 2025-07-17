@@ -4,6 +4,7 @@ import (
 	"csm-api/api"
 	"csm-api/config"
 	"csm-api/entity"
+	"csm-api/utils"
 	"encoding/json"
 	"fmt"
 )
@@ -24,7 +25,7 @@ func (s *ServiceRestDate) GetRestDelDates(year string, month string) (entity.Res
 
 	body, err := api.CallGetAPI(url)
 	if err != nil {
-		return nil, fmt.Errorf("call GetRestDelDates API error: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	type RestDelInfo struct {

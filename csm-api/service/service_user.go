@@ -4,7 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"fmt"
+	"csm-api/utils"
 )
 
 type ServiceUser struct {
@@ -19,7 +19,7 @@ type ServiceUser struct {
 func (u *ServiceUser) GetUserInfoPeList(ctx context.Context, unoList []int) (*entity.UserPeInfos, error) {
 	userPeInfos, err := u.Store.GetUserInfoPeList(ctx, u.SafeDB, unoList)
 	if err != nil {
-		return nil, fmt.Errorf("service_user/GetUserInfoPeList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return userPeInfos, nil
@@ -29,7 +29,7 @@ func (u *ServiceUser) GetUserInfoPeList(ctx context.Context, unoList []int) (*en
 func (u *ServiceUser) GetUserRole(ctx context.Context, jno int64, uno int64) (string, error) {
 	role1, err := u.Store.GetSiteRole(ctx, u.TimeSheetDB, jno, uno)
 	if err != nil {
-		return "", fmt.Errorf("service_user/GetUserRole err: %w", err)
+		return "", utils.CustomErrorf(err)
 	}
 	if role1 != "" {
 		return role1, nil
@@ -37,7 +37,7 @@ func (u *ServiceUser) GetUserRole(ctx context.Context, jno int64, uno int64) (st
 
 	role2, err := u.Store.GetOperationalRole(ctx, u.SafeDB, jno, uno)
 	if err != nil {
-		return "", fmt.Errorf("service_user/GetUserRole err: %w", err)
+		return "", utils.CustomErrorf(err)
 	}
 
 	if role2 != "" {
@@ -52,7 +52,7 @@ func (u *ServiceUser) GetAuthorizationList(ctx context.Context, api string) (*en
 
 	list, err := u.Store.GetAuthorizationList(ctx, u.SafeDB, api)
 	if err != nil {
-		return nil, fmt.Errorf("service_user/GetAuthorizationList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil

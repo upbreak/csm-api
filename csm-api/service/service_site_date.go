@@ -4,7 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"fmt"
+	"csm-api/utils"
 )
 
 type ServiceSiteDate struct {
@@ -19,7 +19,7 @@ type ServiceSiteDate struct {
 func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*entity.SiteDate, error) {
 	siteDate, err := s.Store.GetSiteDateData(ctx, s.DB, sno)
 	if err != nil {
-		return nil, fmt.Errorf("service_site_date/GetSiteDateData err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return siteDate, nil
@@ -33,28 +33,13 @@ func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*enti
 func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) (err error) {
 	tx, err := s.TDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_site_date/ModifySiteDate err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site_date/ModifySiteDate panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_site_date/ModifySiteDate rollback err: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_site_date/ModifySiteDate commit err: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err := s.Store.ModifySiteDate(ctx, tx, sno, siteDate); err != nil {
-		return fmt.Errorf("service_site_date/ModifySiteDate err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return

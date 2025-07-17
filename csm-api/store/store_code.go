@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"fmt"
 )
 
@@ -21,7 +22,7 @@ func (r *Repository) GetCodeList(ctx context.Context, db Queryer, pCode string) 
 			  ORDER BY t1."ORDER"`
 
 	if err := db.SelectContext(ctx, &list, query, pCode); err != nil {
-		return nil, fmt.Errorf("GetCodeList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -55,7 +56,7 @@ func (r *Repository) GetCodeTree(ctx context.Context, db Queryer, pCode string) 
 		`, pCode)
 
 	if err := db.SelectContext(ctx, &codes, query); err != nil {
-		return nil, fmt.Errorf("GetCodeTrees err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &codes, nil
@@ -132,7 +133,7 @@ func (r *Repository) MergeCode(ctx context.Context, tx Execer, code entity.Code)
 		code.UdfVal03, code.UdfVal04, code.UdfVal05, code.UdfVal06, code.UdfVal07,
 		code.SortNo, code.IsUse, code.Etc, code.RegUno, code.RegUser); err != nil {
 
-		return fmt.Errorf("MergeCode err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -149,7 +150,7 @@ func (r *Repository) RemoveCode(ctx context.Context, tx Execer, idx int64) error
 	`
 
 	if _, err := tx.ExecContext(ctx, query, idx); err != nil {
-		return fmt.Errorf("store_code/RemoveCode err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -166,7 +167,7 @@ func (r *Repository) ModifySortNo(ctx context.Context, tx Execer, codeSort entit
 			IDX = :2                 
 		`
 	if _, err := tx.ExecContext(ctx, query, codeSort.SortNo, codeSort.IDX); err != nil {
-		return fmt.Errorf("store_code/ModifyCodeSort err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -186,7 +187,7 @@ func (r *Repository) DuplicateCheckCode(ctx context.Context, db Queryer, code st
 		`
 
 	if err := db.GetContext(ctx, &count, query, code); err != nil {
-		return -1, fmt.Errorf("store_code/DuplicateCheckCode err: %w", err)
+		return -1, utils.CustomErrorf(err)
 	}
 
 	return count, nil
