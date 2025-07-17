@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 	"database/sql"
 	"encoding/json"
@@ -59,12 +60,12 @@ func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.De
 // @param
 // - device entity.Device: SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, REG_USER
 func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.AddDevice(ctx, tx, device); err != nil {
 		return utils.CustomErrorf(err)
@@ -76,12 +77,12 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 // @param
 // - device entity.DeviceSql: DNO, SNO, DEVICE_SN, DEVICE_NM, ETC, IS_USE, MOD_USER
 func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.ModifyDevice(ctx, tx, device); err != nil {
 		return utils.CustomErrorf(err)
@@ -93,12 +94,12 @@ func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) 
 // @param
 // - dno int64: 홍채인식기 고유번호
 func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error) {
-	tx, err := s.SafeTDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	var dnoSql sql.NullInt64
 	if dno != 0 {

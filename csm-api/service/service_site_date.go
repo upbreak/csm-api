@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 )
 
@@ -31,12 +32,12 @@ func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*enti
 // - sno: 현장고유번호
 // - siteDate: 현장 시간 (opening_date, closing_plan_date, closing_forecast_date, closing_actual_date)
 func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) (err error) {
-	tx, err := s.TDB.BeginTx(ctx, nil)
+	tx, err := txutil.BeginTxWithMode(ctx, s.TDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer utils.DeferTx(tx, &err)
+	defer txutil.DeferTx(tx, &err)
 
 	if err := s.Store.ModifySiteDate(ctx, tx, sno, siteDate); err != nil {
 		return utils.CustomErrorf(err)
