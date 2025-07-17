@@ -4,9 +4,9 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 )
 
 /**
@@ -32,12 +32,12 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	list, err := s.Store.GetDeviceList(ctx, s.SafeDB, pageSql, search, retry)
 	if err != nil {
-		return nil, fmt.Errorf("service_device/GetDeviceList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -49,7 +49,7 @@ func (s *ServiceDevice) GetDeviceList(ctx context.Context, page entity.Page, sea
 func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.Device, retry string) (int, error) {
 	count, err := s.Store.GetDeviceListCount(ctx, s.SafeDB, search, retry)
 	if err != nil {
-		return 0, fmt.Errorf("service_device/GetDeviceListCount err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -61,28 +61,13 @@ func (s *ServiceDevice) GetDeviceListCount(ctx context.Context, search entity.De
 func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_device/AddDevice BeginTx fail err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_site/ModifySite panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_device/AddDevice Rollback err: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_device/AddDevice Commit err: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err = s.Store.AddDevice(ctx, tx, device); err != nil {
-		return fmt.Errorf("service_device/AddDevice err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -93,28 +78,13 @@ func (s *ServiceDevice) AddDevice(ctx context.Context, device entity.Device) (er
 func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_device/ModifyDevice BeginTx fail err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_device/ModifyDevice panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_device/ModifyDevice Rollback err: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_device/ModifyDevice Commit err: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err = s.Store.ModifyDevice(ctx, tx, device); err != nil {
-		return fmt.Errorf("service_device/UpdateDevice err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -125,25 +95,10 @@ func (s *ServiceDevice) ModifyDevice(ctx context.Context, device entity.Device) 
 func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_device/RemoveDevice BeginTx fail err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_device/RemoveDevice panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_device/RemoveDevice Rollback err: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_device/RemoveDevice Commit err: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	var dnoSql sql.NullInt64
 	if dno != 0 {
@@ -153,7 +108,7 @@ func (s *ServiceDevice) RemoveDevice(ctx context.Context, dno int64) (err error)
 	}
 
 	if err = s.Store.RemoveDevice(ctx, tx, dnoSql); err != nil {
-		return fmt.Errorf("service_device/RemoveDevice err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -165,7 +120,7 @@ func (s *ServiceDevice) GetCheckRegisteredDevices(ctx context.Context) ([]string
 	// 당일 iris_recd_log 가져오기
 	devices, err := s.Store.GetDeviceLog(ctx, s.SafeDB)
 	if err != nil {
-		return nil, fmt.Errorf("service_device/GetDeviceList err: %v\n", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	var log entity.RecdLog
@@ -173,7 +128,7 @@ func (s *ServiceDevice) GetCheckRegisteredDevices(ctx context.Context) ([]string
 	// iris_recd_log 테이블의 iris_data값인 json에 들어온 deviceName을 파싱해서 deviceList 얻기
 	for _, device := range *devices {
 		if err = json.Unmarshal([]byte(device.IrisData.String), &log); err != nil {
-			return nil, fmt.Errorf("GetDeviceList JSON parse err: %v\n", err)
+			return nil, utils.CustomErrorf(err)
 		}
 
 		// 중복 제거
@@ -189,7 +144,7 @@ func (s *ServiceDevice) GetCheckRegisteredDevices(ctx context.Context) ([]string
 	for deviceName, _ := range deviceList {
 		check, err = s.Store.GetCheckRegistered(ctx, s.SafeDB, deviceName)
 		if err != nil {
-			return nil, fmt.Errorf("service_device/GetCheckRegisteredDevices err: %v\n", err)
+			return nil, utils.CustomErrorf(err)
 		}
 		if check == 0 {
 			respond = append(respond, deviceName)

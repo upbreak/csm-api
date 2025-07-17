@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
-	"fmt"
+	"csm-api/utils"
 	"time"
 )
 
@@ -49,7 +49,7 @@ func (r *Repository) SaveWeather(ctx context.Context, tx Execer, weather entity.
 		weather.Wsd,       // :13
 		weather.RecogTime, // :14
 	); err != nil {
-		return fmt.Errorf("SaveWeather err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (r *Repository) GetWeatherList(ctx context.Context, db Queryer, sno int64, 
 		`
 
 	if err := db.SelectContext(ctx, &weathers, query, sno, targetDate); err != nil {
-		return nil, fmt.Errorf("IRIS_WEATHER LIST failed: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &weathers, nil

@@ -104,7 +104,7 @@ func (r *Repository) GetDeviceList(ctx context.Context, db Queryer, page entity.
 				WHERE RNUM > :2`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &list, query, page.EndNum, page.StartNum); err != nil {
-		return nil, fmt.Errorf("GetDeviceList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -176,7 +176,7 @@ func (r *Repository) GetDeviceListCount(ctx context.Context, db Queryer, search 
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetDeviceListCount fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	return count, nil
 }
@@ -210,7 +210,7 @@ func (r *Repository) AddDevice(ctx context.Context, tx Execer, device entity.Dev
 				    :7    
 				)`
 	if _, err := tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, agent, device.RegUser); err != nil {
-		return fmt.Errorf("AddDevice err: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -236,7 +236,7 @@ func (r *Repository) ModifyDevice(ctx context.Context, tx Execer, device entity.
 				WHERE DNO = :8`
 
 	if _, err := tx.ExecContext(ctx, query, device.Sno, device.DeviceSn, device.DeviceNm, device.Etc, device.IsUse, device.ModUser, agent, device.Dno); err != nil {
-		return fmt.Errorf("ModifyDevice fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -248,7 +248,7 @@ func (r *Repository) RemoveDevice(ctx context.Context, tx Execer, dno sql.NullIn
 	query := `DELETE FROM IRIS_DEVICE_SET WHERE DNO = :1`
 
 	if _, err := tx.ExecContext(ctx, query, dno); err != nil {
-		return fmt.Errorf("RemoveDevice fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -263,7 +263,7 @@ func (r *Repository) GetDeviceLog(ctx context.Context, db Queryer) (*entity.Recd
 		SELECT IRIS_DATA FROM IRIS_RECD_LOG WHERE to_date(REG_DATE) = TRUNC(SYSDATE) `
 
 	if err := db.SelectContext(ctx, &recodes, query); err != nil {
-		return nil, fmt.Errorf("GetDeviceLog fail: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &recodes, nil
@@ -285,7 +285,7 @@ func (r *Repository) GetCheckRegistered(ctx context.Context, db Queryer, deviceN
 			`
 
 	if err := db.GetContext(ctx, &count, query, deviceName); err != nil {
-		return -1, fmt.Errorf("GetDeviceListCount fail: %v", err)
+		return -1, utils.CustomErrorf(err)
 	}
 
 	return count, nil

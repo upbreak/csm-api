@@ -5,6 +5,7 @@ import (
 	"csm-api/api"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -34,7 +35,7 @@ func (s *ServiceCompany) GetJobInfo(ctx context.Context, jno int64) (*entity.Job
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
 	data, err := s.Store.GetJobInfo(ctx, s.SafeDB, jnoSql)
 	if err != nil {
-		return nil, fmt.Errorf("service_conpany/GetJobInfo err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return data, nil
 }
@@ -46,7 +47,7 @@ func (s *ServiceCompany) GetSiteManagerList(ctx context.Context, jno int64) (*en
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
 	list, err := s.Store.GetSiteManagerList(ctx, s.TimeSheetDB, jnoSql)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetSiteManagerList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -59,7 +60,7 @@ func (s *ServiceCompany) GetSafeManagerList(ctx context.Context, jno int64) (*en
 	jnoSql := entity.ToSQLNulls(jno).(sql.NullInt64)
 	list, err := s.Store.GetSafeManagerList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetSafeManagerList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -73,18 +74,18 @@ func (s *ServiceCompany) GetSupervisorList(ctx context.Context, jno int64) (*ent
 	// 안전보건시스템에 등록된 관리감독자
 	list, err := s.Store.GetSupervisorList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetSupervisorList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// 조직도에 등록된 construction
 	cList, err := s.Store.GetConstruction(ctx, s.TimeSheetDB, jno)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetConstruction err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	rList, err := s.UserRoleStore.GetUserRoleListByCodeAndJno(ctx, s.SafeDB, "TEMP_SITE_MANAGER", jno)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetUserRoleListByCodeAndJno err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// 현장관리자 권한 셋팅
@@ -132,7 +133,7 @@ func (s *ServiceCompany) GetSupervisorList(ctx context.Context, jno int64) (*ent
 func (s *ServiceCompany) GetWorkInfoList(ctx context.Context) (*entity.WorkInfos, error) {
 	list, err := s.Store.GetWorkInfoList(ctx, s.SafeDB)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetWorkInfoList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -148,7 +149,7 @@ func (s *ServiceCompany) GetCompanyInfoList(ctx context.Context, jno int64) (*en
 	// 협력업체 정보 조회
 	companyList, err := s.Store.GetCompanyInfoList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetCompanyInfoList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	for _, item := range *companyList {
 		temp := &entity.CompanyInfoRes{}
@@ -164,20 +165,20 @@ func (s *ServiceCompany) GetCompanyInfoList(ctx context.Context, jno int64) (*en
 	url := fmt.Sprintf("http://wcfservice.hi-techeng.co.kr/apipcs/getcontractinfo?jno=%d&contracttype=C", jno)
 	response, err := api.CallGetAPI(url)
 	if err != nil {
-		return nil, fmt.Errorf("service_conpany;companyInfo/call Get Api err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	companyApiReq := &entity.CompanyApiReq{}
 	if err = json.Unmarshal([]byte(response), companyApiReq); err != nil {
-		return nil, fmt.Errorf("service_conpany;companyInfo/json.Unmarshal err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	if companyApiReq.ResultType != "Success" {
-		return nil, fmt.Errorf("service_conpany;companyInfo/Api ResultType not Success")
+		return nil, utils.CustomErrorf(fmt.Errorf("service_conpany;companyInfo/Api ResultType not Success"))
 	}
 
 	// 공종 조회
 	workInfoList, err := s.Store.GetCompanyWorkInfoList(ctx, s.SafeDB, jnoSql)
 	if err != nil {
-		return nil, fmt.Errorf("service_company/GetCompanyWorkInfoList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	companyApiValues := entity.CompanyApiValues{}

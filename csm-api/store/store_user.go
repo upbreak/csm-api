@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ func (r *Repository) GetUserInfoPeList(ctx context.Context, db Queryer, unoList 
 			WHERE t1.UNO IN (%s)`, strings.Join(placeholders, ","))
 
 	if err := db.SelectContext(ctx, &userPeInfos, sql, args...); err != nil {
-		return nil, fmt.Errorf("GetUserInfoPeList fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &userPeInfos, nil
@@ -70,7 +71,7 @@ func (r *Repository) GetSiteRole(ctx context.Context, db Queryer, jno int64, uno
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", nil
 		}
-		return "", fmt.Errorf("GetSiteRole fail: %w", err)
+		return "", utils.CustomErrorf(err)
 	}
 	return role, nil
 }
@@ -109,7 +110,7 @@ func (r *Repository) GetOperationalRole(ctx context.Context, db Queryer, jno int
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", nil
 		}
-		return "", fmt.Errorf("GetOperationalRole fail: %w", err)
+		return "", utils.CustomErrorf(err)
 	}
 	return role, nil
 }
@@ -129,7 +130,7 @@ func (r *Repository) GetAuthorizationList(ctx context.Context, db Queryer, api s
 		`
 
 	if err := db.SelectContext(ctx, &list, query, api); err != nil {
-		return nil, fmt.Errorf("GetAuthorizationList", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil

@@ -112,7 +112,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 				WHERE RNUM > :2`, condition, retryCondition, order, page.RnumOrder)
 
 	if err := db.SelectContext(ctx, &workers, query, page.EndNum, page.StartNum); err != nil {
-		return nil, fmt.Errorf("GetWorkerTotalList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &workers, nil
@@ -151,7 +151,7 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetWorkerTotalCount fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	return count, nil
 }
@@ -189,7 +189,7 @@ func (r *Repository) GetAbsentWorkerList(ctx context.Context, db Queryer, page e
 				WHERE RNUM > :6`, retryCondition)
 
 	if err := db.SelectContext(ctx, &workers, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
-		return nil, fmt.Errorf("GetAbsentWorkerList fail: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &workers, nil
@@ -223,7 +223,7 @@ func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, searc
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetAbsentWorkerCount fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	return count, nil
 }
@@ -243,7 +243,7 @@ func (r *Repository) GetWorkerDepartList(ctx context.Context, db Queryer, jno in
 		  AND DEPARTMENT IS NOT NULL`
 
 	if err := db.SelectContext(ctx, &list, query, jno); err != nil {
-		return nil, fmt.Errorf("GetWorkerDepartList fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -272,7 +272,7 @@ func (r *Repository) AddWorker(ctx context.Context, tx Execer, worker entity.Wor
 		agent, worker.RegUser, worker.RegUno, worker.RegNo,
 	)
 	if err != nil {
-		return fmt.Errorf("AddWorker; IRIS_WORKER_SET INSERT fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -300,15 +300,15 @@ func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.
 	)
 
 	if err != nil {
-		return fmt.Errorf("ModifyWorker fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("ModifyWorker RowsAffected fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected)
+		return utils.CustomErrorf(fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected))
 	}
 
 	return nil
@@ -386,7 +386,7 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 				WHERE RNUM > :5`, condition, retryCondition, order, page.RnumOrder)
 
 	if err := db.SelectContext(ctx, &list, query, search.Jno, search.SearchStartTime, search.SearchEndTime, page.EndNum, page.StartNum); err != nil {
-		return nil, fmt.Errorf("GetWorkerSiteBaseList err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &list, nil
@@ -425,7 +425,7 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("GetWorkerSiteBaseCount fail: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 	return count, nil
 }
@@ -487,7 +487,7 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 			worker.WorkState, worker.IsOvertime, worker.WorkHour,
 		)
 		if err != nil {
-			return fmt.Errorf("MergeSiteBaseWorker fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -504,7 +504,7 @@ func (r *Repository) MergeSiteBaseWorkerLog(ctx context.Context, tx Execer, work
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.WorkState, worker.Message, worker.ModUser, worker.ModUno, agent); err != nil {
-			return fmt.Errorf("MergeSiteBaseWorkerLog fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -535,7 +535,7 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, tx Execer, worker
 			worker.UserId, worker.RecordDate,
 		)
 		if err != nil {
-			return fmt.Errorf("ModifyWorkerDeadline fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -567,7 +567,7 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, tx Execer, workers
 			worker.Jno, worker.UserId, worker.RecordDate,
 		)
 		if err != nil {
-			return fmt.Errorf("ModifyWorkerProject fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -596,7 +596,7 @@ func (r *Repository) ModifyWorkerDefaultProject(ctx context.Context, tx Execer, 
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.AfterJno, worker.ModUser, worker.ModUno, agent, worker.Sno, worker.UserId, worker.Sno, worker.Jno); err != nil {
-			return fmt.Errorf("ModifyWorkerDefaultProject fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -622,7 +622,7 @@ func (r *Repository) ModifyWorkerDeadlineInit(ctx context.Context, tx Execer) er
 			AND COMPARE_STATE = 'S'`
 
 	if _, err := tx.ExecContext(ctx, query, agent); err != nil {
-		return fmt.Errorf("ModifyWorkerDeadlineInit fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -652,7 +652,7 @@ func (r *Repository) GetWorkerOverTime(ctx context.Context, db Queryer) (*entity
 		`
 
 	if err := db.SelectContext(ctx, &workerOverTimes, query); err != nil {
-		return nil, fmt.Errorf("GetWorkerOverTime fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &workerOverTimes, nil
@@ -681,7 +681,7 @@ func (r *Repository) ModifyWorkerOverTime(ctx context.Context, tx Execer, worker
 	`
 
 	if _, err := tx.ExecContext(ctx, query, workerOverTime.OutRecogTime, agent, workerOverTime.BeforeCno); err != nil {
-		return fmt.Errorf("ModifyWorkerOverTime fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 
@@ -697,7 +697,7 @@ func (r *Repository) DeleteWorkerOverTime(ctx context.Context, tx Execer, cno nu
 		WHERE  CNO = :1
 		`
 	if _, err := tx.ExecContext(ctx, query, cno); err != nil {
-		return fmt.Errorf("DeleteWorkerOverTime fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -714,7 +714,7 @@ func (r *Repository) RemoveSiteBaseWorkers(ctx context.Context, tx Execer, worke
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
-			return fmt.Errorf("RemoveSiteBaseWorkers fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -736,7 +736,7 @@ func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, worker
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
-			return fmt.Errorf("ModifyDeadlineCancel fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -785,7 +785,7 @@ func (r *Repository) AddDailyWorkers(ctx context.Context, db Queryer, tx Execer,
 				worker.RegUser, worker.RegUno, agent,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("AddDailyWorkers insert fail: %w", err)
+				return nil, utils.CustomErrorf(err)
 			}
 			// 통과된 항목만 슬라이스에 append
 			copied := worker // 새 인스턴스를 만들어야 주소 복사 문제 방지됨
@@ -826,7 +826,7 @@ func (r *Repository) GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer
 		AND T2.COMPARE_STATE IN ('S', 'X')`
 
 	if err := db.SelectContext(ctx, &list, query, param.Jno, param.StartDate, param.EndDate); err != nil {
-		return list, fmt.Errorf("GetDailyWorkersByJnoAndDate fail: %w", err)
+		return list, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -850,7 +850,7 @@ func (r *Repository) ModifyWorkHours(ctx context.Context, tx Execer, workers ent
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.WorkHour, agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
-			return fmt.Errorf("ModifyWorkHours fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil

@@ -30,7 +30,7 @@ func (r *Repository) GetSiteDateData(ctx context.Context, db Queryer, sno int64)
 		if errors.Is(err, sql.ErrNoRows) {
 			return &siteDate, nil
 		}
-		return nil, fmt.Errorf("GetSiteDateData fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &siteDate, nil
 }
@@ -54,7 +54,7 @@ func (r *Repository) ModifySiteDate(ctx context.Context, tx Execer, sno int64, s
 			`)
 
 	if _, err := tx.ExecContext(ctx, query, siteDateSql.OpeningDate, siteDateSql.ClosingPlanDate, siteDateSql.ClosingForecastDate, siteDateSql.ClosingActualDate, sno); err != nil {
-		return fmt.Errorf("ModifySiteDate fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (r *Repository) ModifySiteDateIsNonUse(ctx context.Context, tx Execer, site
 				MOD_DATE = SYSDATE
 			WHERE SNO = :1`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("ModifySiteDateIsNonUse fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (r *Repository) ModifySiteDateIsUse(ctx context.Context, tx Execer, site en
 				MOD_DATE = SYSDATE
 			WHERE SNO = :1`
 	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
-		return fmt.Errorf("ModifySiteDateIsUse fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil

@@ -5,7 +5,6 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -20,17 +19,17 @@ type ServiceCompare struct {
 func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Compare, retry string, order string) ([]entity.Compare, error) {
 	workerlist, err := s.Store.GetDailyWorkerList(ctx, s.SafeDB, compare, retry, order)
 	if err != nil {
-		return nil, fmt.Errorf("ServiceCompare.GetCompareList GetDailyWorkerList :%w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	tbmList, err := s.Store.GetTbmList(ctx, s.SafeDB, compare, retry, order)
 	if err != nil {
-		return nil, fmt.Errorf("ServiceCompare.GetCompareList GetTbmList :%w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	deductionList, err := s.Store.GetDeductionList(ctx, s.SafeDB, compare, retry, order)
 	if err != nil {
-		return nil, fmt.Errorf("ServiceCompare.GetCompareList GetDeductionList :%w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// " ", "-" 제거
@@ -254,53 +253,38 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 func (s *ServiceCompare) ModifyWorkerCompareApply(ctx context.Context, workers entity.WorkerDailys) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareApply begin tx: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service.ModifyWorkerCompareApply panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service.ModifyWorkerCompareApply tx rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service.ModifyWorkerCompareApply tx commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	// 근로자 정보: IRIS_WORKER_SET
 	// 선택한 프로젝트로 수정
 	if err = s.Store.ModifyWorkerCompareApply(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 근로자 비교 반영 - 근로자 일일 정보: IRIS_WORKER_DAILY_SET
 	// 반영상태, 선택한 프로젝트로 수정
 	if err = s.Store.ModifyDailyWorkerCompareApply(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 근로자 비교 반영 - TBM 등록 정보: IRIS_TBM_SET
 	// 선택한 프로젝트로 수정
 	if err = s.Store.ModifyTbmCompareApply(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 근로자 비교 반영 - 퇴직공제 등록 정보: IRIS_DEDUCTION_SET
 	// 선택한 프로젝트로 수정
 	if err = s.Store.ModifyDeductionCompareApply(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	// 비교 상태 수정 로그 등록
 	if err = s.Store.AddCompareLog(ctx, tx, workers); err != nil {
-		return fmt.Errorf("service.ModifyWorkerCompareApply store error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return

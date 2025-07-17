@@ -8,7 +8,6 @@ import (
 	"csm-api/service"
 	"csm-api/store"
 	"csm-api/utils"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/sync/errgroup"
 	"log"
@@ -66,7 +65,7 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 			ModUser: utils.ParseNullString("SYSTEM_INIT"),
 		}
 		if initErr := i.WorkHourService.ModifyWorkHour(ctx, user); initErr != nil {
-			return entity.WriteErrorLog(ctx, fmt.Errorf("[init] ModifyWorkHour fail: %w", initErr))
+			return entity.WriteErrorLog(ctx, utils.CustomErrorf(initErr))
 		}
 		log.Println("[init] ModifyWorkHour completed")
 		return nil

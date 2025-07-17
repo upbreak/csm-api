@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
-	"fmt"
+	"csm-api/utils"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -30,12 +30,12 @@ func (r *Repository) GetParentMenu(ctx context.Context, db Queryer, roles []stri
 
 	query, args, err := sqlx.In(query, roles)
 	if err != nil {
-		return nil, fmt.Errorf("GetParentMenu sqlx.In error: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	query = db.Rebind(query)
 
 	if err = db.SelectContext(ctx, &list, query, args...); err != nil {
-		return nil, fmt.Errorf("GetParentMenu err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -63,12 +63,12 @@ func (r *Repository) GetChildMenu(ctx context.Context, db Queryer, roles []strin
 
 	query, args, err := sqlx.In(query, roles)
 	if err != nil {
-		return nil, fmt.Errorf("GetChildMenu sqlx.In error: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	query = db.Rebind(query)
 
 	if err = db.SelectContext(ctx, &list, query, args...); err != nil {
-		return nil, fmt.Errorf("GetChildMenu err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
 	"fmt"
 )
@@ -41,7 +42,7 @@ func (r *Repository) GetOrganizationClientList(ctx context.Context, db Queryer, 
 				ORDER BY JM.FUNC_NAME ASC, SC.VAL5 ASC, JM.SORT_NO ASC`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno); err != nil {
-		return nil, fmt.Errorf("GetOrganizationClientList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &sqlData, nil
@@ -115,7 +116,7 @@ func (r *Repository) GetOrganizationHtencList(ctx context.Context, db Queryer, j
 					`)
 
 	if err := db.SelectContext(ctx, &sqlData, query, jno, funcNo); err != nil {
-		return nil, fmt.Errorf("GetOrganizationHtencList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &sqlData, nil
 }
@@ -138,7 +139,7 @@ func (r *Repository) GetFuncNameList(ctx context.Context, db Queryer) (*entity.F
 	`)
 
 	if err := db.SelectContext(ctx, &sqlData, query); err != nil {
-		return nil, fmt.Errorf("GetFuncNameList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &sqlData, nil

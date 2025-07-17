@@ -26,21 +26,21 @@ func (h *InitApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 근로자 마감 처리
 	if err := h.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("[InitApi] ModifyWorkerDeadlineInit fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(fmt.Errorf("[InitApi] ModifyWorkerDeadlineInit fail: %+v", err)))
 	} else {
 		log.Println("[InitApi] ModifyWorkerDeadlineInit completed")
 	}
 
 	// 철야 확인 작업
 	if count, err := h.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("[InitApi] ModifyWorkerOverTime fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(fmt.Errorf("[InitApi] ModifyWorkerOverTime fail: %+v", err)))
 	} else if count != 0 {
 		log.Println("[InitApi] ModifyWorkerOverTime completed")
 	}
 
 	// 프로젝트 정보 업데이트(초기 세팅)
 	if count, err := h.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("[InitApi] CheckProjectSettings fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(fmt.Errorf("[InitApi] CheckProjectSettings fail: %+v", err)))
 	} else if count != 0 {
 		log.Printf("[InitApi] CheckProjectSettings %d completed \n", count)
 	}
@@ -50,7 +50,7 @@ func (h *InitApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ModUser: utils.ParseNullString("SYSTEM_BATCH"),
 	}
 	if err := h.WorkHourService.ModifyWorkHour(ctx, user); err != nil {
-		_ = entity.WriteErrorLog(ctx, fmt.Errorf("[InitApi] ModifyWorkHour fail: %+v", err))
+		_ = entity.WriteErrorLog(ctx, utils.CustomErrorf(fmt.Errorf("[InitApi] ModifyWorkHour fail: %+v", err)))
 	} else {
 		log.Println("[InitApi] ModifyWorkHour completed")
 	}

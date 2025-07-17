@@ -4,8 +4,8 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"database/sql"
-	"fmt"
 )
 
 type ServiceOrganization struct {
@@ -28,12 +28,12 @@ func (s *ServiceOrganization) GetOrganizationClientList(ctx context.Context, jno
 	clientSql := &entity.OrganizationSqls{}
 	clientSql, err := s.Store.GetOrganizationClientList(ctx, s.TimeSheetDB, jnoSql)
 	if err != nil {
-		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetOrganizationClientList: %w", err)
+		return &entity.OrganizationPartitions{}, utils.CustomErrorf(err)
 	}
 
 	clients := &entity.Organizations{} //  []organization
 	if err := entity.ConvertSliceToRegular(*clientSql, clients); err != nil {
-		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/CovertSliceToRegular: %w", err)
+		return &entity.OrganizationPartitions{}, utils.CustomErrorf(err)
 	}
 
 	organizations := entity.OrganizationPartitions{}
@@ -77,12 +77,12 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 
 	funcNameSqls, err := s.Store.GetFuncNameList(ctx, s.TimeSheetDB)
 	if err != nil {
-		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetFuncNameList: %w", err)
+		return &entity.OrganizationPartitions{}, utils.CustomErrorf(err)
 	}
 
 	funcNames := &entity.FuncNames{}
 	if err := entity.ConvertSliceToRegular(*funcNameSqls, funcNames); err != nil {
-		return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/CovertSliceToRegular: %w", err)
+		return &entity.OrganizationPartitions{}, utils.CustomErrorf(err)
 	}
 
 	organizations := entity.OrganizationPartitions{}
@@ -98,7 +98,7 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 		hitechSql := &entity.OrganizationSqls{}
 		hitechSql, err := s.Store.GetOrganizationHtencList(ctx, s.TimeSheetDB, jnoSql, funcNoSql)
 		if err != nil {
-			return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/GetOrganizationHtencList: %w", err)
+			return &entity.OrganizationPartitions{}, utils.CustomErrorf(err)
 		}
 		if len(*hitechSql) == 0 {
 			continue
@@ -106,7 +106,7 @@ func (s *ServiceOrganization) GetOrganizationHtencList(ctx context.Context, jno 
 
 		hitech := &entity.Organizations{}
 		if err := entity.ConvertSliceToRegular(*hitechSql, hitech); err != nil {
-			return &entity.OrganizationPartitions{}, fmt.Errorf("ServiceOrganization/ConvertSliceToRegular: %w", err)
+			return &entity.OrganizationPartitions{}, utils.CustomErrorf(err)
 		}
 
 		organization.FuncName = funcName.FuncName

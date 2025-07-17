@@ -65,7 +65,7 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 		%s`, retryCondition, orderBy)
 
 	if err := db.SelectContext(ctx, &list, query, compare.RecordDate, compare.Sno, compare.Jno, compare.Jno); err != nil {
-		return list, fmt.Errorf("GetDailyWorkerList: %w", err)
+		return list, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -118,7 +118,7 @@ func (r *Repository) GetTbmList(ctx context.Context, db Queryer, compare entity.
 		%s`, retryCondition, orderBy)
 
 	if err := db.SelectContext(ctx, &list, query, compare.Sno, compare.RecordDate, compare.Sno, compare.RecordDate, compare.Jno); err != nil {
-		return list, fmt.Errorf("GetTbmList: %w", err)
+		return list, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -184,7 +184,7 @@ func (r *Repository) GetDeductionList(ctx context.Context, db Queryer, compare e
 		%s`, retryCondition, orderBy)
 
 	if err := db.SelectContext(ctx, &list, query, compare.Sno, compare.RecordDate, compare.Sno, compare.RecordDate, compare.Jno); err != nil {
-		return list, fmt.Errorf("GetDeductionList: %w", err)
+		return list, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -207,7 +207,7 @@ func (r *Repository) ModifyWorkerCompareApply(ctx context.Context, tx Execer, wo
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId); err != nil {
-			return fmt.Errorf("ModifyWorkerCompareState: %v", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -233,7 +233,7 @@ func (r *Repository) ModifyDailyWorkerCompareApply(ctx context.Context, tx Exece
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.AfterState, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
-			return fmt.Errorf("ModifyDailyWorkerCompareState: %v", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -267,7 +267,7 @@ func (r *Repository) ModifyTbmCompareApply(ctx context.Context, tx Execer, worke
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegNo, agent, worker.Sno, worker.UserNm, worker.Department, worker.RecordDate); err != nil {
-			return fmt.Errorf("ModifyTbmCompareState: %v", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -301,7 +301,7 @@ func (r *Repository) ModifyDeductionCompareApply(ctx context.Context, tx Execer,
 		)`
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserNm, worker.Department, worker.RegNo, worker.RecordDate); err != nil {
-			return fmt.Errorf("ModifyDeductionCompareState: %v", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -317,7 +317,7 @@ func (r *Repository) AddCompareLog(ctx context.Context, tx Execer, logs entity.W
 
 	for _, log := range logs {
 		if _, err := tx.ExecContext(ctx, query, log.Sno, log.Jno, log.UserId, log.UserNm, log.BeforeState, log.AfterState, log.RecordDate, log.RegUser, log.RegUno, agent); err != nil {
-			return fmt.Errorf("AddCompareLog: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil

@@ -9,7 +9,6 @@ import (
 	"csm-api/service"
 	"csm-api/store"
 	"csm-api/utils"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"log"
@@ -99,13 +98,13 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		log.Println("[Scheduler] Running ModifyWorkerDeadlineSchedule")
 
 		if err := s.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
-			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] ModifyWorkerDeadlineSchedule fail: %+v", err))
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] ModifyWorkerDeadlineSchedule", err))
 		} else {
 			log.Println("[Scheduler] ModifyWorkerDeadlineSchedule completed")
 		}
 	})
 	if err != nil {
-		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
+		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}
 
 	// 1분마다 실행
@@ -113,14 +112,13 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	_, err = s.cron.AddFunc("0 0/1 * * * *", func() {
 		var count int
 		if count, err = s.WorkerService.ModifyWorkerOverTime(ctx); err != nil {
-			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] ModifyWorkerOverTime fail: %+v", err))
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] ModifyWorkerOverTime", err))
 		} else if count != 0 {
 			log.Println("[Scheduler] ModifyWorkerOverTime completed")
 		}
 	})
 	if err != nil {
-		// TODO: 에러아카이브
-		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
+		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}
 
 	// 5분 마다 실행
@@ -128,13 +126,13 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
 		var count int
 		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
-			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] CheckProjectSettings fail: %+v", err))
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] CheckProjectSettings", err))
 		} else if count != 0 {
 			log.Printf("[Scheduler] CheckProjectSettings %d completed \n", count)
 		}
 	})
 	if err != nil {
-		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
+		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}
 
 	// 0시 1분 0초에 실행
@@ -145,13 +143,13 @@ func (s *Scheduler) Run(ctx context.Context) error {
 			ModUser: utils.ParseNullString("SYSTEM_BATCH"),
 		}
 		if err = s.WorkHourService.ModifyWorkHour(ctx, user); err != nil {
-			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] ModifyWorkHour fail: %+v", err))
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] ModifyWorkHour", err))
 		} else {
 			log.Println("[Scheduler] ModifyWorkHour completed")
 		}
 	})
 	if err != nil {
-		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
+		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}
 
 	// 8시, 10시, 13시, 15시, 17시에 시작
@@ -162,14 +160,14 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 		err = s.WeatherService.SaveWeather(ctx)
 		if err != nil {
-			_ = entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] SaveWeather fail: %w", err))
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] SaveWeather", err))
 		} else {
 			log.Printf("[Scheduler] SaveWeather completed")
 		}
 
 	})
 	if err != nil {
-		return entity.WriteErrorLog(ctx, fmt.Errorf("[Scheduler] failed to add cron job: %w", err))
+		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}
 
 	// 00:00부터 05:00까지 1시간 단위
@@ -186,7 +184,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		}
 	})
 	if err != nil {
-		return fmt.Errorf("[Scheduler] failed to add cron job: %w", err)
+		return utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err)
 	}
 
 	// ... 추가 job 등록

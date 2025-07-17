@@ -4,7 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"fmt"
+	"csm-api/utils"
 )
 
 type ServiceWorkHour struct {
@@ -17,29 +17,14 @@ type ServiceWorkHour struct {
 func (s *ServiceWorkHour) ModifyWorkHourByJno(ctx context.Context, jno int64, user entity.Base, ids []string) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_work_hour.ModifyWorkHourByJno BeginTx err: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_work_hour.ModifyWorkHourByJno panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_work_hour.ModifyWorkHourByJno err: %v; rollback err: %v", err, rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_work_hour.ModifyWorkHourByJno err: %v; commit err: %v", err, commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.ModifyWorkHourByJno(ctx, tx, jno, user, ids)
 	if err != nil {
-		return fmt.Errorf("service_work_hour.ModifyWorkHourByJno err: %v", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -48,29 +33,14 @@ func (s *ServiceWorkHour) ModifyWorkHourByJno(ctx context.Context, jno int64, us
 func (s *ServiceWorkHour) ModifyWorkHour(ctx context.Context, user entity.Base) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_work_hour.ModifyWorkHour BeginTx err: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_work_hour.ModifyWorkHour panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_work_hour.ModifyWorkHour err: %v; rollback err: %v", err, rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_work_hour.ModifyWorkHour err: %v; commit err: %v", err, commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.ModifyWorkHour(ctx, tx, user)
 	if err != nil {
-		return fmt.Errorf("service_work_hour.ModifyWorkHour err: %v", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }

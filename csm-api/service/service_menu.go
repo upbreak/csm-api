@@ -4,7 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"fmt"
+	"csm-api/utils"
 )
 
 type ServiceMenu struct {
@@ -16,12 +16,12 @@ type ServiceMenu struct {
 func (s *ServiceMenu) GetMenu(ctx context.Context, roles []string) (entity.MenuRes, error) {
 	parentList, err := s.Store.GetParentMenu(ctx, s.SafeDB, roles)
 	if err != nil {
-		return entity.MenuRes{}, fmt.Errorf("service_menu/GetParentMenu err: %w", err)
+		return entity.MenuRes{}, utils.CustomErrorf(err)
 	}
 
 	childList, err := s.Store.GetChildMenu(ctx, s.SafeDB, roles)
 	if err != nil {
-		return entity.MenuRes{}, fmt.Errorf("service_menu/GetChildMenu err: %w", err)
+		return entity.MenuRes{}, utils.CustomErrorf(err)
 	}
 
 	list := entity.MenuRes{

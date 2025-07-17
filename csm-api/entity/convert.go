@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"csm-api/utils"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -94,13 +95,13 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 
 	// sqlNulls가 포인터인지 확인하고 역참조
 	if sqlNullsVal.Kind() != reflect.Ptr {
-		return fmt.Errorf("sqlNulls must be a pointer to a struct")
+		return utils.CustomErrorf(fmt.Errorf("sqlNulls must be a pointer to a struct"))
 	}
 	sqlNullsVal = sqlNullsVal.Elem()
 
 	// regular가 포인터가 아니라 값 타입이면 그대로 사용
 	if regularVal.Kind() != reflect.Struct {
-		return fmt.Errorf("regular must be a struct, got %s", regularVal.Kind())
+		return utils.CustomErrorf(fmt.Errorf("regular must be a struct, got %s", regularVal.Kind()))
 	}
 
 	regularType := regularVal.Type()
@@ -111,7 +112,7 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 		sqlNullsField := sqlNullsVal.FieldByName(fieldName)
 
 		if !sqlNullsField.IsValid() {
-			return fmt.Errorf("field %q exists in regular but not in SQLNulls", fieldName)
+			return utils.CustomErrorf(fmt.Errorf("field %q exists in regular but not in SQLNulls", fieldName))
 		}
 
 		// 값을 직접 수정
@@ -145,7 +146,7 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 				//	Valid: !regularField.Interface().(time.Time).IsZero(),
 				//}))
 			} else {
-				return fmt.Errorf("unsupported struct field type for field %q", fieldName)
+				return utils.CustomErrorf(fmt.Errorf("unsupported struct field type for field %q", fieldName))
 			}
 		case reflect.Float64:
 			sqlNullsField.Set(reflect.ValueOf(sql.NullFloat64{
@@ -154,7 +155,7 @@ func ConvertToSQLNulls(regular any, sqlNulls any) error {
 			}))
 
 		default:
-			return fmt.Errorf("unsupported field type %s for field %q", regularField.Type(), fieldName)
+			return utils.CustomErrorf(fmt.Errorf("unsupported field type %s for field %q", regularField.Type(), fieldName))
 		}
 	}
 
@@ -176,7 +177,7 @@ func ConvertToRegular(sqlNulls any, regular any) error {
 
 	// sqlNulls가 구조체인지 확인
 	if sqlNullsVal.Kind() != reflect.Struct {
-		return fmt.Errorf("sqlNulls must be a struct, got %s", sqlNullsVal.Kind())
+		return utils.CustomErrorf(fmt.Errorf("sqlNulls must be a struct, got %s", sqlNullsVal.Kind()))
 	}
 
 	sqlNullsType := sqlNullsVal.Type()
@@ -187,7 +188,7 @@ func ConvertToRegular(sqlNulls any, regular any) error {
 		regularField := regularVal.FieldByName(fieldName)
 
 		if !regularField.IsValid() {
-			return fmt.Errorf("field %q exists in SQLNulls but not in regular", fieldName)
+			return utils.CustomErrorf(fmt.Errorf("field %q exists in SQLNulls but not in regular", fieldName))
 		}
 
 		switch sqlNullsField.Interface().(type) {
@@ -198,7 +199,7 @@ func ConvertToRegular(sqlNulls any, regular any) error {
 		case sql.NullTime:
 			regularField.Set(reflect.ValueOf(sqlNullsField.Interface().(sql.NullTime).Time))
 		default:
-			return fmt.Errorf("unsupported field type %s for field %q", sqlNullsField.Type(), fieldName)
+			return utils.CustomErrorf(fmt.Errorf("unsupported field type %s for field %q", sqlNullsField.Type(), fieldName))
 		}
 	}
 	return nil
@@ -213,7 +214,7 @@ func ConvertSliceToSQLNulls(regularSlice any, sqlNullsSlice any) error {
 	sqlNullsVal := reflect.ValueOf(sqlNullsSlice)
 
 	if regularVal.Kind() != reflect.Slice {
-		return fmt.Errorf("regularSlice must be a slice (got %s)", regularVal.Kind())
+		return utils.CustomErrorf(fmt.Errorf("regularSlice must be a slice (got %s)", regularVal.Kind()))
 	}
 
 	if sqlNullsVal.Kind() == reflect.Ptr {
@@ -221,7 +222,7 @@ func ConvertSliceToSQLNulls(regularSlice any, sqlNullsSlice any) error {
 	}
 
 	if sqlNullsVal.Kind() != reflect.Slice {
-		return fmt.Errorf("sqlNullsSlice must be a pointer to a slice (got %s)", sqlNullsVal.Kind())
+		return utils.CustomErrorf(fmt.Errorf("sqlNullsSlice must be a pointer to a slice (got %s)", sqlNullsVal.Kind()))
 	}
 
 	if sqlNullsVal.IsNil() || sqlNullsVal.Len() != regularVal.Len() {
@@ -240,7 +241,7 @@ func ConvertSliceToSQLNulls(regularSlice any, sqlNullsSlice any) error {
 
 		err := ConvertToSQLNulls(regularItem.Interface(), sqlNullsItem.Interface()) // 이제 값이 전달됨
 		if err != nil {
-			return fmt.Errorf("error converting item at index %d: %w", i, err)
+			return utils.CustomErrorf(fmt.Errorf("error converting item at index %d: %w", i, err))
 		}
 
 		sqlNullsVal.Index(i).Set(sqlNullsItem)
@@ -263,17 +264,17 @@ func ConvertSliceToRegular(sqlNullsSlice any, regularSlice any) error {
 	}
 
 	if sqlNullsVal.Kind() != reflect.Slice {
-		return fmt.Errorf("sqlNullsSlice must be a slice (got %s)", sqlNullsVal.Kind())
+		return utils.CustomErrorf(fmt.Errorf("sqlNullsSlice must be a slice (got %s)", sqlNullsVal.Kind()))
 	}
 
 	if regularVal.Kind() != reflect.Ptr {
-		return fmt.Errorf("regularSlice must be a pointer (got %s)", regularVal.Kind())
+		return utils.CustomErrorf(fmt.Errorf("regularSlice must be a pointer (got %s)", regularVal.Kind()))
 	}
 
 	regularSliceElem := regularVal.Elem()
 
 	if regularSliceElem.Kind() != reflect.Slice {
-		return fmt.Errorf("regularSlice must be a pointer to a slice (got %s)", regularSliceElem.Kind())
+		return utils.CustomErrorf(fmt.Errorf("regularSlice must be a pointer to a slice (got %s)", regularSliceElem.Kind()))
 	}
 
 	if regularSliceElem.IsNil() || regularSliceElem.Len() != sqlNullsVal.Len() {
@@ -286,7 +287,7 @@ func ConvertSliceToRegular(sqlNullsSlice any, regularSlice any) error {
 
 		err := ConvertToRegular(sqlNullsItem.Interface(), regularItem.Interface())
 		if err != nil {
-			return fmt.Errorf("error converting item at index %d: %w", i, err)
+			return utils.CustomErrorf(fmt.Errorf("error converting item at index %d: %w", i, err))
 		}
 
 		regularSliceElem.Index(i).Set(regularItem)

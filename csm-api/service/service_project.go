@@ -26,13 +26,13 @@ type ServiceProject struct {
 func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error) {
 	projectInfos, err := p.Store.GetProjectList(ctx, p.SafeDB, sno, targetDate)
 	if err != nil {
-		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectList error: %w", err)
+		return &entity.ProjectInfos{}, utils.CustomErrorf(err)
 	}
 
 	// 안전관리자 수 조회
 	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.SafeDB, targetDate)
 	if err != nil {
-		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// 프로젝트 정보 객체에 pm, pe 정보 삽입
@@ -45,7 +45,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 			for _, jonPe := range jobPeList {
 				uno, err := strconv.Atoi(jonPe)
 				if err != nil {
-					return &entity.ProjectInfos{}, fmt.Errorf("service_project/strconv.Atoi(jonPe) parse err")
+					return &entity.ProjectInfos{}, utils.CustomErrorf(fmt.Errorf("service_project/strconv.Atoi(jonPe) parse err"))
 				}
 				unoList = append(unoList, uno)
 			}
@@ -54,7 +54,7 @@ func (p *ServiceProject) GetProjectList(ctx context.Context, sno int64, targetDa
 		// pe 정보 일괄 조회
 		userPeList, err := p.UserStore.GetUserInfoPeList(ctx, p.SafeDB, unoList)
 		if err != nil {
-			return &entity.ProjectInfos{}, fmt.Errorf("service_project/GetUserInfoPeList error: %w", err)
+			return &entity.ProjectInfos{}, utils.CustomErrorf(err)
 		}
 		projectInfo.ProjectPeList = userPeList
 
@@ -79,13 +79,13 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 	// 근로자 수 조회
 	projectInfos, err := p.Store.GetProjectWorkerCountList(ctx, p.SafeDB, targetDate)
 	if err != nil {
-		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectWorkerCountList error: %w", err)
+		return &entity.ProjectInfos{}, utils.CustomErrorf(err)
 	}
 
 	// 안전관리자 수 조회
 	safeInfos, err := p.Store.GetProjectSafeWorkerCountList(ctx, p.SafeDB, targetDate)
 	if err != nil {
-		return nil, fmt.Errorf("service_project/getProjectSafeWorkerCountList error: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// 안전, 공사 근로자 수
@@ -109,7 +109,7 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error) {
 	list, err := p.Store.GetProjectNmList(ctx, p.SafeDB)
 	if err != nil {
-		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
+		return &entity.ProjectInfos{}, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -122,12 +122,12 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 
 	jobInfos, err := p.Store.GetUsedProjectList(ctx, p.SafeDB, pageSql, search, retry)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
+		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 
 	return jobInfos, nil
@@ -139,7 +139,7 @@ func (p *ServiceProject) GetUsedProjectList(ctx context.Context, page entity.Pag
 func (p *ServiceProject) GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string) (int, error) {
 	count, err := p.Store.GetUsedProjectCount(ctx, p.SafeDB, search, retry)
 	if err != nil {
-		return 0, fmt.Errorf("service_project/GetUsedProjectCount error: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -152,12 +152,12 @@ func (p *ServiceProject) GetAllProjectList(ctx context.Context, page entity.Page
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 
 	jobInfos, err := p.Store.GetAllProjectList(ctx, p.SafeDB, pageSql, search, isAll, retry)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("service_project/GetUsedProjectList error: %w", err)
+		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 
 	return jobInfos, nil
@@ -173,7 +173,7 @@ func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.J
 		count += 1
 	}
 	if err != nil {
-		return 0, fmt.Errorf("service_project/GetAllProjectCount error: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -194,12 +194,12 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("service_project/OfPageSql error: %w", err)
+		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 
 	jobInfos, err := p.Store.GetStaffProjectList(ctx, p.SafeDB, pageSql, search, unoSql)
 	if err != nil {
-		return &entity.JobInfos{}, fmt.Errorf("service_project/GetStaffProjectList: %w", err)
+		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 	return jobInfos, nil
 
@@ -219,7 +219,7 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 
 	count, err := p.Store.GetStaffProjectCount(ctx, p.SafeDB, search, unoSql)
 	if err != nil {
-		return 0, fmt.Errorf("service_project/GetStaffProjectCount error: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -246,7 +246,7 @@ func (p *ServiceProject) GetProjectNmUnoList(ctx context.Context, uno int64, rol
 	projectInfos, err := p.Store.GetProjectNmUnoList(ctx, p.SafeDB, unoSql, roleInt)
 
 	if err != nil {
-		return &entity.ProjectInfos{}, fmt.Errorf("service_project/getProjectNmList error: %w", err)
+		return &entity.ProjectInfos{}, utils.CustomErrorf(err)
 	}
 
 	return projectInfos, nil
@@ -259,13 +259,13 @@ func (s *ServiceProject) GetNonUsedProjectList(ctx context.Context, page entity.
 	pageSql := entity.PageSql{}
 	pageSql, err := pageSql.OfPageSql(page)
 	if err != nil {
-		return nil, fmt.Errorf("service_project/GetNonUsedProjectList ofPageSql error: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	list, err := s.Store.GetNonUsedProjectList(ctx, s.SafeDB, pageSql, search, retry)
 
 	if err != nil {
-		return nil, fmt.Errorf("service_project/GetNonUsedProjectList error: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return list, nil
@@ -278,7 +278,7 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 	count, err := s.Store.GetNonUsedProjectCount(ctx, s.SafeDB, search, retry)
 
 	if err != nil {
-		return 0, fmt.Errorf("service_project/GetNonUsedProjectCount error: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -288,7 +288,7 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 func (s *ServiceProject) GetProjectBySite(ctx context.Context, sno int64) (entity.ProjectInfos, error) {
 	projectInfos, err := s.Store.GetProjectBySite(ctx, s.SafeDB, sno)
 	if err != nil {
-		return entity.ProjectInfos{}, fmt.Errorf("service_project/GetProjectBySite error: %w", err)
+		return entity.ProjectInfos{}, utils.CustomErrorf(err)
 	}
 	return projectInfos, nil
 }
@@ -299,29 +299,14 @@ func (s *ServiceProject) GetProjectBySite(ctx context.Context, sno int64) (entit
 func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProject) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project/AddProject BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project/AddProject panic error: %w", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project/AddProject Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project/AddProject Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.AddProject(ctx, tx, project)
 	if err != nil {
-		return fmt.Errorf("service_project/AddProject error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -332,29 +317,14 @@ func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProje
 func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entity.ReqProject) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project/ModifyDefaultProject BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project/ModifyDefaultProject panic error: %w", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project/ModifyDefaultProject Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project/ModifyDefaultProject Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.ModifyDefaultProject(ctx, tx, project)
 	if err != nil {
-		return fmt.Errorf("service_project/ModifyDefaultProject error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -365,29 +335,14 @@ func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entit
 func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.ReqProject) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project/ModifyUseProject BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project/ModifyUseProject panic error: %w", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project/ModifyUseProject Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project/ModifyUseProject Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.ModifyUseProject(ctx, tx, project)
 	if err != nil {
-		return fmt.Errorf("service_project/ModifyUseProject error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }
@@ -398,29 +353,14 @@ func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.Re
 func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_project/RemoveProject BeginTx error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_project/RemoveProject panic error: %w", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_project/RemoveProject Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_project/RemoveProject Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	err = s.Store.RemoveProject(ctx, tx, sno, jno)
 	if err != nil {
-		return fmt.Errorf("service_project/RemoveProject error: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return
 }

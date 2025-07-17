@@ -3,8 +3,8 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/utils"
 	"database/sql"
-	"fmt"
 	"time"
 )
 
@@ -49,7 +49,7 @@ func (r *Repository) GetProjectDailyContentList(ctx context.Context, db Queryer,
 				NVL(t1.REG_DATE, t1.MOD_DATE) DESC`
 
 	if err := db.SelectContext(ctx, &projectDailys, sql, jnoParam, targetDateParam); err != nil {
-		return nil, fmt.Errorf("GetProjectDailyContentList fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return &projectDailys, nil
 }
@@ -69,7 +69,7 @@ func (r *Repository) GetDailyJobList(ctx context.Context, db Queryer, jno int64,
 			AND :2 = 0 OR (JNO = :3 OR JNO = 0)`
 
 	if err := db.SelectContext(ctx, &projectDailys, query, targetDate, jno, jno); err != nil {
-		return entity.ProjectDailys{}, fmt.Errorf("GetDailyJobList fail: %w", err)
+		return entity.ProjectDailys{}, utils.CustomErrorf(err)
 	}
 	return projectDailys, nil
 }
@@ -82,7 +82,7 @@ func (r *Repository) AddDailyJob(ctx context.Context, tx Execer, project entity.
 
 	for _, job := range project {
 		if _, err := tx.ExecContext(ctx, query, job.Jno, job.Content, job.TargetDate, job.RegUno, job.RegUser); err != nil {
-			return fmt.Errorf("AddDailyJob fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 
@@ -103,7 +103,7 @@ func (r *Repository) ModifyDailyJob(ctx context.Context, tx Execer, project enti
 			WHERE IDX = :6`
 
 	if _, err := tx.ExecContext(ctx, query, project.Jno, project.Content, project.TargetDate, project.RegUno, project.RegUser, project.Idx); err != nil {
-		return fmt.Errorf("ModifyDailyJob fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func (r *Repository) RemoveDailyJob(ctx context.Context, tx Execer, idx int64) e
 	query := `DELETE FROM IRIS_DAILY_JOB WHERE IDX = :1`
 
 	if _, err := tx.ExecContext(ctx, query, idx); err != nil {
-		return fmt.Errorf("RemoveDailyJob fail: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }

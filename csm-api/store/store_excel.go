@@ -6,7 +6,6 @@ import (
 	"csm-api/utils"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -26,7 +25,7 @@ func (r *Repository) GetTbmOrder(ctx context.Context, db Queryer, tbm entity.Tbm
 		if errors.Is(err, sql.ErrNoRows) {
 			return "0", nil
 		}
-		return "0", fmt.Errorf("GetTbmOrder: %w", err)
+		return "0", utils.CustomErrorf(err)
 	}
 
 	if !order.Valid {
@@ -46,7 +45,7 @@ func (r *Repository) AddTbmExcel(ctx context.Context, tx Execer, tbms []entity.T
 
 	for _, tbm := range tbms {
 		if _, err := tx.ExecContext(ctx, query, tbm.Sno, tbm.Department, tbm.DiscName, tbm.UserNm, tbm.TbmDate, tbm.TbmOrder, tbm.RegUser, tbm.RegUno, agent); err != nil {
-			return fmt.Errorf("AddTbmExcel: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -62,7 +61,7 @@ func (r *Repository) GetDeductionSiteNameBySno(ctx context.Context, db Queryer, 
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", nil
 		}
-		return "", fmt.Errorf("GetDeductionSiteNameBySno: %w", err)
+		return "", utils.CustomErrorf(err)
 	}
 	if !name.Valid {
 		return "", nil
@@ -85,7 +84,7 @@ func (r *Repository) GetDeductionOrder(ctx context.Context, db Queryer, tbm enti
 		if errors.Is(err, sql.ErrNoRows) {
 			return "0", nil
 		}
-		return "0", fmt.Errorf("GetDeductionOrder: %w", err)
+		return "0", utils.CustomErrorf(err)
 	}
 	if !order.Valid {
 		return "0", nil
@@ -103,7 +102,7 @@ func (r *Repository) AddDeductionExcel(ctx context.Context, tx Execer, tbms []en
 
 	for _, tbm := range tbms {
 		if _, err := tx.ExecContext(ctx, query, tbm.Sno, tbm.UserNm, tbm.Department, tbm.Gender, tbm.RegNo, tbm.Phone, tbm.InRecogTime, tbm.OutRecogTime, tbm.RecordDate, tbm.DeductOrder, tbm.RegUser, tbm.RegUno, agent); err != nil {
-			return fmt.Errorf("AddDeductionExcel: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil

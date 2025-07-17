@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"csm-api/utils"
 	"github.com/caarlos0/env"
 )
 
@@ -19,7 +19,7 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return cfg, nil
 }

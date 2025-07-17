@@ -6,7 +6,6 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
-	"fmt"
 	"strconv"
 )
 
@@ -20,7 +19,7 @@ type ServiceUploadFile struct {
 func (s *ServiceUploadFile) GetUploadFileList(ctx context.Context, file entity.UploadFile) ([]entity.UploadFile, error) {
 	list, err := s.Store.GetUploadFileList(ctx, s.DB, file)
 	if err != nil {
-		return list, fmt.Errorf("serviceUploadFile.GetUploadFileList: %w", err)
+		return list, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -29,7 +28,7 @@ func (s *ServiceUploadFile) GetUploadFileList(ctx context.Context, file entity.U
 func (s *ServiceUploadFile) GetUploadFile(ctx context.Context, file entity.UploadFile) (entity.UploadFile, error) {
 	data, err := s.Store.GetUploadFile(ctx, s.DB, file)
 	if err != nil {
-		return entity.UploadFile{}, fmt.Errorf("serviceUploadFile.UploadFile: %w", err)
+		return entity.UploadFile{}, utils.CustomErrorf(err)
 	}
 	return data, nil
 }
@@ -40,37 +39,22 @@ func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.Uploa
 	if !ok || tx == nil {
 		tx, err = s.TDB.BeginTxx(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
+			return utils.CustomErrorf(err)
 		}
 
-		defer func() {
-			if r := recover(); r != nil {
-				_ = tx.Rollback()
-				err = fmt.Errorf("serviceUploadFile.AddUploadFile panic error: %w", r)
-				return
-			}
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					err = fmt.Errorf("serviceUploadFile.AddUploadFile rollback error: %w", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					err = fmt.Errorf("serviceUploadFile.AddUploadFile commit error: %w", commitErr)
-				}
-			}
-		}()
+		defer utils.DeferTxx(tx, &err)
 	}
 
 	// 차수
 	uploadRound, err := s.Store.GetUploadRound(ctx, s.DB, file)
 	if err != nil {
-		return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	file.UploadRound = utils.ParseNullInt(strconv.Itoa(uploadRound))
 
 	// 저장
 	if err = s.Store.AddUploadFile(ctx, tx, file); err != nil {
-		return fmt.Errorf("serviceUploadFile.AddUploadFile: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return

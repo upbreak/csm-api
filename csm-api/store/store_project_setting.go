@@ -29,7 +29,7 @@ func (r *Repository) GetManHourList(ctx context.Context, db Queryer, jno int64) 
 		`
 
 	if err := db.SelectContext(ctx, &manHours, query, jno); err != nil {
-		return nil, fmt.Errorf("GetManHourList err:%v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return &manHours, nil
@@ -77,7 +77,7 @@ func (r *Repository) MergeManHour(ctx context.Context, tx Execer, manHour entity
 		`
 	result, err := tx.ExecContext(ctx, query, manHour.Mhno, manHour.WorkHour, manHour.ManHour, manHour.Jno, manHour.Etc, manHour.RegUno, manHour.RegUser)
 	if err != nil {
-		return 0, fmt.Errorf("MargeManHour err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	count, _ = result.RowsAffected()
@@ -95,7 +95,7 @@ func (r *Repository) AddManHour(ctx context.Context, tx Execer, manHour entity.M
 		`
 	_, err := tx.ExecContext(ctx, query, manHour.WorkHour, manHour.ManHour, manHour.Jno, manHour.Etc, manHour.RegUno, manHour.RegUser)
 	if err != nil {
-		return fmt.Errorf("Store/AddManHour err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 	return nil
 }
@@ -144,7 +144,7 @@ func (r *Repository) MergeProjectSetting(ctx context.Context, tx Execer, project
 			)`
 	result, err := tx.ExecContext(ctx, query, project.Jno, project.InTime, project.OutTime, project.RespiteTime, project.CancelCode, project.RegUno, project.RegUser)
 	if err != nil {
-		return 0, fmt.Errorf("MergeProject. Failed to modify project setting: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	count, _ := result.RowsAffected()
@@ -168,7 +168,7 @@ func (r *Repository) GetCheckProjectSetting(ctx context.Context, db Queryer) (pr
 				AND IS_USE = 'Y'`
 
 	if err = db.SelectContext(ctx, projects, query); err != nil {
-		return nil, fmt.Errorf("GetCheckProjectSetting err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return
@@ -189,8 +189,7 @@ func (r *Repository) GetCheckProjectManHours(ctx context.Context, db Queryer) (p
 				    JNO NOT IN (SELECT JNO FROM IRIS_MAN_HOUR)`
 
 	if err = db.SelectContext(ctx, projects, query); err != nil {
-		//TODO: 에러 아카이브
-		return nil, fmt.Errorf("GetCheckProjectSetting err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return
@@ -220,7 +219,7 @@ func (r *Repository) GetProjectSetting(ctx context.Context, db Queryer, jno int6
 			`)
 
 	if err := db.SelectContext(ctx, &setting, query, jno); err != nil {
-		return &setting, fmt.Errorf("GetProjectSetting fail: %v", err)
+		return &setting, utils.CustomErrorf(err)
 	}
 
 	return &setting, nil
@@ -238,9 +237,9 @@ func (r *Repository) DeleteManHour(ctx context.Context, tx Execer, mhno int64) e
 			`)
 	result, err := tx.ExecContext(ctx, query, mhno)
 	if err != nil {
-		return fmt.Errorf("DeleteManHour fail: %v", err)
+		return utils.CustomErrorf(err)
 	} else if count, _ := result.RowsAffected(); count <= 0 {
-		return fmt.Errorf("Deleted ManHour is Zero")
+		return utils.CustomErrorf(fmt.Errorf("Deleted ManHour is Zero"))
 	}
 
 	return nil
@@ -256,7 +255,7 @@ func (r *Repository) ProjectSettingLog(ctx context.Context, tx Execer, setting e
 	`)
 
 	if _, err := tx.ExecContext(ctx, query, setting.Jno, setting.Message, setting.RegUser, setting.RegUno, agent); err != nil {
-		return fmt.Errorf("ProjectSettingLog fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil
@@ -272,7 +271,7 @@ func (r *Repository) ManHourLog(ctx context.Context, tx Execer, manhour entity.M
 	`)
 
 	if _, err := tx.ExecContext(ctx, query, manhour.Jno, manhour.Message, manhour.RegUser, manhour.RegUno, agent); err != nil {
-		return fmt.Errorf("ManHourLog fail: %v", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return nil

@@ -4,7 +4,6 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/utils"
-	"fmt"
 )
 
 // 사용자 권한 조회
@@ -22,7 +21,7 @@ func (r *Repository) GetUserRoleListByUno(ctx context.Context, db Queryer, uno i
 		AND JNO != 0`
 
 	if err := db.SelectContext(ctx, &list, query, uno); err != nil {
-		return nil, fmt.Errorf("GetUserRoleListByUno fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -42,7 +41,7 @@ func (r *Repository) GetUserRoleListByCodeAndJno(ctx context.Context, db Queryer
 		AND JNO = :2`
 
 	if err := db.SelectContext(ctx, &list, query, code, jno); err != nil {
-		return nil, fmt.Errorf("GetUserRoleListByCodeAndJno fail: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -57,7 +56,7 @@ func (r *Repository) AddUserRole(ctx context.Context, tx Execer, userRoles []ent
 
 	for _, userRole := range userRoles {
 		if _, err := tx.ExecContext(ctx, query, userRole.UserUno, userRole.RoleCode, userRole.Jno, agent, userRole.RegUser, userRole.RegUno); err != nil {
-			return fmt.Errorf("AddUserRole fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil
@@ -73,7 +72,7 @@ func (r *Repository) RemoveUserRole(ctx context.Context, tx Execer, userRoles []
 
 	for _, userRole := range userRoles {
 		if _, err := tx.ExecContext(ctx, query, userRole.UserUno, userRole.RoleCode, userRole.Jno); err != nil {
-			return fmt.Errorf("RemoveUserRole fail: %w", err)
+			return utils.CustomErrorf(err)
 		}
 	}
 	return nil

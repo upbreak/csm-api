@@ -4,7 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/store"
-	"fmt"
+	"csm-api/utils"
 )
 
 type ServiceUserRole struct {
@@ -18,7 +18,7 @@ type ServiceUserRole struct {
 func (s *ServiceUserRole) GetUserRoleListByUno(ctx context.Context, uno int64) ([]entity.UserRoleMap, error) {
 	list, err := s.Store.GetUserRoleListByUno(ctx, s.SafeDB, uno)
 	if err != nil {
-		return nil, fmt.Errorf("service_user_role/GetUserRoleListByUno err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -28,7 +28,7 @@ func (s *ServiceUserRole) GetUserRoleListByUno(ctx context.Context, uno int64) (
 func (s *ServiceUserRole) GetUserRoleListByCodeAndJno(ctx context.Context, code string, jno int64) ([]entity.UserRoleMap, error) {
 	list, err := s.Store.GetUserRoleListByCodeAndJno(ctx, s.SafeDB, code, jno)
 	if err != nil {
-		return nil, fmt.Errorf("service_user_role/GetUserRoleListByCodeAndJno err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 	return list, nil
 }
@@ -37,28 +37,13 @@ func (s *ServiceUserRole) GetUserRoleListByCodeAndJno(ctx context.Context, code 
 func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.UserRoleMap) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		err = fmt.Errorf("service_user_role/AddUserRole BeginTx error: %w", err)
+		err = utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_user_role/AddUserRole panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_user_role/AddUserRole Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_user_role/AddUserRole Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err = s.Store.AddUserRole(ctx, tx, userRoles); err != nil {
-		err = fmt.Errorf("service_user_role/AddUserRole error: %w", err)
+		err = utils.CustomErrorf(err)
 	}
 	return
 }
@@ -67,27 +52,13 @@ func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.Us
 func (s *ServiceUserRole) RemoveUserRole(ctx context.Context, userRoles []entity.UserRoleMap) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		err = fmt.Errorf("service_user_role/RemoveUserRole BeginTx error: %w", err)
+		err = utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_user_role/RemoveUserRole panic error: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_user_role/RemoveUserRole Rollback error: %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_user_role/RemoveUserRole Commit error: %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
+
 	if err = s.Store.RemoveUserRole(ctx, tx, userRoles); err != nil {
-		err = fmt.Errorf("service_user_role/RemoveUserRole error: %w", err)
+		err = utils.CustomErrorf(err)
 	}
 	return
 }

@@ -6,7 +6,6 @@ import (
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/utils"
-	"fmt"
 	"github.com/guregu/null"
 )
 
@@ -30,7 +29,7 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, sea
 	// 권한 조회
 	list, err := s.UserStore.GetAuthorizationList(ctx, s.SafeDB, "/notice")
 	if err != nil {
-		return nil, fmt.Errorf("service_notice/GetNoticeList GetAuthorizationList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	var roleInt int
@@ -45,12 +44,12 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, sea
 	pageSql, err = pageSql.OfPageSql(page)
 
 	if err != nil {
-		return nil, fmt.Errorf("service_notice/GetNoticeList err : %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	notices, err := s.Store.GetNoticeList(ctx, s.SafeDB, uno, roleInt, pageSql, search)
 	if err != nil {
-		return &entity.Notices{}, fmt.Errorf("fail to list notice: %w", err)
+		return &entity.Notices{}, utils.CustomErrorf(err)
 	}
 
 	return notices, nil
@@ -68,7 +67,7 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 	// 권한 조회
 	list, err := s.UserStore.GetAuthorizationList(ctx, s.SafeDB, "/notice")
 	if err != nil {
-		return 0, fmt.Errorf("service_notice/GetNoticeList GetAuthorizationList err: %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	var roleInt int
@@ -80,7 +79,7 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 
 	count, err := s.Store.GetNoticeListCount(ctx, s.SafeDB, uno, roleInt, search)
 	if err != nil {
-		return 0, fmt.Errorf("service_notice/GetNoticeListCount err : %w", err)
+		return 0, utils.CustomErrorf(err)
 	}
 
 	return count, nil
@@ -93,27 +92,13 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_notice/AddNotice err : %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_notice/AddNotice panic : %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_notice/AddNotice rollback err : %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_notice/AddNotice commit err : %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
+
 	if err = s.Store.AddNotice(ctx, tx, notice); err != nil {
-		return fmt.Errorf("service_notice/AddNotice err : %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -125,28 +110,13 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (er
 func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_notice/ModifyNotice err : %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_notice/ModifyNotice panic : %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_notice/ModifyNotice rollback err : %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_notice/ModifyNotice commit err : %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err = s.Store.ModifyNotice(ctx, tx, notice); err != nil {
-		return fmt.Errorf("service_notice/ModifyNotice err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return
@@ -158,28 +128,13 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx null.Int) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_notice/RemoveNotice err : %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_notice/RemoveNotice panic : %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_notice/RemoveNotice rollback err : %w", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_notice/RemoveNotice commit err : %w", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	if err = s.Store.RemoveNotice(ctx, tx, idx); err != nil {
-		return fmt.Errorf("service_notice/RemomveNotice err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
 	return

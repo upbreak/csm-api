@@ -4,6 +4,7 @@ import (
 	"csm-api/api"
 	"csm-api/config"
 	"csm-api/entity"
+	"csm-api/utils"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -30,7 +31,7 @@ type ServiceAddressSearch struct {
 func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*entity.Point, error) {
 
 	if roadAddress == "" {
-		return nil, fmt.Errorf("roadAddress parameter is missing")
+		return nil, utils.CustomErrorf(fmt.Errorf("roadAddress parameter is missing"))
 	}
 	// apiUrl주소
 	apiUrl := fmt.Sprintf(`https://api.vworld.kr/req/search?key=%s&version=%s&service=%s&request=%s&type=%s&crs=%s&category=%s&query=%s&domain=%s&format=%s&errorFormat=%s`,
@@ -50,7 +51,7 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 	// api 호출
 	body, err := api.CallGetAPI(apiUrl)
 	if err != nil {
-		return nil, fmt.Errorf("call GetWhetherSrtNcst API error: %v", err)
+		return nil, utils.CustomMessageErrorf("call GetWhetherSrtNcst API", err)
 	}
 
 	// api response struct
@@ -86,11 +87,11 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 	// api response parse
 	var res AddressSearching
 	if err = json.Unmarshal([]byte(body), &res); err != nil {
-		return nil, fmt.Errorf("AddressSearch api JSON parse err: %v", err)
+		return nil, utils.CustomMessageErrorf("AddressSearch api JSON parse", err)
 	}
 
 	if res.Response.Status != "OK" {
-		return nil, fmt.Errorf("AddressSearch api response err: %s", res.Response.Error.Text)
+		return nil, utils.CustomErrorf(fmt.Errorf("AddressSearch api response err: %s", res.Response.Error.Text))
 
 	} else {
 		items := res.Response.Result.Items
@@ -108,7 +109,7 @@ func (s *ServiceAddressSearch) GetAPILatitudeLongtitude(roadAddress string) (*en
 //   - roadAddress : 도로명 주소
 func (s *ServiceAddressSearch) GetAPISiteMapPoint(roadAddress string) (*entity.MapPoint, error) {
 	if roadAddress == "" {
-		return nil, fmt.Errorf("roadAddress parameter is missing")
+		return nil, utils.CustomErrorf(fmt.Errorf("roadAddress parameter is missing"))
 	}
 	if roadAddress == "undefined" {
 		return &entity.MapPoint{
@@ -148,17 +149,17 @@ func (s *ServiceAddressSearch) GetAPISiteMapPoint(roadAddress string) (*entity.M
 	// api 호출
 	body, err := api.CallGetAPI(apiUrl)
 	if err != nil {
-		return nil, fmt.Errorf("call GetWhetherSrtNcst API error: %v", err)
+		return nil, utils.CustomMessageErrorf("call GetWhetherSrtNcst API", err)
 	}
 
 	// 응답 json으로 변환
 	var res SiteMapPoint
 	if err = json.Unmarshal([]byte(body), &res); err != nil {
-		return nil, fmt.Errorf("SiteMapPoint api JSON parse err: %v", err)
+		return nil, utils.CustomMessageErrorf("SiteMapPoint api JSON parse", err)
 	}
 
 	if res.Response.Status != "OK" {
-		return nil, fmt.Errorf("SiteMapPoint api response err: %s", res.Response.Error.Text)
+		return nil, utils.CustomErrorf(fmt.Errorf("SiteMapPoint api response", res.Response.Error.Text))
 	}
 
 	return &res.Response.Result.Point, nil

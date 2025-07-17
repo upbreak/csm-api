@@ -49,7 +49,7 @@ func (s *ServiceWeather) GetWeatherSrtNcst(date string, time string, nx int, ny 
 	// api call
 	body, err := api.CallGetAPI(url)
 	if err != nil {
-		return nil, fmt.Errorf("call GetWeatherSrtNcst API error: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// api response item struct
@@ -64,7 +64,7 @@ func (s *ServiceWeather) GetWeatherSrtNcst(date string, time string, nx int, ny 
 	// response parse
 	var res Weather
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
-		return nil, fmt.Errorf("WeatherSrt api JSON parse err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// Weather api response -> go api response convert
@@ -113,7 +113,7 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 	// api call
 	body, err := api.CallGetAPI(url)
 	if err != nil {
-		return nil, fmt.Errorf("call GetWeatherWrnMsgList API error: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	// api response item struct
@@ -138,11 +138,11 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 	// response parse
 	var res Weather
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
-		return nil, fmt.Errorf("WeatherWrnMsg api JSON parse err: %v", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	if res.Response.Header.ResultCode != "00" {
-		return nil, fmt.Errorf("WeatherWrnMsg api response err : %s", res.Response.Header.ResultMsg)
+		return nil, utils.CustomErrorf(fmt.Errorf("WeatherWrnMsg api response err : %s", res.Response.Header.ResultMsg))
 	}
 
 	// Weather api response -> go api response convert
@@ -215,7 +215,7 @@ func (s *ServiceWeather) GetWeatherList(ctx context.Context, sno int64, targetDa
 
 	weathers, err := s.Store.GetWeatherList(ctx, s.SafeDB, sno, targetDate)
 	if err != nil {
-		return nil, fmt.Errorf("service_weather/GetWeatherList err: %w", err)
+		return nil, utils.CustomErrorf(err)
 	}
 
 	return weathers, nil
@@ -227,31 +227,16 @@ func (s *ServiceWeather) GetWeatherList(ctx context.Context, sno int64, targetDa
 func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 	tx, err := s.SafeTDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("service_weather/SaveWeather err: %w", err)
+		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			err = fmt.Errorf("service_weather/SaveWeather panic: %v", r)
-			return
-		}
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				err = fmt.Errorf("service_weather/SaveWeather rollback err: %v", rollbackErr)
-			}
-		} else {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = fmt.Errorf("service_weather/SaveWeather commit err: %v", commitErr)
-			}
-		}
-	}()
+	defer utils.DeferTx(tx, &err)
 
 	// IRIS_SITE_POS에 등록된 값들 불러오기
 	list, err := s.SitePosStore.GetSitePosList(ctx, s.SafeDB)
 
 	if err != nil {
-		err = fmt.Errorf("service_weather/SitePosList err: %w", err)
+		err = utils.CustomErrorf(err)
 	}
 
 	for _, site := range list {
@@ -269,14 +254,14 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 		// 초단기예보 조회
 		res, weatherErr := s.GetWeatherSrtNcst(baseDate, baseTime, nx, ny)
 		if weatherErr != nil {
-			err = fmt.Errorf("service_weather/Fail GetWeatherSrtNcst: %w", weatherErr)
+			err = utils.CustomErrorf(weatherErr)
 		}
 
 		// weather 형태로 변경
 		weather, convertErr := s.convertWeather(res)
 
 		if convertErr != nil {
-			err = fmt.Errorf("service_weather/ConvertError: %w", convertErr)
+			err = utils.CustomErrorf(convertErr)
 		}
 
 		// 값이 없는 경우 저장하지 않음
@@ -289,11 +274,11 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 
 		// weather 저장
 		if err = s.Store.SaveWeather(ctx, tx, *weather); err != nil {
-			err = fmt.Errorf("service_weather/SaveWeather err: %w", err)
+			err = utils.CustomErrorf(err)
 		}
 	}
 
-	return err
+	return
 }
 
 // func: 초단기예보 key, value로 구성된 데이터를 Weather객체로 변경

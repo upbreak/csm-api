@@ -6,6 +6,7 @@ import (
 	"csm-api/config"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/utils"
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"log"
@@ -19,7 +20,7 @@ import (
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			_ = entity.WriteErrorLog(context.Background(), fmt.Errorf("panic recovered: %v", r))
+			_ = entity.WriteErrorLog(context.Background(), utils.CustomMessageErrorf("panic recovered", fmt.Errorf("%v", r)))
 		}
 	}()
 
@@ -29,7 +30,7 @@ func main() {
 
 	if err := run(ctx); err != nil {
 		if !entity.IsLoggedError(err) {
-			_ = entity.WriteErrorLog(ctx, fmt.Errorf("main() run 실패: %w", err))
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("main() run 실패", err))
 		}
 	}
 }
@@ -42,13 +43,13 @@ func run(ctx context.Context) error {
 	// config 설정
 	cfg, err := config.NewConfig()
 	if err != nil {
-		return fmt.Errorf("config.NewConfig: %w", err)
+		return utils.CustomMessageErrorf("config.NewConfig", err)
 	}
 
 	// domain, port 설정
 	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.Domain, cfg.Port))
 	if err != nil {
-		return fmt.Errorf("net.Listen: %w", err)
+		return utils.CustomMessageErrorf("net.Listen", err)
 	}
 
 	url := fmt.Sprintf("http://%s", l.Addr().String())
@@ -57,27 +58,27 @@ func run(ctx context.Context) error {
 	// DB config 설정
 	dbCfg, err := config.NewDBConfig()
 	if err != nil {
-		return fmt.Errorf("config.NewDBConfig: %w", err)
+		return utils.CustomMessageErrorf("config.NewDBConfig", err)
 	}
 
 	// DB connect
 	var cleanup []func()
 	safeDb, safeCleanup, err := store.New(ctx, dbCfg.Safe)
 	if err != nil {
-		return fmt.Errorf("store.New (safeDb): %w", err)
+		return utils.CustomMessageErrorf("store.New", err)
 	}
 	cleanup = append(cleanup, func() { safeCleanup() })
 
 	timesheetDb, timesheetCleanup, err := store.New(ctx, dbCfg.TimeSheet)
 	if err != nil {
-		return fmt.Errorf("store.New (timesheetDb): %w", err)
+		return utils.CustomMessageErrorf("store.New", err)
 	}
 	cleanup = append(cleanup, func() { timesheetCleanup() })
 
 	// api config 생성
 	apiCfg, err := config.GetApiConfig()
 	if err != nil {
-		return fmt.Errorf("config.ApiConfig: %w", err)
+		return utils.CustomMessageErrorf("config.ApiConfig", err)
 	}
 
 	defer func() {
@@ -89,18 +90,18 @@ func run(ctx context.Context) error {
 	// 초기화 (Init 객체 생성)
 	init, err := NewInit(safeDb)
 	if err != nil {
-		return fmt.Errorf("NewInit fail: %w", err)
+		return utils.CustomMessageErrorf("NewInit fail", err)
 	}
 	// 초기화 실행
 	err = init.RunInitializations(ctx)
 	if err != nil {
-		return fmt.Errorf("RunInitializations fail: %w", err)
+		return utils.CustomMessageErrorf("RunInitializations", err)
 	}
 
 	// 라우팅 설정
 	mux, err := newMux(ctx, safeDb, timesheetDb)
 	if err != nil {
-		return fmt.Errorf("newMux: %w", err)
+		return utils.CustomMessageErrorf("newMux", err)
 	}
 
 	// HTTP server 생성
@@ -109,7 +110,7 @@ func run(ctx context.Context) error {
 	// scheduler 생성
 	scheduler, err := NewScheduler(safeDb, apiCfg, timesheetDb)
 	if err != nil {
-		return fmt.Errorf("NewScheduler fail: %w", err)
+		return utils.CustomMessageErrorf("NewScheduler", err)
 	}
 
 	// 서버와 스케줄러 동시에 실행
@@ -133,7 +134,7 @@ func run(ctx context.Context) error {
 		defer cancel()
 
 		if err = server.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("server graceful shutdown failed: %w", err)
+			return utils.CustomMessageErrorf("server graceful shutdown", err)
 		}
 		log.Println("Server exited normally.")
 	}
