@@ -505,7 +505,7 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	query := fmt.Sprintf(`
 				SELECT
 					0 AS RNUM,
-				    NULL AS JNO,
+				    0 AS JNO,
 					100 AS SNO,
 					'전체' AS JOB_NAME,
 					'' AS JOB_NO,
