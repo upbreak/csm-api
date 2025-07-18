@@ -118,14 +118,15 @@ func (n *NoticeHandler) Modify(w http.ResponseWriter, r *http.Request) {
 func (n *NoticeHandler) Remove(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	intIdx := utils.ParseNullInt(r.PathValue("idx"))
+	nullIdx := utils.ParseNullInt(r.PathValue("idx"))
 
-	if intIdx.Valid == false {
+	if nullIdx.Valid == false {
 		BadRequestResponse(ctx, w)
 		return
 	}
 
-	if err := n.Service.RemoveNotice(ctx, intIdx); err != nil {
+	idx := nullIdx.Int64
+	if err := n.Service.RemoveNotice(ctx, idx); err != nil {
 		FailResponse(ctx, w, err)
 		return
 	}

@@ -8,7 +8,6 @@ import (
 	"csm-api/txutil"
 	"csm-api/utils"
 	"fmt"
-	"github.com/guregu/null"
 )
 
 type ServiceNotice struct {
@@ -127,7 +126,7 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 // func: 공지사항 삭제
 // @param
 // - IDX: 공지사항 인덱스
-func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx null.Int) (err error) {
+func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx int64) (err error) {
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)

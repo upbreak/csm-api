@@ -117,7 +117,7 @@ type NoticeStore interface {
 	GetNoticeListCount(ctx context.Context, db Queryer, uno null.Int, role int, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, tx Execer, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, tx Execer, notice entity.Notice) error
-	RemoveNotice(ctx context.Context, tx Execer, idx null.Int) error
+	RemoveNotice(ctx context.Context, tx Execer, idx int64) error
 }
 
 type DeviceStore interface {

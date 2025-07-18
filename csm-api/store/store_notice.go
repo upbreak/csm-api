@@ -1,6 +1,5 @@
 package store
 
-import "C"
 import (
 	"context"
 	"csm-api/entity"
@@ -230,6 +229,12 @@ func (r *Repository) AddNotice(ctx context.Context, tx Execer, notice entity.Not
 // @param
 // - notice entity.NoticeSql: IDX, SNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
 func (r *Repository) ModifyNotice(ctx context.Context, tx Execer, notice entity.Notice) error {
+
+	contentCLOB := godror.Lob{
+		IsClob: true,
+		Reader: strings.NewReader(notice.Content.String),
+	}
+
 	query := `
 				UPDATE IRIS_NOTICE_BOARD
 				SET
@@ -249,7 +254,7 @@ func (r *Repository) ModifyNotice(ctx context.Context, tx Execer, notice entity.
 					IDX = :11
 			`
 
-	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, notice.Content, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
+	_, err := tx.ExecContext(ctx, query, notice.Jno, notice.Jno, notice.Title, contentCLOB, notice.ShowYN, notice.IsImportant, notice.ModUno, notice.ModUser, notice.PostingStartDate, notice.PostingEndDate, notice.Idx)
 
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -261,17 +266,21 @@ func (r *Repository) ModifyNotice(ctx context.Context, tx Execer, notice entity.
 // func: 공지사항 삭제
 // @param
 // - idx: 공지사항 인덱스
-func (r *Repository) RemoveNotice(ctx context.Context, tx Execer, idx null.Int) error {
-	query := `
-		UPDATE IRIS_NOTICE_BOARD 
-		SET 
-			IS_USE = 'N'
-		WHERE 
-			IDX = :1
-			`
+func (r *Repository) RemoveNotice(ctx context.Context, tx Execer, idx int64) error {
+	query :=
+		`
+			DELETE FROM IRIS_NOTICE_BOARD WHERE IDX = :1
+		`
 
-	_, err := tx.ExecContext(ctx, query, idx)
-	if err != nil {
+	//	`
+	//UPDATE IRIS_NOTICE_BOARD
+	//SET
+	//	IS_USE = 'N'
+	//WHERE
+	//	IDX = :1
+	//	`
+
+	if _, err := tx.ExecContext(ctx, query, idx); err != nil {
 		return utils.CustomErrorf(err)
 	}
 
