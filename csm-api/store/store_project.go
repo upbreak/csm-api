@@ -175,7 +175,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
 			AND (:12 IS NULL OR t1.SNO = :13)
-			ORDER BY IS_DEFAULT DESC`
+			ORDER BY IS_DEFAULT DESC, JNO DESC`
 
 	if err := db.SelectContext(ctx, &projectInfos, sql,
 		snoParam, snoParam, targetDate, targetDate, targetDate,
@@ -353,7 +353,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 			WHERE t1.sno > 100
 			AND t1.IS_USE = 'Y'
 			ORDER BY
-				t1.IS_DEFAULT DESC`
+				t1.IS_DEFAULT DESC, JNO DESC`
 	if err := db.SelectContext(ctx, &projectInfos, sql); err != nil {
 		return &projectInfos, utils.CustomErrorf(err)
 	}
@@ -387,7 +387,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 	if pageSql.Order.Valid {
 		order = pageSql.Order.String
 	} else {
-		order = "JOB_NO ASC"
+		order = "JNO DESC, JOB_NO ASC"
 	}
 
 	query := fmt.Sprintf(`
@@ -767,7 +767,7 @@ func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = `
+		order = `JNO DESC,
 				CASE 
 					WHEN t1.REG_DATE IS NULL THEN t1.MOD_DATE 
 					WHEN t1.MOD_DATE IS NULL THEN t1.REG_DATE 
@@ -865,7 +865,8 @@ func (r *Repository) GetProjectBySite(ctx context.Context, db Queryer, sno int64
 			T2.JOB_NAME	AS PROJECT_NM
 		FROM IRIS_SITE_JOB T1
 		LEFT JOIN SYS_JOB_INFO T2 ON T1.JNO = T2.JNO
-		WHERE T1.SNO = :1`
+		WHERE T1.SNO = :1
+		ORDER BY JNO DESC`
 
 	if err := db.SelectContext(ctx, &list, query, sno); err != nil {
 		return nil, utils.CustomErrorf(err)
