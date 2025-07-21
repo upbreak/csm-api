@@ -17,11 +17,6 @@ func ProjectRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 			SafeTDB:   safeDB,
 			Store:     r,
 			UserStore: r,
-			//ManHourService: &service.ServiceManHour{
-			//	SafeDB:  safeDB,
-			//	SafeTDB: safeDB,
-			//	Store:   r,
-			//},
 		},
 	}
 
@@ -32,6 +27,7 @@ func ProjectRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	router.Get("/my-org/{uno}", projectHandler.MyOrgList)          // 본인이 속한 조직도의 프로젝트 조회
 	router.Get("/my-job_name/{uno}", projectHandler.MyJobNameList) // 본인이 속한 프로젝트 이름 목록
 	router.Get("/non-reg", projectHandler.NonRegList)              // 현장근태 사용되지 않은 프로젝트
+	router.Get("/non-reg/{type}", projectHandler.NonRegListByType) // 현장근태 사용되지 않은 프로젝트(Type별)
 	router.Get("/project-by-site", projectHandler.ProjectBySite)   // 현장별 프로젝트 조회
 	router.Post("/", projectHandler.Add)                           // 추가
 	router.Put("/default", projectHandler.ModifyDefault)           // 현장 기본 프로젝트 변경
