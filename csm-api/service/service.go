@@ -139,7 +139,7 @@ type WorkerService interface {
 
 type WorkHourService interface {
 	ModifyWorkHour(ctx context.Context, user entity.Base) error
-	ModifyWorkHourByJno(ctx context.Context, jno int64, user entity.Base, ids []string) error
+	ModifyWorkHourByJno(ctx context.Context, jno int64, user entity.Base, uuids []string) error
 }
 
 type CompanyService interface {

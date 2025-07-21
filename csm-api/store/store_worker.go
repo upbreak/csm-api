@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"csm-api/entity"
+	"csm-api/enum"
 	"csm-api/utils"
 	"database/sql"
 	"errors"
@@ -56,6 +57,30 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 	}
 
 	query := fmt.Sprintf(`
+				WITH LATEST_DAILY AS (
+					SELECT SNO, USER_KEY, MOD_DATE, REG_DATE
+					FROM (
+						SELECT
+							SNO,
+							USER_KEY,
+							MOD_DATE,
+							REG_DATE,
+							ROW_NUMBER() OVER (
+								PARTITION BY USER_KEY
+								ORDER BY 
+									CASE WHEN MOD_DATE IS NOT NULL THEN 0 ELSE 1 END,
+									NVL(MOD_DATE, REG_DATE) DESC
+							) AS RN
+						FROM IRIS_WORKER_DAILY_SET
+					)
+					WHERE RN = 1
+				),
+				BASE AS (
+					SELECT R1.*
+					FROM IRIS_WORKER_SET R1
+					JOIN LATEST_DAILY R2
+					ON R1.SNO = R2.SNO AND R1.USER_KEY = R2.USER_KEY
+				)
 				SELECT *
 				FROM (
 					SELECT 
@@ -64,6 +89,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 						sorted_data.SITE_NM,
 						sorted_data.JNO,
 						sorted_data.JOB_NAME,
+						sorted_data.USER_KEY, 
 						sorted_data.USER_ID, 
 						sorted_data.USER_NM,
 						sorted_data.DEPARTMENT,
@@ -85,6 +111,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							t3.SITE_NM,
 							t1.JNO,
 							t2.JOB_NAME,
+							t1.USER_KEY,
 							t1.USER_ID, 
 							t1.USER_NM,
 							t1.DEPARTMENT,
@@ -99,10 +126,11 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							t1.MOD_USER,
 							t1.MOD_DATE,
 							t1.REG_NO
-						FROM IRIS_WORKER_SET t1
+						FROM BASE t1
 						LEFT JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
 						LEFT JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 						WHERE t1.SNO > 100
+						--AND T3.IS_USE = 'Y'
 						%s %s
 						ORDER BY %s
 					) sorted_data
@@ -140,11 +168,37 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	query := fmt.Sprintf(`
+						WITH LATEST_DAILY AS (
+							SELECT SNO, USER_KEY, MOD_DATE, REG_DATE
+							FROM (
+								SELECT
+									SNO,
+									USER_KEY,
+									MOD_DATE,
+									REG_DATE,
+									ROW_NUMBER() OVER (
+										PARTITION BY USER_KEY
+										ORDER BY 
+											CASE WHEN MOD_DATE IS NOT NULL THEN 0 ELSE 1 END,
+											NVL(MOD_DATE, REG_DATE) DESC
+									) AS RN
+								FROM IRIS_WORKER_DAILY_SET
+							)
+							WHERE RN = 1
+						),
+						BASE AS (
+							SELECT R1.*
+							FROM IRIS_WORKER_SET R1
+							JOIN LATEST_DAILY R2
+							ON R1.SNO = R2.SNO AND R1.USER_KEY = R2.USER_KEY
+						)
 						SELECT 
 							COUNT(*)
-						FROM IRIS_WORKER_SET t1
+						FROM BASE t1
 						LEFT JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+						LEFT JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 						WHERE t1.SNO > 100
+						--AND t3.IS_USE = 'Y'
 						%s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
@@ -256,23 +310,43 @@ func (r *Repository) AddWorker(ctx context.Context, tx Execer, worker entity.Wor
 
 	// IRIS_WORKER_SET에 INSERT하는 쿼리
 	insertQuery := `
-		INSERT INTO IRIS_WORKER_SET(
+		INSERT INTO IRIS_WORKER_SET (
 			SNO, JNO, USER_ID, USER_NM, DEPARTMENT, 
 			DISC_NAME, PHONE, WORKER_TYPE, IS_RETIRE, REG_DATE, 
-			REG_AGENT, REG_USER, REG_UNO, REG_NO
-		) VALUES (
-			:1, :2, :3, :4, :5, 
-			:6, :7, :8, :9, SYSDATE, 
-			:10, :11, :12, :13
+			REG_AGENT, REG_USER, REG_UNO, REG_NO, USER_KEY
+		)
+		SELECT
+			:1, :2, :3, :4, :5,
+			:6, :7, :8, :9, SYSDATE,
+			:10, :11, :12, :13, GET_IRIS_USER_UUID()
+		FROM DUAL
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM IRIS_WORKER_SET
+			WHERE USER_ID = :14
+			  AND USER_NM = :15
+			  AND (
+				(REG_NO = :16) OR (REG_NO IS NULL AND :17 IS NULL)
+			  )
 		)`
 
-	_, err := tx.ExecContext(ctx, insertQuery,
+	res, err := tx.ExecContext(ctx, insertQuery,
 		worker.Sno, worker.Jno, worker.UserId, worker.UserNm, worker.Department,
 		worker.DiscName, worker.Phone, worker.WorkerType, worker.IsRetire, /*, SYSDATE*/
 		agent, worker.RegUser, worker.RegUno, worker.RegNo,
+		worker.UserId, worker.UserNm, worker.RegNo, worker.RegNo,
 	)
 	if err != nil {
 		return utils.CustomErrorf(err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("%s*등록 실패: 동일한 작업자가 이미 존재합니다 (USER_ID=%s, USER_NM=%s, REG_NO=%s)", enum.WORKER_T_A, worker.UserId, worker.UserNm, worker.RegNo)
 	}
 
 	return nil
@@ -285,18 +359,35 @@ func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.
 	agent := utils.GetAgent()
 
 	query := `
-				UPDATE IRIS_WORKER_SET 
+				UPDATE IRIS_WORKER_SET R
 				SET 
-					USER_NM = :1, DEPARTMENT = :2, PHONE = :3, WORKER_TYPE = :4, IS_RETIRE = :5,
-					RETIRE_DATE = :6, MOD_DATE = SYSDATE, MOD_AGENT = :7, MOD_USER = :8, MOD_UNO = :9, TRG_EDITABLE_YN = 'N',
-					REG_NO = :10, IS_MANAGE = :11, DISC_NAME=:12
-				WHERE SNO = :13 AND JNO = :14 AND USER_ID = :15`
+					R.USER_NM          = :1,
+					R.DEPARTMENT       = :2,
+					R.PHONE            = :3,
+					R.WORKER_TYPE      = :4,
+					R.IS_RETIRE        = :5,
+					R.RETIRE_DATE      = :6,
+					R.MOD_DATE         = SYSDATE,
+					R.MOD_AGENT        = :7,
+					R.MOD_USER         = :8,
+					R.MOD_UNO          = :9,
+					R.TRG_EDITABLE_YN  = 'N',
+					R.REG_NO           = :10,
+					R.IS_MANAGE        = :11,
+					R.DISC_NAME        = :12
+				WHERE R.USER_KEY = :15
+				  AND EXISTS (
+						SELECT 1
+						FROM IRIS_SITE_JOB J
+						WHERE J.JNO    = R.JNO
+						  AND J.IS_USE = 'Y'
+				  )`
 
 	result, err := tx.ExecContext(ctx, query,
 		worker.UserNm, worker.Department, worker.Phone, worker.WorkerType, worker.IsRetire,
 		worker.RetireDate /*, SYSDATE*/, agent, worker.ModUser, worker.ModUno,
 		worker.RegNo, worker.IsManage, worker.DiscName,
-		worker.Sno, worker.Jno, worker.UserId,
+		worker.UserKey,
 	)
 
 	if err != nil {

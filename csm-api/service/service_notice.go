@@ -91,12 +91,15 @@ func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.No
 // @param
 // - notice entity.Notice: JNO, TITLE, CONTENT, SHOW_YN, PERIOD_CODE, REG_UNO, REG_USER
 func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.AddNotice(ctx, tx, notice); err != nil {
 		return fmt.Errorf("service_notice/AddNotice err : %w", err)
@@ -109,12 +112,15 @@ func (s *ServiceNotice) AddNotice(ctx context.Context, notice entity.Notice) (er
 // @param
 // -notice entity.Notice: IDX, JNO, TITLE, CONTENT, SHOW_YN, MOD_UNO, MOD_USER
 func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.ModifyNotice(ctx, tx, notice); err != nil {
 		return utils.CustomErrorf(err)
@@ -127,12 +133,15 @@ func (s *ServiceNotice) ModifyNotice(ctx context.Context, notice entity.Notice) 
 // @param
 // - IDX: 공지사항 인덱스
 func (s *ServiceNotice) RemoveNotice(ctx context.Context, idx int64) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.RemoveNotice(ctx, tx, idx); err != nil {
 		return utils.CustomErrorf(err)

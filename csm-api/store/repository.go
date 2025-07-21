@@ -19,9 +19,18 @@ func New(ctx context.Context, cfg *config.DBConfig) (*sqlx.DB, func(), error) {
 	var P godror.ConnectionParams
 	P.Username = cfg.UserName
 	P.Password = godror.NewPassword(cfg.Password)
-	P.ConnectString = fmt.Sprintf("%s:%s/%s?_enableTxReadWrite=0", cfg.Host, cfg.Port, cfg.OracleSid)
-	P.Timezone = time.FixedZone("Asia/Seoul", 9*60*60) // 애플리케이션 타임존 설정
-	P.SetSessionParamOnInit("TIME_ZONE", "Asia/Seoul") // 세션 타임존 설정
+	P.ConnectString = fmt.Sprintf("%s:%s/%s", cfg.Host, cfg.Port, cfg.OracleSid)
+	//P.ConnectString = fmt.Sprintf("%s:%s/%s?_enableTxReadWrite=0", cfg.Host, cfg.Port, cfg.OracleSid)
+	P.StandaloneConnection = sql.NullBool{Bool: true, Valid: true}
+	//P.Timezone = time.FixedZone("Asia/Seoul", 9*60*60) // 애플리케이션 타임존 설정
+	//P.SetSessionParamOnInit("TIME_ZONE", "Asia/Seoul") // 세션 타임존 설정
+
+	// OCI 세션 풀링 활성화 (godror SessionPool)
+	P.PoolParams.MinSessions = 2                   // 최소 세션 2개
+	P.PoolParams.MaxSessions = 10                  // 최대 세션 10개
+	P.PoolParams.SessionIncrement = 2              // 풀 확장할 때마다 +2
+	P.PoolParams.SessionTimeout = 60 * time.Second // 유휴 풀 세션 TTL
+	P.PoolParams.WaitTimeout = 10 * time.Second    // 풀 대기 최대 시간
 
 	// 디버깅 용도로 DSN 출력
 	fmt.Printf("DSN: %s\n", P.StringWithPassword())
@@ -31,6 +40,10 @@ func New(ctx context.Context, cfg *config.DBConfig) (*sqlx.DB, func(), error) {
 
 	// sql.DB 생성
 	db := sql.OpenDB(connector)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(0)
+	db.SetConnMaxIdleTime(0)
+	db.SetConnMaxLifetime(0)
 
 	// 연결 확인
 	if err := db.PingContext(ctx); err != nil {
@@ -39,6 +52,7 @@ func New(ctx context.Context, cfg *config.DBConfig) (*sqlx.DB, func(), error) {
 
 	// sqlx.DB 생성
 	xdb := sqlx.NewDb(db, "godror")
+
 	cleanup := func() {
 		fmt.Printf("close db: %s\n", cfg.DBName)
 		_ = db.Close()

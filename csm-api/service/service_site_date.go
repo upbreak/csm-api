@@ -32,12 +32,15 @@ func (s *ServiceSiteDate) GetSiteDateData(ctx context.Context, sno int64) (*enti
 // - sno: 현장고유번호
 // - siteDate: 현장 시간 (opening_date, closing_plan_date, closing_forecast_date, closing_actual_date)
 func (s *ServiceSiteDate) ModifySiteDate(ctx context.Context, sno int64, siteDate entity.SiteDate) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.TDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.TDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err := s.Store.ModifySiteDate(ctx, tx, sno, siteDate); err != nil {
 		return utils.CustomErrorf(err)
