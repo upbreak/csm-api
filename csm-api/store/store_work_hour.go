@@ -9,7 +9,7 @@ import (
 )
 
 // 마감처리가 안된 특정프로젝트의 근로자의 공수 계산: jno는 필수, ids는 없으면 jno의 모든 근로자 계산 있으면 해당 id의 근로자만 계산
-func (r *Repository) ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int64, user entity.Base, ids []string) error {
+func (r *Repository) ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int64, user entity.Base, uuids []string) error {
 	var (
 		query strings.Builder
 		args  []interface{}
@@ -77,9 +77,9 @@ func (r *Repository) ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int
 					AND T1.JNO = :1
 					AND T1.IS_DEADLINE = 'N'`)
 
-	if len(ids) > 0 {
-		query.WriteString("\nAND T1.USER_ID IN (")
-		for i, id := range ids {
+	if len(uuids) > 0 {
+		query.WriteString("\nAND T1.USER_KEY IN (")
+		for i, id := range uuids {
 			if i > 0 {
 				query.WriteString(", ")
 			}
@@ -131,7 +131,7 @@ func (r *Repository) ModifyWorkHour(ctx context.Context, tx Execer, user entity.
 				SELECT 
 					T1.ROWID AS W_ROWID,
 					T1.JNO,
-					T1.USER_ID,
+					--T1.USER_ID,
 					T1.RECORD_DATE,
 					T1.IN_RECOG_TIME,
 					T1.OUT_RECOG_TIME,

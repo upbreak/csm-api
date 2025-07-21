@@ -160,7 +160,7 @@ type WorkerStore interface {
 
 type WorkHourStore interface {
 	ModifyWorkHour(ctx context.Context, tx Execer, user entity.Base) error
-	ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int64, user entity.Base, ids []string) error
+	ModifyWorkHourByJno(ctx context.Context, tx Execer, jno int64, user entity.Base, uuids []string) error
 }
 
 type CompanyStore interface {

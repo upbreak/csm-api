@@ -5,6 +5,7 @@ import (
 	"csm-api/ctxutil"
 	"csm-api/entity"
 	"csm-api/store"
+	"csm-api/txutil"
 	"csm-api/utils"
 	"fmt"
 	"strconv"
@@ -38,27 +39,20 @@ func (s *ServiceUploadFile) GetUploadFile(ctx context.Context, file entity.Uploa
 func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.UploadFile) (err error) {
 	tx, ok := ctxutil.GetTx(ctx)
 	if !ok || tx == nil {
-		tx, err = s.TDB.BeginTxx(ctx, nil)
+		conn, err := s.TDB.Conn(ctx)
 		if err != nil {
 			return utils.CustomErrorf(err)
 		}
-
 		defer func() {
-			if r := recover(); r != nil {
-				_ = tx.Rollback()
-				err = utils.CustomMessageErrorf("panic", fmt.Errorf("%v", r))
-				return
-			}
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					err = utils.CustomMessageErrorf("rollback", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					err = utils.CustomMessageErrorf("commit", commitErr)
+			if closeErr := conn.Close(); closeErr != nil {
+				if err != nil {
+					err = utils.CustomMessageErrorf(fmt.Sprintf("%v; conn.Close", err), closeErr)
+				} else {
+					err = utils.CustomMessageErrorf("conn.Close", closeErr)
 				}
 			}
 		}()
+		defer txutil.DeferTxx(tx, &err)
 	}
 
 	// 차수

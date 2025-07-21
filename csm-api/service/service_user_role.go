@@ -36,12 +36,15 @@ func (s *ServiceUserRole) GetUserRoleListByCodeAndJno(ctx context.Context, code 
 
 // 사용자 권한 추가
 func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.UserRoleMap) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.AddUserRole(ctx, tx, userRoles); err != nil {
 		err = utils.CustomErrorf(err)
@@ -51,12 +54,15 @@ func (s *ServiceUserRole) AddUserRole(ctx context.Context, userRoles []entity.Us
 
 // 사용자 권한 삭제
 func (s *ServiceUserRole) RemoveUserRole(ctx context.Context, userRoles []entity.UserRoleMap) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.RemoveUserRole(ctx, tx, userRoles); err != nil {
 		err = utils.CustomErrorf(err)

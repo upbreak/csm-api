@@ -6,6 +6,7 @@ import (
 
 type Worker struct {
 	RowNum      null.Int    `json:"rnum" db:"RNUM"`
+	UserKey     null.String `json:"user_key" db:"USER_KEY"`
 	Sno         null.Int    `json:"sno" db:"SNO"` //현장 고유번호
 	SiteNm      null.String `json:"site_nm" db:"SITE_NM"`
 	Jno         null.Int    `json:"jno" db:"JNO"` //프로젝트 고유번호
@@ -29,8 +30,9 @@ type Workers []*Worker
 
 type WorkerDaily struct {
 	RowNum          null.Int    `json:"rnum" db:"RNUM"`
-	Sno             null.Int    `json:"sno" db:"SNO"`         //현장 고유번호
-	Jno             null.Int    `json:"jno" db:"JNO"`         //프로젝트 고유번호
+	Sno             null.Int    `json:"sno" db:"SNO"` //현장 고유번호
+	Jno             null.Int    `json:"jno" db:"JNO"` //프로젝트 고유번호
+	UserKey         null.String `json:"user_key" db:"USER_KEY"`
 	UserId          null.String `json:"user_id" db:"USER_ID"` //근로자 아이디
 	UserNm          null.String `json:"user_nm" db:"USER_NM"`
 	Department      null.String `json:"department" db:"DEPARTMENT"`

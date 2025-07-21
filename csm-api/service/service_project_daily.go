@@ -25,12 +25,15 @@ func (s *ServiceProjectDaily) GetDailyJobList(ctx context.Context, jno int64, ta
 
 // 작업내용 추가
 func (s *ServiceProjectDaily) AddDailyJob(ctx context.Context, project entity.ProjectDailys) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.AddDailyJob(ctx, tx, project); err != nil {
 		return utils.CustomErrorf(err)
@@ -40,12 +43,15 @@ func (s *ServiceProjectDaily) AddDailyJob(ctx context.Context, project entity.Pr
 
 // 작업내용 수정
 func (s *ServiceProjectDaily) ModifyDailyJob(ctx context.Context, project entity.ProjectDaily) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.ModifyDailyJob(ctx, tx, project); err != nil {
 		return utils.CustomErrorf(err)
@@ -55,12 +61,15 @@ func (s *ServiceProjectDaily) ModifyDailyJob(ctx context.Context, project entity
 
 // 작업내용 삭제
 func (s *ServiceProjectDaily) RemoveDailyJob(ctx context.Context, idx int64) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	if err = s.Store.RemoveDailyJob(ctx, tx, idx); err != nil {
 		return utils.CustomErrorf(err)

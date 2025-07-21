@@ -252,12 +252,15 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 
 // 근로자 비교 반영
 func (s *ServiceCompare) ModifyWorkerCompareApply(ctx context.Context, workers entity.WorkerDailys) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	// 근로자 정보: IRIS_WORKER_SET
 	// 선택한 프로젝트로 수정

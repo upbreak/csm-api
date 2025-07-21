@@ -81,26 +81,20 @@ func (s *ServiceExcel) ImportTbm(ctx context.Context, path string, tbm entity.Tb
 
 	tx, ok := ctxutil.GetTx(ctx)
 	if !ok || tx == nil {
-		tx, err = s.SafeTDB.BeginTxx(ctx, nil)
+		conn, err := s.SafeTDB.Conn(ctx)
 		if err != nil {
 			return utils.CustomErrorf(err)
 		}
 		defer func() {
-			if r := recover(); r != nil {
-				_ = tx.Rollback()
-				err = utils.CustomMessageErrorf("panic", fmt.Errorf("%v", r))
-				return
-			}
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					err = utils.CustomMessageErrorf("rollback", rollbackErr)
-				}
-			} else {
-				if commitErr := tx.Commit(); commitErr != nil {
-					err = utils.CustomMessageErrorf("commit", commitErr)
+			if closeErr := conn.Close(); closeErr != nil {
+				if err != nil {
+					err = utils.CustomMessageErrorf(fmt.Sprintf("%v; conn.Close", err), closeErr)
+				} else {
+					err = utils.CustomMessageErrorf("conn.Close", closeErr)
 				}
 			}
 		}()
+		defer txutil.DeferTxx(tx, &err)
 	}
 
 	// db 저장
@@ -193,12 +187,15 @@ func (s *ServiceExcel) ImportDeduction(ctx context.Context, path string, deducti
 
 	tx, ok := ctxutil.GetTx(ctx)
 	if !ok || tx == nil {
-		tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+		tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 		if err != nil {
 			return utils.CustomErrorf(err)
 		}
 
-		defer txutil.DeferTx(tx, &err)
+		defer func() {
+			txutil.DeferTx(tx, &err)
+			cleanup()
+		}()
 	}
 
 	if err = s.Store.AddDeductionExcel(ctx, tx, deductionList); err != nil {
@@ -294,12 +291,15 @@ func (s *ServiceExcel) ImportAddDailyWorker(ctx context.Context, path string, wo
 		workers = append(workers, temp)
 	}
 
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	var list entity.WorkerDailys
 	if list, err = s.WorkerStore.AddDailyWorkers(ctx, s.SafeDB, tx, workers); err != nil {

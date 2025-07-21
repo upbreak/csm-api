@@ -30,12 +30,15 @@ func (s *ServiceSchedule) GetRestScheduleList(ctx context.Context, jno int64, ye
 // @param
 // -
 func (s *ServiceSchedule) AddRestSchedule(ctx context.Context, schedule entity.RestSchedules) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	err = s.Store.AddRestSchedule(ctx, tx, schedule)
 	if err != nil {
@@ -49,12 +52,15 @@ func (s *ServiceSchedule) AddRestSchedule(ctx context.Context, schedule entity.R
 // @param
 // -
 func (s *ServiceSchedule) ModifyRestSchedule(ctx context.Context, schedule entity.RestSchedule) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	err = s.Store.ModifyRestSchedule(ctx, tx, schedule)
 	if err != nil {
@@ -68,12 +74,15 @@ func (s *ServiceSchedule) ModifyRestSchedule(ctx context.Context, schedule entit
 // @param
 // -
 func (s *ServiceSchedule) RemoveRestSchedule(ctx context.Context, cno int64) (err error) {
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer txutil.DeferTx(tx, &err)
+	defer func() {
+		txutil.DeferTx(tx, &err)
+		cleanup()
+	}()
 
 	err = s.Store.RemoveRestSchedule(ctx, tx, cno)
 	if err != nil {

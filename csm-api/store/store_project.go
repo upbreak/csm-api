@@ -31,13 +31,13 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				SELECT
 					t1.SNO,
 					t1.JNO,
-					t1.USER_ID,
+					t2.USER_ID,
 					NVL(t2.USER_NM, ' ') AS USER_NM,
 					TO_CHAR(t1.RECORD_DATE, 'YYYY-MM-DD') AS RECORD_DATE,
 					NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT,
 					t2.WORKER_TYPE
 				FROM IRIS_WORKER_DAILY_SET t1
-				LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
+				LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_KEY = t2.USER_KEY
 				WHERE t1.SNO > 100
 				AND (:1 IS NULL OR t1.SNO = :2) AND t1.RECORD_DATE < :3
 			),
@@ -199,13 +199,13 @@ func (r *Repository) GetProjectWorkerCountList(ctx context.Context, db Queryer, 
 					SELECT
 						t1.SNO,
 						t1.JNO,
-						t1.USER_ID,
+						t2.USER_ID,
 						NVL(t2.USER_NM, ' ') AS USER_NM,
 						TO_CHAR(t1.RECORD_DATE, 'YYYY-MM-DD') AS RECORD_DATE,
 						NVL(t2.DEPARTMENT, ' ') AS DEPARTMENT,
 						t2.WORKER_TYPE
 					FROM IRIS_WORKER_DAILY_SET t1
-					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
+					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_KEY = t2.USER_KEY
 					WHERE t1.SNO > 100
 				),
 				worker_counts AS (
@@ -283,7 +283,7 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 				WITH htenc_cnt AS (
 					SELECT T1.SNO, T1.JNO, T2.USER_NM
 					FROM IRIS_WORKER_DAILY_SET t1
-					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_ID = t2.USER_ID
+					LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.JNO = t2.JNO AND t1.USER_KEY = t2.USER_KEY
 					WHERE TO_CHAR(T1.RECORD_DATE, 'YYYY-MM-DD') = TO_CHAR(:1, 'YYYY-MM-DD')
 					AND (
 						INSTR(T2.DEPARTMENT, '하이테크') > 0 
