@@ -330,15 +330,12 @@ func (s *ServiceProject) GetProjectBySite(ctx context.Context, sno int64) (entit
 // @param
 // -
 func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProject) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.AddProject(ctx, tx, project)
 	if err != nil {
@@ -351,15 +348,12 @@ func (s *ServiceProject) AddProject(ctx context.Context, project entity.ReqProje
 // @param
 // -
 func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entity.ReqProject) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.ModifyDefaultProject(ctx, tx, project)
 	if err != nil {
@@ -372,15 +366,12 @@ func (s *ServiceProject) ModifyDefaultProject(ctx context.Context, project entit
 // @param
 // -
 func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.ReqProject) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.ModifyUseProject(ctx, tx, project)
 	if err != nil {
@@ -393,15 +384,12 @@ func (s *ServiceProject) ModifyUseProject(ctx context.Context, project entity.Re
 // @param
 // -
 func (s *ServiceProject) RemoveProject(ctx context.Context, sno int64, jno int64) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.RemoveProject(ctx, tx, sno, jno)
 	if err != nil {

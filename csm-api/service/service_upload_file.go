@@ -7,7 +7,7 @@ import (
 	"csm-api/store"
 	"csm-api/txutil"
 	"csm-api/utils"
-	"fmt"
+	"database/sql"
 	"strconv"
 )
 
@@ -39,19 +39,11 @@ func (s *ServiceUploadFile) GetUploadFile(ctx context.Context, file entity.Uploa
 func (s *ServiceUploadFile) AddUploadFile(ctx context.Context, file entity.UploadFile) (err error) {
 	tx, ok := ctxutil.GetTx(ctx)
 	if !ok || tx == nil {
-		conn, err := s.TDB.Conn(ctx)
+		tx, err = s.TDB.BeginTxx(ctx, &sql.TxOptions{ReadOnly: false})
 		if err != nil {
 			return utils.CustomErrorf(err)
 		}
-		defer func() {
-			if closeErr := conn.Close(); closeErr != nil {
-				if err != nil {
-					err = utils.CustomMessageErrorf(fmt.Sprintf("%v; conn.Close", err), closeErr)
-				} else {
-					err = utils.CustomMessageErrorf("conn.Close", closeErr)
-				}
-			}
-		}()
+
 		defer txutil.DeferTxx(tx, &err)
 	}
 

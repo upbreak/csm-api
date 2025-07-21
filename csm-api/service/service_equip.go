@@ -23,15 +23,12 @@ func (s *ServiceEquip) GetEquipList(ctx context.Context) (entity.EquipTemps, err
 }
 
 func (s *ServiceEquip) MergeEquipCnt(ctx context.Context, equips entity.EquipTemps) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.MergeEquipCnt(ctx, tx, equips); err != nil {
 		return utils.CustomErrorf(err)

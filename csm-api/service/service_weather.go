@@ -226,15 +226,12 @@ func (s *ServiceWeather) GetWeatherList(ctx context.Context, sno int64, targetDa
 // params:
 // -
 func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	// IRIS_SITE_POS에 등록된 값들 불러오기
 	list, err := s.SitePosStore.GetSitePosList(ctx, s.SafeDB)

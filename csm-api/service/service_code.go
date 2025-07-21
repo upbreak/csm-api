@@ -48,15 +48,12 @@ func (s *ServiceCode) GetCodeTree(ctx context.Context, pCode string) (*entity.Co
 // @param
 // -
 func (s *ServiceCode) MergeCode(ctx context.Context, code entity.Code) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.MergeCode(ctx, tx, code); err != nil {
 		return utils.CustomErrorf(err)
@@ -69,15 +66,12 @@ func (s *ServiceCode) MergeCode(ctx context.Context, code entity.Code) (err erro
 // @param
 // -
 func (s *ServiceCode) RemoveCode(ctx context.Context, idx int64) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	if err = s.Store.RemoveCode(ctx, tx, idx); err != nil {
 		return utils.CustomErrorf(err)
@@ -90,15 +84,12 @@ func (s *ServiceCode) RemoveCode(ctx context.Context, idx int64) (err error) {
 // @param
 // -
 func (s *ServiceCode) ModifySortNo(ctx context.Context, codeSorts entity.CodeSorts) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	for _, codeSort := range codeSorts {
 		if err = s.Store.ModifySortNo(ctx, tx, *codeSort); err != nil {

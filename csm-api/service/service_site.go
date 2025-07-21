@@ -188,15 +188,12 @@ func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time
 // @param
 // -
 func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	if site.Sno.Int64 == 0 {
 		return utils.CustomErrorf(fmt.Errorf("sno parameter is missing"))
@@ -274,15 +271,12 @@ func (s *ServiceSite) ModifySite(ctx context.Context, site entity.Site) (err err
 // @param
 // -
 func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.AddSite(ctx, s.SafeDB, tx, jno, user)
 	if err != nil {
@@ -296,15 +290,12 @@ func (s *ServiceSite) AddSite(ctx context.Context, jno int64, user entity.User) 
 // @param
 // -
 func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSite) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	// 현장
 	if err = s.Store.ModifySiteIsNonUse(ctx, tx, site); err != nil {
@@ -332,15 +323,12 @@ func (s *ServiceSite) ModifySiteIsNonUse(ctx context.Context, site entity.ReqSit
 // @param
 // -
 func (s *ServiceSite) ModifySiteIsUse(ctx context.Context, site entity.ReqSite) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	// 현장
 	if err = s.Store.ModifySiteIsUse(ctx, tx, site); err != nil {
@@ -368,15 +356,12 @@ func (s *ServiceSite) ModifySiteIsUse(ctx context.Context, site entity.ReqSite) 
 // @param
 // -
 func (s *ServiceSite) SettingWorkRate(ctx context.Context, targetDate time.Time) (count int64, err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return 0, utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	count, err = s.Store.SettingWorkRate(ctx, tx, targetDate)
 	if err != nil {
@@ -388,15 +373,12 @@ func (s *ServiceSite) SettingWorkRate(ctx context.Context, targetDate time.Time)
 
 // 공정률 수정
 func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) (err error) {
-	tx, cleanup, err := txutil.BeginTxWithCleanMode(ctx, s.SafeTDB, false)
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
-	defer func() {
-		txutil.DeferTx(tx, &err)
-		cleanup()
-	}()
+	defer txutil.DeferTx(tx, &err)
 
 	err = s.Store.ModifyWorkRate(ctx, tx, workRate)
 	if err != nil {
