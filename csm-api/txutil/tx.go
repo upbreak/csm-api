@@ -54,37 +54,19 @@ func DeferTxx(tx *sqlx.Tx, err *error) {
 	}
 }
 
-func BeginTxWithCleanMode(ctx context.Context, db store.Beginner, readOnly bool) (tx *sql.Tx, cleanup func(), err error) {
-	//conn, err := db.Conn(ctx)
-	//if err != nil {
-	//	return nil, nil, utils.CustomMessageErrorfDepth(2, "db.Conn", err)
-	//}
-	//
-	//tx, err = conn.BeginTx(ctx, &sql.TxOptions{ReadOnly: readOnly})
+func BeginTxWithMode(ctx context.Context, db store.Beginner, readOnly bool) (tx *sql.Tx, err error) {
 	tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: readOnly})
 	if err != nil {
 		orig := err
-		//_ = conn.Close()
-		return nil, nil, utils.CustomMessageErrorfDepth(2, "begin tx", orig)
+		return nil, utils.CustomMessageErrorfDepth(2, "begin tx", orig)
 	}
 
 	if readOnly {
 		if _, e := tx.Exec("SET TRANSACTION READ ONLY"); e != nil {
 			_ = tx.Rollback()
 			orig := e
-			//_ = conn.Close()
-			return nil, nil, utils.CustomMessageErrorfDepth(2, "set transaction", orig)
+			return nil, utils.CustomMessageErrorfDepth(2, "set transaction", orig)
 		}
-	}
-
-	cleanup = func() {
-		//if closeErr := conn.Close(); closeErr != nil {
-		//	if err != nil {
-		//		err = fmt.Errorf("%v; cleanup conn.Close: %w", err, closeErr)
-		//	} else {
-		//		err = utils.CustomMessageErrorfDepth(2, "cleanup conn.Close", closeErr)
-		//	}
-		//}
 	}
 
 	return
