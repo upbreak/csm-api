@@ -61,6 +61,8 @@ type ProjectStore interface {
 	GetProjectNmUnoList(ctx context.Context, db Queryer, uno sql.NullInt64, role int) (*entity.ProjectInfos, error)
 	GetNonUsedProjectList(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string) (*entity.NonUsedProjects, error)
 	GetNonUsedProjectCount(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string) (int, error)
+	GetNonUsedProjectListByType(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string, typeString string) (*entity.NonUsedProjects, error)
+	GetNonUsedProjectCountByType(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string, typeString string) (int, error)
 	GetProjectBySite(ctx context.Context, db Queryer, sno int64) (entity.ProjectInfos, error)
 	AddProject(ctx context.Context, tx Execer, project entity.ReqProject) error
 	ModifyDefaultProject(ctx context.Context, tx Execer, project entity.ReqProject) error

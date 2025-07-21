@@ -285,6 +285,38 @@ func (s *ServiceProject) GetNonUsedProjectCount(ctx context.Context, search enti
 	return count, nil
 }
 
+// func: 현장근태 사용되지 않은 프로젝트(타입별)
+// @param
+// -
+func (s *ServiceProject) GetNonUsedProjectListByType(ctx context.Context, page entity.Page, search entity.NonUsedProject, retry string, typeString string) (*entity.NonUsedProjects, error) {
+	pageSql := entity.PageSql{}
+	pageSql, err := pageSql.OfPageSql(page)
+	if err != nil {
+		return nil, utils.CustomErrorf(err)
+	}
+
+	list, err := s.Store.GetNonUsedProjectListByType(ctx, s.SafeDB, pageSql, search, retry, typeString)
+
+	if err != nil {
+		return nil, utils.CustomErrorf(err)
+	}
+
+	return list, nil
+}
+
+// func: 현장근태 사용되지 않은 프로젝트 수(타입별)
+// @param
+// -
+func (s *ServiceProject) GetNonUsedProjectCountByType(ctx context.Context, search entity.NonUsedProject, retry string, typeString string) (int, error) {
+	count, err := s.Store.GetNonUsedProjectCountByType(ctx, s.SafeDB, search, retry, typeString)
+
+	if err != nil {
+		return 0, utils.CustomErrorf(err)
+	}
+
+	return count, nil
+}
+
 // 현장별 프로젝트 조회
 func (s *ServiceProject) GetProjectBySite(ctx context.Context, sno int64) (entity.ProjectInfos, error) {
 	projectInfos, err := s.Store.GetProjectBySite(ctx, s.SafeDB, sno)

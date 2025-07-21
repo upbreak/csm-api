@@ -369,6 +369,72 @@ func (h *HandlerProject) NonRegList(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
+// func: 현장근태 사용되지 않은 프로젝트
+// @param
+// -
+func (h *HandlerProject) NonRegListByType(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	page := entity.Page{}
+	search := entity.NonUsedProject{}
+
+	pageNum := r.URL.Query().Get("page_num")
+	rowSize := r.URL.Query().Get("row_size")
+	order := r.URL.Query().Get("order")
+	rnumOrder := r.URL.Query().Get("rnum_order")
+	retrySearch := r.URL.Query().Get("retry_search")
+	jno := r.URL.Query().Get("jno")
+	jobNo := r.URL.Query().Get("job_no")
+	JobName := r.URL.Query().Get("job_name")
+	JobYear := r.URL.Query().Get("job_year")
+	JobSd := r.URL.Query().Get("job_sd")
+	JobEd := r.URL.Query().Get("job_ed")
+	UserName := r.URL.Query().Get("job_pm_nm")
+
+	typeValue := r.PathValue("type")
+	if typeValue == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	if pageNum == "" || rowSize == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	page.PageNum, _ = strconv.Atoi(pageNum)
+	page.RowSize, _ = strconv.Atoi(rowSize)
+	page.Order = order
+	page.RnumOrder = rnumOrder
+
+	search.Jno = utils.ParseNullInt(jno)
+	search.JobNo = utils.ParseNullString(jobNo)
+	search.JobName = utils.ParseNullString(JobName)
+	search.JobYear = utils.ParseNullInt(JobYear)
+	search.JobSd = utils.ParseNullString(JobSd)
+	search.JobEd = utils.ParseNullString(JobEd)
+	search.JobPmNm = utils.ParseNullString(UserName)
+
+	list, err := h.Service.GetNonUsedProjectListByType(ctx, page, search, retrySearch, typeValue)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	// 개수 조회
+	count, err := h.Service.GetNonUsedProjectCountByType(ctx, search, retrySearch, typeValue)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	values := struct {
+		List  entity.NonUsedProjects `json:"list"`
+		Count int                    `json:"count"`
+	}{List: *list, Count: count}
+	SuccessValuesResponse(ctx, w, values)
+}
+
 // func: 현장 프로젝트 추가
 // @param
 // -

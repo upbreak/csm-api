@@ -175,7 +175,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
 			AND (:12 IS NULL OR t1.SNO = :13)
-			ORDER BY IS_DEFAULT DESC`
+			ORDER BY IS_DEFAULT DESC, JNO DESC`
 
 	if err := db.SelectContext(ctx, &projectInfos, sql,
 		snoParam, snoParam, targetDate, targetDate, targetDate,
@@ -353,7 +353,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 			WHERE t1.sno > 100
 			AND t1.IS_USE = 'Y'
 			ORDER BY
-				t1.IS_DEFAULT DESC`
+				t1.IS_DEFAULT DESC, JNO DESC`
 	if err := db.SelectContext(ctx, &projectInfos, sql); err != nil {
 		return &projectInfos, utils.CustomErrorf(err)
 	}
@@ -387,7 +387,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 	if pageSql.Order.Valid {
 		order = pageSql.Order.String
 	} else {
-		order = "JOB_NO ASC"
+		order = "JNO DESC, JOB_NO ASC"
 	}
 
 	query := fmt.Sprintf(`
@@ -767,7 +767,7 @@ func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page
 	if page.Order.Valid {
 		order = page.Order.String
 	} else {
-		order = `
+		order = `JNO DESC,
 				CASE 
 					WHEN t1.REG_DATE IS NULL THEN t1.MOD_DATE 
 					WHEN t1.MOD_DATE IS NULL THEN t1.REG_DATE 
@@ -854,6 +854,119 @@ func (r *Repository) GetNonUsedProjectCount(ctx context.Context, db Queryer, sea
 	return count, nil
 }
 
+// func: 현장근태에 등록되지 않은 프로젝트(타입별)
+// @param
+// -
+func (r *Repository) GetNonUsedProjectListByType(ctx context.Context, db Queryer, page entity.PageSql, search entity.NonUsedProject, retry string, typeString string) (*entity.NonUsedProjects, error) {
+	nonProjects := entity.NonUsedProjects{}
+
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Jno.NullInt64, "t1.JNO")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "t1.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t1.JOB_NAME")
+	condition = utils.Int64WhereConvert(condition, search.JobYear.NullInt64, "t1.JOB_YEAR")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "t1.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "t1.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.JobPmNm.NullString, "t2.USER_NAME")
+
+	var columns []string
+	columns = append(columns, "t1.JNO")
+	columns = append(columns, "t1.JOB_NO")
+	columns = append(columns, "t1.JOB_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	var order string
+	if page.Order.Valid {
+		order = page.Order.String
+	} else {
+		order = `JNO DESC,
+				CASE 
+					WHEN t1.REG_DATE IS NULL THEN t1.MOD_DATE 
+					WHEN t1.MOD_DATE IS NULL THEN t1.REG_DATE 
+					ELSE GREATEST(t1.REG_DATE, t1.MOD_DATE) 
+				END DESC NULLS LAST`
+	}
+
+	query := fmt.Sprintf(`
+								SELECT *
+								FROM (
+									SELECT ROWNUM AS RNUM, sorted_data.*
+									FROM (
+									    SELECT 
+											t1.JNO,
+											t1.JOB_NO,
+											t1.JOB_NAME,
+											t1.JOB_YEAR,
+											t1.JOB_SD,
+											t1.JOB_ED,
+											t2.USER_NAME AS JOB_PM_NM,
+											t2.DUTY_NAME
+										FROM s_job_info t1
+										LEFT JOIN COMMON.V_BIZ_USER_INFO t2 ON t1.JOB_PM = t2.UNO
+										WHERE t1.JOB_STATE = 'Y'
+										AND t1.JNO NOT IN(
+											SELECT JNO
+											FROM IRIS_SITE_JOB
+										) AND REGEXP_LIKE(job_no, '^[^-]+-[^ -]*[%s][^ -]*-[^-]+-[^-]+$')
+										%s %s
+										ORDER BY %s 
+									) sorted_data
+									WHERE ROWNUM <= :1
+								)
+								WHERE RNUM > :2`, typeString, condition, retryCondition, order)
+
+	if err := db.SelectContext(ctx, &nonProjects, query, page.EndNum, page.StartNum); err != nil {
+		return &nonProjects, utils.CustomErrorf(err)
+	}
+
+	return &nonProjects, nil
+}
+
+// func: 현장근태에 등록되지 않은 프로젝트 수(타입별)
+// @param
+// -
+func (r *Repository) GetNonUsedProjectCountByType(ctx context.Context, db Queryer, search entity.NonUsedProject, retry string, typeString string) (int, error) {
+	var count int
+
+	condition := ""
+
+	condition = utils.Int64WhereConvert(condition, search.Jno.NullInt64, "t1.JNO")
+	condition = utils.StringWhereConvert(condition, search.JobNo.NullString, "t1.JOB_NO")
+	condition = utils.StringWhereConvert(condition, search.JobName.NullString, "t1.JOB_NAME")
+	condition = utils.Int64WhereConvert(condition, search.JobYear.NullInt64, "t1.JOB_YEAR")
+	condition = utils.StringWhereConvert(condition, search.JobSd.NullString, "t1.JOB_SD")
+	condition = utils.StringWhereConvert(condition, search.JobEd.NullString, "t1.JOB_ED")
+	condition = utils.StringWhereConvert(condition, search.JobPmNm.NullString, "t2.USER_NAME")
+
+	var columns []string
+	columns = append(columns, "t1.JNO")
+	columns = append(columns, "t1.JOB_NO")
+	columns = append(columns, "t1.JOB_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	query := fmt.Sprintf(`
+								SELECT 
+									COUNT(*)
+								FROM s_job_info t1
+								LEFT JOIN COMMON.V_BIZ_USER_INFO t2 ON t1.JOB_PM = t2.UNO
+								WHERE t1.JOB_STATE = 'Y'
+								AND t1.JNO NOT IN(
+									SELECT JNO
+									FROM IRIS_SITE_JOB
+								) AND REGEXP_LIKE(job_no, '^[^-]+-[^ -]*[%s][^ -]*-[^-]+-[^-]+$')
+								%s %s`, typeString, condition, retryCondition)
+
+	if err := db.GetContext(ctx, &count, query); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, utils.CustomErrorf(err)
+	}
+
+	return count, nil
+}
+
 // 현장별 프로젝트 조회
 func (r *Repository) GetProjectBySite(ctx context.Context, db Queryer, sno int64) (entity.ProjectInfos, error) {
 	var list entity.ProjectInfos
@@ -865,7 +978,8 @@ func (r *Repository) GetProjectBySite(ctx context.Context, db Queryer, sno int64
 			T2.JOB_NAME	AS PROJECT_NM
 		FROM IRIS_SITE_JOB T1
 		LEFT JOIN SYS_JOB_INFO T2 ON T1.JNO = T2.JNO
-		WHERE T1.SNO = :1`
+		WHERE T1.SNO = :1
+		ORDER BY JNO DESC`
 
 	if err := db.SelectContext(ctx, &list, query, sno); err != nil {
 		return nil, utils.CustomErrorf(err)
