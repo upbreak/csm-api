@@ -27,22 +27,27 @@ func init() {
 		log.Fatalf("Failed to set PORT: %v", err)
 	}
 
-	err = os.Setenv("UPLOAD_PATH", "/tmp/data/csm/uploads")
+	err = os.Setenv("UPLOAD_PATH", "/var/csm/uploads")
 	if err != nil {
 		log.Fatalf("Failed to set UPLOAD_PATH: %v", err)
 	}
 
-	err = os.Setenv("LOG_PATH", "/tmp/data/csm/logs")
+	err = os.Setenv("LOG_PATH", "/var/csm/logs")
 	if err != nil {
 		log.Fatalf("Failed to set LOG_PATH: %v", err)
 	}
 
-	err = os.Setenv("ERR_LOG_PATH", "/tmp/data/csm/logs/error")
+	err = os.Setenv("ERR_LOG_PATH", "/var/csm/logs/error")
 	if err != nil {
 		log.Fatalf("Failed to set LOG_PATH: %v", err)
 	}
 
-	err = os.Setenv("EXCEL_PATH", "/tmp/data/csm/resources/excel")
+	err = os.Setenv("EXCEL_PATH", "/var/csm/resources/excel")
+	if err != nil {
+		log.Fatalf("Failed to set EXCEL_PATH: %v", err)
+	}
+
+	err = os.Setenv("CONSOLE_LOG_PATH", "/var/log/csm")
 	if err != nil {
 		log.Fatalf("Failed to set EXCEL_PATH: %v", err)
 	}

@@ -135,6 +135,8 @@ type WorkerService interface {
 	ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) error
 	GetDailyWorkersByJnoAndDate(ctx context.Context, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error)
 	ModifyWorkHours(ctx context.Context, workers entity.WorkerDailys) error
+	MergeRecdWorker(ctx context.Context) error
+	MergeRecdDailyWorker(ctx context.Context) error
 }
 
 type WorkHourService interface {

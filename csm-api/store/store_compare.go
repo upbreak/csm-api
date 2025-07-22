@@ -40,7 +40,7 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 		SELECT
 			T1.SNO,
 			T1.JNO,
-			T1.USER_ID,
+			T2.USER_ID,
 			T2.USER_NM,
 			T2.REG_NO,
 			CASE
@@ -54,7 +54,7 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 			T1.COMPARE_STATE,
 			T1.IS_DEADLINE
 		FROM IRIS_WORKER_DAILY_SET T1
-		LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
+		LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.USER_KEY = T2.USER_KEY --T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
 		WHERE TRUNC(T1.RECORD_DATE) = TRUNC(:1)
 		AND T1.SNO = :2
 		AND (

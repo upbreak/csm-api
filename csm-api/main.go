@@ -9,6 +9,7 @@ import (
 	"csm-api/utils"
 	"fmt"
 	"golang.org/x/sync/errgroup"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -18,12 +19,36 @@ import (
 )
 
 func main() {
+	// 로그파일 경로 세팅
+	// 운영서버 sudo vi /etc/logrotate.d/csm 에 로그 정책 설정
+	logDir := os.Getenv("CONSOLE_LOG_PATH")
+	if logDir == "" {
+		logDir = "logs/console"
+	}
+	logFilePath := logDir + "/csm.log"
+	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "log file open error: %v\n", err)
+		log.SetOutput(os.Stderr) // 파일 Writer 없이 stderr만!
+	} else {
+		defer func(logFile *os.File) {
+			err = logFile.Close()
+			if err != nil {
+				// 로그 남기지 않아도 됨
+			}
+		}(logFile)
+		mw := io.MultiWriter(os.Stderr, logFile)
+		log.SetOutput(mw)
+	}
+
+	// 리커버
 	defer func() {
 		if r := recover(); r != nil {
 			_ = entity.WriteErrorLog(context.Background(), utils.CustomMessageErrorf("panic recovered", fmt.Errorf("%v", r)))
 		}
 	}()
 
+	// 서버 실행
 	ctx := context.Background()
 	ctx = auth.SetContext(ctx, auth.UserId{}, "SYSTEM_MAIN")
 	ctx = auth.SetContext(ctx, auth.Uno{}, "0")
@@ -120,9 +145,15 @@ func run(ctx context.Context) error {
 		return server.Run(ctx)
 	})
 
-	eg.Go(func() error {
-		return scheduler.Run(ctx)
-	})
+	// 운영환경에서만 스케줄러 실행
+	env := os.Getenv("ENV")
+	if env == "production" {
+		eg.Go(func() error {
+			return scheduler.Run(ctx)
+		})
+	} else {
+		log.Printf("[INFO] Scheduler runs only when ENV=production. Current ENV: %s\n", env)
+	}
 
 	// 종료 신호 대기
 	select {

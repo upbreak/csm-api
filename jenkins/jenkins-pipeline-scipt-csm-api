@@ -12,7 +12,7 @@ pipeline {
 
                         env.CSM_API_IMAGE_NAME = secrets['CSM-API-IMAGE-NAME']
                         env.CSM_API_TAR_FILE = secrets['CSM-API-TAR-FILE']
-                        env.CSM_API_DOCKER_NETWORK = secrets['CSM-API-DOCKER-NETWORK']
+                        env.CSM_DOCKER_NETWORK = secrets['CSM-DOCKER-NETWORK']
                         env.CSM_REMOTE_USER = secrets['CSM-REMOTE-USER']
                         env.CSM_REMOTE_SERVER = secrets['CSM-REMOTE-SERVER']
                         env.CSM_REMOTE_PATH = secrets['CSM-REMOTE-PATH']
@@ -28,7 +28,7 @@ pipeline {
                     set -e
                     echo "=== 도커 이미지 및 tar 생성 ==="
                     cd '${LOCAL_WORKSPACE_DIR}'
-                    docker build -t '${env.CSM_API_IMAGE_NAME}:latest' .
+                    docker build --build-arg CIMAGE_UID=1000 --build-arg CIMAGE_GID=1000 -t csm-api:latest .
                     docker save -o '${LOCAL_WORKSPACE_DIR}/${env.CSM_API_TAR_FILE}' '${env.CSM_API_IMAGE_NAME}:latest'
                     """
                 }
@@ -39,7 +39,7 @@ pipeline {
                 script {
                     def imageName = env.CSM_API_IMAGE_NAME
                     def tarFileName = env.CSM_API_TAR_FILE
-                    def dockerNetwork = env.CSM_API_DOCKER_NETWORK
+                    def dockerNetwork = env.CSM_DOCKER_NETWORK
                     def remoteUser = env.CSM_REMOTE_USER
                     def remoteServer = env.CSM_REMOTE_SERVER
                     def remotePath = env.CSM_REMOTE_PATH
@@ -87,13 +87,14 @@ pipeline {
 
                         echo "=== 새 컨테이너 실행 ==="
                         docker run -d --name "\${IMAGE_NAME}" \
-						  --network "\${DOCKER_NETWORK}" \
-						  --restart=unless-stopped \
-						  -p 8080:8080 \
-						  -v /etc/localtime:/etc/localtime:ro \
+                          --network "\${DOCKER_NETWORK}" \
+                          --restart=unless-stopped \
+                          -p 8080:8080 \
+                          -v /etc/localtime:/etc/localtime:ro \
                           -v /etc/timezone:/etc/timezone:ro \
-						  -v /tmp/data/csm:/tmp/data/csm \
-						  "\${IMAGE_NAME}:latest"
+                          -v /var/csm:/var/csm \
+                          -v /var/log/csm:/var/log/csm \
+                          "\${IMAGE_NAME}:latest"
                     '
                     """
                 }

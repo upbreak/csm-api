@@ -156,6 +156,12 @@ type WorkerStore interface {
 	AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers []entity.WorkerDaily) (entity.WorkerDailys, error)
 	GetDailyWorkersByJnoAndDate(ctx context.Context, db Queryer, param entity.RecordDailyWorkerReq) ([]entity.RecordDailyWorkerRes, error)
 	ModifyWorkHours(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	GetRecdWorkerList(ctx context.Context, db Queryer) ([]entity.Worker, error)
+	GetRecdWorkerUserKey(ctx context.Context, db Queryer, worker entity.Worker) (string, error)
+	MergeRecdWorker(ctx context.Context, tx Execer, worker []entity.Worker) error
+	GetRecdDailyWorkerList(ctx context.Context, db Queryer) ([]entity.WorkerDaily, error)
+	GetRecdDailyWorkerChk(ctx context.Context, db Queryer, userKey string, date null.Time) (bool, error)
+	MergeRecdDailyWorker(ctx context.Context, tx Execer, worker []entity.WorkerDaily) error
 }
 
 type WorkHourStore interface {

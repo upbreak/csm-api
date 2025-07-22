@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"csm-api/utils"
+	"errors"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net"
@@ -21,8 +22,8 @@ type Server struct {
 func (s *Server) Run(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		log.Println("HTTP server starting...")
-		if err := s.srv.Serve(s.l); err != nil && err != http.ErrServerClosed {
+		log.Println("HTTP server start")
+		if err := s.srv.Serve(s.l); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Printf("failed to close: %+v", err)
 			return utils.CustomErrorf(err)
 		}

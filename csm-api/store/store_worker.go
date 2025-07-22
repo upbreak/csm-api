@@ -67,7 +67,8 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 							REG_DATE,
 							ROW_NUMBER() OVER (
 								PARTITION BY USER_KEY
-								ORDER BY 
+								ORDER BY
+									RECORD_DATE DESC,
 									CASE WHEN MOD_DATE IS NOT NULL THEN 0 ELSE 1 END,
 									NVL(MOD_DATE, REG_DATE) DESC
 							) AS RN
@@ -941,6 +942,234 @@ func (r *Repository) ModifyWorkHours(ctx context.Context, tx Execer, workers ent
 
 	for _, worker := range workers {
 		if _, err := tx.ExecContext(ctx, query, worker.WorkHour, agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+			return utils.CustomErrorf(err)
+		}
+	}
+	return nil
+}
+
+// 홍채인식기 IRIS_WORKER_SET 테이블 미기록 리스트 조회::스케줄 용도
+func (r *Repository) GetRecdWorkerList(ctx context.Context, db Queryer) ([]entity.Worker, error) {
+	var list []entity.Worker
+
+	query := `
+		SELECT 
+			IRIS_NO, 
+			SNO, 
+			JNO, 
+			USER_ID, 
+			USER_NM, 
+			DEPARTMENT, 
+			DISC_NAME, 
+			REG_NO,
+			CASE 
+				WHEN INSTR(NVL(DEPARTMENT, ''), '하이테크') > 0 OR INSTR(NVL(UPPER(DEPARTMENT), ''), 'HTENC') > 0 THEN '01'
+				ELSE '00'
+			END AS WORKER_TYPE,
+			CASE 
+				WHEN INSTR(NVL(DEPARTMENT, ''), '관리') > 0 OR INSTR(NVL(DISC_NAME, ''), '관리') > 0 THEN 'Y'
+				ELSE 'N'
+			END AS IS_MANAGE
+		FROM IRIS_RECD_SET
+		WHERE IS_WORKER = 'N'`
+
+	if err := db.SelectContext(ctx, &list, query); err != nil {
+		return list, utils.CustomErrorf(err)
+	}
+	return list, nil
+}
+
+// user_key 조회::스케줄 용도
+func (r *Repository) GetRecdWorkerUserKey(ctx context.Context, db Queryer, worker entity.Worker) (string, error) {
+	var userKey string
+
+	query := `
+		SELECT USER_KEY
+		FROM (
+			SELECT USER_KEY 
+			FROM IRIS_WORKER_SET
+			WHERE USER_ID = :1 
+			AND USER_NM = :2
+			AND (
+				REG_NO = :3
+				OR (REG_NO IS NULL AND :4 IS NULL)
+			)
+			ORDER BY REG_DATE DESC
+		)
+		WHERE ROWNUM = 1`
+
+	if err := db.GetContext(ctx, &userKey, query, worker.UserId, worker.UserNm, worker.RegNo, worker.RegNo); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			query = `SELECT GET_IRIS_USER_UUID() AS USER_KEY FROM DUAL`
+			if err = db.GetContext(ctx, &userKey, query); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return "", utils.CustomErrorf(fmt.Errorf("user_key not found"))
+				}
+				return userKey, utils.CustomErrorf(err)
+			}
+			return userKey, nil
+		}
+		return userKey, utils.CustomErrorf(err)
+	}
+	return userKey, nil
+}
+
+// 홍채인식기 데이터를 근로자 테이블에 반영::스케줄 용도
+func (r *Repository) MergeRecdWorker(ctx context.Context, tx Execer, worker []entity.Worker) error {
+	agent := utils.GetAgent()
+
+	query := `
+		MERGE INTO IRIS_WORKER_SET t1
+		USING (
+			SELECT 
+				:1 AS USER_KEY, 
+				:2 AS SNO, 
+				:3 AS JNO, 
+				:4 AS USER_ID, 
+				:5 AS USER_NM,
+				:6 AS DEPARTMENT, 
+				:7 AS DISC_NAME, 
+				:8 AS REG_NO,
+				:9 AS WORKER_TYPE, 
+				:10 AS IS_MANAGE,
+				:11 AS MOD_AGENT,
+				0 AS MOD_UNO
+			FROM DUAL
+		) t2
+		ON (
+			t1.USER_KEY = t2.USER_KEY AND t1.SNO = t2.SNO
+		)
+		WHEN MATCHED THEN
+			UPDATE SET 
+				t1.JNO = t2.JNO, 
+				t1.USER_ID = t2.USER_ID, 
+				t1.USER_NM = t2.USER_NM,
+				t1.DEPARTMENT = t2.DEPARTMENT, 
+				t1.WORKER_TYPE = t2.WORKER_TYPE,
+				t1.IS_MANAGE = t2.IS_MANAGE, 
+				t1.DISC_NAME = t2.DISC_NAME, 
+				t1.REG_NO = t2.REG_NO,
+				t1.MOD_DATE = SYSDATE, 
+				t1.MOD_USER = 'TRG_IRIS_WORKER_SET',
+				t1.MOD_UNO = t2.MOD_UNO,
+				t1.MOD_AGENT = t2.MOD_AGENT
+			WHERE t1.TRG_EDITABLE_YN = 'Y'
+		WHEN NOT MATCHED THEN
+			INSERT (
+				USER_KEY, SNO, JNO, USER_ID, USER_NM,
+				DEPARTMENT, WORKER_TYPE, IS_MANAGE, DISC_NAME, REG_NO, 
+				REG_DATE, REG_USER, REG_UNO, REG_AGENT
+			) VALUES (
+				t2.USER_KEY, t2.SNO, t2.JNO, t2.USER_ID, t2.USER_NM, 
+				t2.DEPARTMENT, t2.WORKER_TYPE, t2.IS_MANAGE, t2.DISC_NAME, t2.REG_NO, 
+				SYSDATE, 'TRG_IRIS_WORKER_SET', t2.MOD_UNO, t2.MOD_AGENT
+			)`
+
+	query2 := `
+		UPDATE IRIS_RECD_SET
+			SET IS_WORKER = 'Y'
+		WHERE IRIS_NO = :1`
+
+	for _, w := range worker {
+		if _, err := tx.ExecContext(ctx, query, w.UserKey, w.Sno, w.Jno, w.UserId, w.UserNm, w.Department, w.DiscName, w.RegNo, w.WorkerType, w.IsManage, agent); err != nil {
+			return utils.CustomErrorf(err)
+		}
+
+		if _, err := tx.ExecContext(ctx, query2, w.IrisNo); err != nil {
+			return utils.CustomErrorf(err)
+		}
+	}
+
+	return nil
+}
+
+// 홍채인식기 데이터 현장근로자(IRIS_WORKER_DAILY_SET) 미반영 조회
+func (r *Repository) GetRecdDailyWorkerList(ctx context.Context, db Queryer) ([]entity.WorkerDaily, error) {
+	var list []entity.WorkerDaily
+
+	query := `
+		SELECT IRIS_NO, SNO, JNO, USER_ID, USER_NM, REG_NO, RECOG_TIME AS RECORD_DATE
+		FROM IRIS_RECD_SET
+		WHERE IS_WORKER = 'Y'
+		AND IS_DAILY_WORKER = 'N'`
+
+	if err := db.SelectContext(ctx, &list, query); err != nil {
+		return list, utils.CustomErrorf(err)
+	}
+	return list, nil
+}
+
+// 출근 기록이 있는지 확인
+func (r *Repository) GetRecdDailyWorkerChk(ctx context.Context, db Queryer, userKey string, date null.Time) (bool, error) {
+	var chk bool
+
+	qeury := `
+		SELECT 1
+		FROM IRIS_WORKER_DAILY_SET
+		WHERE USER_KEY = :1
+		AND TRUNC(RECORD_DATE) = :2`
+	if err := db.GetContext(ctx, &chk, qeury, userKey, date); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, utils.CustomErrorf(err)
+	}
+	return true, nil
+}
+
+// 홍채인식기 데이터 현장근로자(IRIS_WORKER_DAILY_SET) 테이블에 반영
+func (r *Repository) MergeRecdDailyWorker(ctx context.Context, tx Execer, worker []entity.WorkerDaily) error {
+	agent := utils.GetAgent()
+
+	query := `
+		MERGE INTO IRIS_WORKER_DAILY_SET t1
+		USING (
+			SELECT 
+				:1 AS SNO, 
+				:2 AS JNO, 
+				:3 AS USER_KEY,
+				TRUNC(:4) AS RECORD_DATE,
+				:5 AS IN_RECOG_TIME,
+				:6 AS OUT_RECOG_TIME,
+				:7 AS WORK_STATE,
+				0 AS MOD_UNO,
+				:8 AS MOD_AGENT		
+			FROM DUAL
+		) t2
+		ON (
+			t1.USER_KEY = t2.USER_KEY
+			AND t1.SNO = t2.SNO
+			AND t1.RECORD_DATE = t2.RECORD_DATE
+		)
+		WHEN MATCHED THEN
+			UPDATE SET
+				t1.OUT_RECOG_TIME = t2.OUT_RECOG_TIME,
+				t1.WORK_STATE = t2.WORK_STATE,
+				t1.MOD_DATE = SYSDATE,
+				t1.MOD_USER = 'TRG_IRIS_WORKER_DAILY_SET',
+				t1.MOD_UNO = t2.MOD_UNO,
+				t1.MOD_AGENT = t2.MOD_AGENT
+			WHERE t2.OUT_RECOG_TIME IS NOT NULL
+			AND (t1.OUT_RECOG_TIME IS NULL OR t2.OUT_RECOG_TIME > t1.OUT_RECOG_TIME)
+		WHEN NOT MATCHED THEN
+			INSERT (
+				SNO, JNO, USER_KEY, RECORD_DATE, IN_RECOG_TIME, 
+				OUT_RECOG_TIME, WORK_STATE, REG_DATE, REG_USER, REG_UNO, REG_AGENT
+			) VALUES (
+				t2.SNO, t2.JNO, t2.USER_KEY, t2.RECORD_DATE, t2.IN_RECOG_TIME, 
+				t2.OUT_RECOG_TIME, t2.WORK_STATE, SYSDATE, 'TRG_IRIS_WORKER_DAILY_SET', t2.MOD_UNO, t2.MOD_AGENT
+			)`
+
+	query2 := `
+		UPDATE IRIS_RECD_SET
+		SET IS_DAILY_WORKER = 'Y'
+		WHERE IRIS_NO = :1`
+
+	for _, w := range worker {
+		if _, err := tx.ExecContext(ctx, query, w.Sno, w.Jno, w.UserKey, w.RecordDate, w.InRecogTime, w.OutRecogTime, w.WorkState, agent); err != nil {
+			return utils.CustomErrorf(err)
+		}
+		if _, err := tx.ExecContext(ctx, query2, w.IrisNo); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}

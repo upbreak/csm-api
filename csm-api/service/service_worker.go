@@ -6,6 +6,7 @@ import (
 	"csm-api/store"
 	"csm-api/txutil"
 	"csm-api/utils"
+	"time"
 )
 
 /**
@@ -364,5 +365,108 @@ func (s *ServiceWorker) ModifyWorkHours(ctx context.Context, workers entity.Work
 		return utils.CustomErrorf(err)
 	}
 
+	return
+}
+
+// 홍채인식기데이터 전체근로자 테이블(IRIS_WORKER_SET)에 반영::스케줄 용도
+func (s *ServiceWorker) MergeRecdWorker(ctx context.Context) (err error) {
+	// 미반영 데이터 조회
+	recdList, err := s.Store.GetRecdWorkerList(ctx, s.SafeDB)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	if len(recdList) == 0 {
+		return
+	}
+
+	// 근로자 키 조회 및 생성
+	for i := range recdList {
+		userKey, err := s.Store.GetRecdWorkerUserKey(ctx, s.SafeDB, recdList[i])
+		if err != nil {
+			return utils.CustomErrorf(err)
+		}
+		recdList[i].UserKey = utils.ParseNullString(userKey)
+	}
+
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	defer txutil.DeferTx(tx, &err)
+
+	// 전체근로자 테이블에 반영
+	if err = s.Store.MergeRecdWorker(ctx, tx, recdList); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	return
+}
+
+// 홍채인식기데이터 현장근로자 테이블(IRIS_WORKER_DAILY_SET)에 반영::스케줄 용도
+func (s *ServiceWorker) MergeRecdDailyWorker(ctx context.Context) (err error) {
+	// 미방영 데이터 조회
+	recdList, err := s.Store.GetRecdDailyWorkerList(ctx, s.SafeDB)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	if len(recdList) == 0 {
+		return
+	}
+
+	for i := range recdList {
+		// 근로자 키 조회 및 생성
+		temp := entity.Worker{
+			UserId: recdList[i].UserId,
+			UserNm: recdList[i].UserNm,
+			RegNo:  recdList[i].RegNo,
+		}
+		userKey, err := s.Store.GetRecdWorkerUserKey(ctx, s.SafeDB, temp)
+		if err != nil {
+			return utils.CustomErrorf(err)
+		}
+		recdList[i].UserKey = utils.ParseNullString(userKey)
+
+		// 출퇴근 시간
+		if !recdList[i].RecordDate.Valid { // 시간 기록이 없는 경우 패스
+			continue
+		} else {
+			// 출근 기록 확인
+			isChk, err := s.Store.GetRecdDailyWorkerChk(ctx, s.SafeDB, userKey, recdList[i].RecordDate)
+			if err != nil {
+				return utils.CustomErrorf(err)
+			}
+			if isChk { // 출근을 한 경우
+				recdList[i].OutRecogTime = recdList[i].RecordDate
+			} else { // 출근이 없는 경우
+				cmp := time.Date(recdList[i].RecordDate.Time.Year(), recdList[i].RecordDate.Time.Month(), recdList[i].RecordDate.Time.Day(), 15, 0, 0, 0, time.Local)
+				if recdList[i].RecordDate.Time.Before(cmp) {
+					recdList[i].InRecogTime = recdList[i].RecordDate
+				} else {
+					recdList[i].OutRecogTime = recdList[i].RecordDate
+				}
+			}
+
+			// 출퇴근 상태
+			if recdList[i].InRecogTime.Valid {
+				recdList[i].WorkState = utils.ParseNullString("01")
+			} else {
+				recdList[i].WorkState = utils.ParseNullString("02")
+			}
+		}
+	}
+
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+	defer txutil.DeferTx(tx, &err)
+
+	// 현장근로자 테이블에 반영
+	if err = s.Store.MergeRecdDailyWorker(ctx, tx, recdList); err != nil {
+		return utils.CustomErrorf(err)
+	}
 	return
 }
