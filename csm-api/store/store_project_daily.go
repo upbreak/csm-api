@@ -30,8 +30,10 @@ func (r *Repository) GetProjectDailyContentList(ctx context.Context, db Queryer,
 
 	sql := `SELECT 
 				t1.JNO,
+				t1.IDX,
 				t1.CONTENT,
 				t1.IS_USE,
+				t1.TARGET_DATE,
 				t1.REG_DATE,
 				t1.MOD_DATE,
 				t1.REG_UNO,

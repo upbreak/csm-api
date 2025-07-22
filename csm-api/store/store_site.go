@@ -73,7 +73,7 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				INNER JOIN (SELECT * FROM IRIS_SITE_DATE WHERE (:6 BETWEEN OPENING_DATE AND CLOSING_ACTUAL_DATE) OR (:7 >= OPENING_DATE AND CLOSING_ACTUAL_DATE IS NULL) OR (:8 <= CLOSING_ACTUAL_DATE AND OPENING_DATE IS NULL)) t4 ON t1.SNO = t4.SNO
 				WHERE t1.SNO > -1
 				--AND t1.IS_USE = 'Y'
-				ORDER BY t1.SNO DESC`
+				ORDER BY t1.REG_DATE ASC,t1.SNO DESC`
 
 	if err := db.SelectContext(ctx, &sites, sql, role, uno, uno, targetDate, targetDate, targetDate, targetDate, targetDate); err != nil {
 		//TODO: 에러 아카이브
@@ -129,7 +129,7 @@ func (r *Repository) GetSiteNmList(ctx context.Context, db Queryer, page entity.
 							ELSE 1 
 						END,
 					    %s,
-						SNO DESC
+						REG_DATE ASC, SNO DESC
 				) WHERE RNUM > :3`, condition, order)
 
 	if err := db.SelectContext(ctx, &sites, query, nonSite, page.EndNum, page.StartNum); err != nil {
