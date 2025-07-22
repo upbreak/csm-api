@@ -140,6 +140,7 @@ type WorkerStore interface {
 	GetWorkerDepartList(ctx context.Context, db Queryer, jno int64) ([]string, error)
 	AddWorker(ctx context.Context, tx Execer, worker entity.Worker) error
 	ModifyWorker(ctx context.Context, tx Execer, worker entity.Worker) error
+	RemoveWorker(ctx context.Context, tx Execer, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
 	GetWorkerSiteBaseCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error)
 	MergeSiteBaseWorker(ctx context.Context, tx Execer, workers entity.WorkerDailys) error

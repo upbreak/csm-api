@@ -124,6 +124,7 @@ type WorkerService interface {
 	GetWorkerDepartList(ctx context.Context, jno int64) ([]string, error)
 	AddWorker(ctx context.Context, worker entity.Worker) error
 	ModifyWorker(ctx context.Context, worker entity.Worker) error
+	RemoveWorker(ctx context.Context, worker entity.Worker) error
 	GetWorkerSiteBaseList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.WorkerDailys, error)
 	GetWorkerSiteBaseCount(ctx context.Context, search entity.WorkerDaily, retry string) (int, error)
 	MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) error

@@ -189,6 +189,24 @@ func (h *HandlerWorker) Modify(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(ctx, w)
 }
 
+// 근로자 삭제
+func (h *HandlerWorker) Remove(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logEntry, worker, err := entity.DecodeItem(r, entity.Worker{})
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+
+	if err = h.Service.RemoveWorker(ctx, worker); err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	entity.WriteLog(logEntry)
+	SuccessResponse(ctx, w)
+}
+
 // func: 현장 근로자 조회
 // @param
 // - response: http get paramter

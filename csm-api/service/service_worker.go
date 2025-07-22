@@ -134,6 +134,21 @@ func (s *ServiceWorker) ModifyWorker(ctx context.Context, worker entity.Worker) 
 	return
 }
 
+// 근로자 삭제
+func (s *ServiceWorker) RemoveWorker(ctx context.Context, worker entity.Worker) (err error) {
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+	defer txutil.DeferTx(tx, &err)
+
+	err = s.Store.RemoveWorker(ctx, tx, worker)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+	return
+}
+
 // func: 현장 근로자 조회
 // @param
 // - page entity.PageSql: 정렬, 리스트 수
