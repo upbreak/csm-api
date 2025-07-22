@@ -81,6 +81,7 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 					FROM IRIS_WORKER_SET R1
 					JOIN LATEST_DAILY R2
 					ON R1.SNO = R2.SNO AND R1.USER_KEY = R2.USER_KEY
+					WHERE R1.IS_DEL = 'N'
 				)
 				SELECT *
 				FROM (
@@ -403,6 +404,26 @@ func (r *Repository) ModifyWorker(ctx context.Context, tx Execer, worker entity.
 		return utils.CustomErrorf(fmt.Errorf("Rows add/update cnt: %d\n", rowsAffected))
 	}
 
+	return nil
+}
+
+// 근로자 삭제 처리
+func (r *Repository) RemoveWorker(ctx context.Context, tx Execer, worker entity.Worker) error {
+	agent := utils.GetAgent()
+
+	query := `
+		UPDATE IRIS_WORKER_SET
+		SET 
+		    IS_DEL = 'Y',
+			MOD_DATE = SYSDATE,
+			MOD_AGENT = :1,
+			MOD_USER = :2,
+			MOD_UNO = :3
+		WHERE USER_KEY = :4`
+
+	if _, err := tx.ExecContext(ctx, query, agent, worker.ModUser, worker.ModUno, worker.UserKey); err != nil {
+		return utils.CustomErrorf(err)
+	}
 	return nil
 }
 

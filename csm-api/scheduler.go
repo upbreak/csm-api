@@ -186,30 +186,30 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err)
 	}
 
-	//// 홍채인식기 전체근로자 반영::5분
-	//_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
-	//	log.Println("[Scheduler] Running ")
-	//	if err = s.WorkerService.MergeRecdWorker(ctx); err != nil {
-	//		log.Println("[Scheduler] MergeRecdWorker fail")
-	//		_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdWorker", err))
-	//	} else {
-	//		log.Println("[Scheduler] MergeRecdWorker completed")
-	//	}
-	//})
-	//if err != nil {
-	//	return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
-	//}
-	//
-	//// 홍채인식기 현장근로자 반영::5분(정시 2분부터 시작)
-	//_, err = s.cron.AddFunc("0 2-59/5 * * * *", func() {
-	//	log.Println("[Scheduler] Running ")
-	//	if err = s.WorkerService.MergeRecdDailyWorker(ctx); err != nil {
-	//		log.Println("[Scheduler] MergeRecdDailyWorker fail")
-	//		_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdDailyWorker", err))
-	//	} else {
-	//		log.Println("[Scheduler] MergeRecdDailyWorker completed")
-	//	}
-	//})
+	// 홍채인식기 전체근로자 반영::5분
+	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
+		log.Println("[Scheduler] Running ")
+		if err = s.WorkerService.MergeRecdWorker(ctx); err != nil {
+			log.Println("[Scheduler] MergeRecdWorker fail")
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdWorker", err))
+		} else {
+			log.Println("[Scheduler] MergeRecdWorker completed")
+		}
+	})
+	if err != nil {
+		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
+	}
+
+	// 홍채인식기 현장근로자 반영::5분(정시 2분부터 시작)
+	_, err = s.cron.AddFunc("0 2-59/5 * * * *", func() {
+		log.Println("[Scheduler] Running ")
+		if err = s.WorkerService.MergeRecdDailyWorker(ctx); err != nil {
+			log.Println("[Scheduler] MergeRecdDailyWorker fail")
+			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdDailyWorker", err))
+		} else {
+			log.Println("[Scheduler] MergeRecdDailyWorker completed")
+		}
+	})
 	if err != nil {
 		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}

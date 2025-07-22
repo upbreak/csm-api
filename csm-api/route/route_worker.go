@@ -24,6 +24,7 @@ func WorkerRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	router.Get("/total/depart", workerHandler.DepartList)                           // 프로젝트 회사명 조회
 	router.Post("/total", workerHandler.Add)                                        // 추가
 	router.Put("/total", workerHandler.Modify)                                      // 수정
+	router.Post("/total/delete", workerHandler.Remove)                              // 삭제
 	router.Get("/site-base", workerHandler.SiteBaseList)                            // 현장근로자 조회
 	router.Post("/site-base", workerHandler.Merge)                                  // 현장근로자 추가&수정
 	router.Post("/site-base/deadline", workerHandler.ModifyDeadline)                // 현장근로자 마감처리
