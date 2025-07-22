@@ -12,6 +12,7 @@ pipeline {
 
                         env.CSM_FRONT_IMAGE_NAME = secrets['CSM-FRONT-IMAGE-NAME']
                         env.CSM_FRONT_TAR_FILE = secrets['CSM-FRONT-TAR-FILE']
+                        env.CSM_DOCKER_NETWORK = secrets['CSM-DOCKER-NETWORK']
                         env.CSM_REMOTE_USER = secrets['CSM-REMOTE-USER']
                         env.CSM_REMOTE_SERVER = secrets['CSM-REMOTE-SERVER']
                         env.CSM_REMOTE_PATH = secrets['CSM-REMOTE-PATH']
@@ -40,6 +41,7 @@ pipeline {
                 script {
                     def imageName = env.CSM_FRONT_IMAGE_NAME
                     def tarFileName = env.CSM_FRONT_TAR_FILE
+                    def dockerNetwork = env.CSM_DOCKER_NETWORK
                     def remoteUser = env.CSM_REMOTE_USER
                     def remoteServer = env.CSM_REMOTE_SERVER
                     def remotePath = env.CSM_REMOTE_PATH
@@ -64,6 +66,7 @@ pipeline {
 
                         IMAGE_NAME="${imageName}"
                         TAR_FILE_NAME="${tarFileName}"
+                        DOCKER_NETWORK="${dockerNetwork}"
                         REMOTE_TAR_PATH="${remoteTarPath}"
 
                         echo "=== 기존 이미지 백업 ==="
@@ -85,7 +88,9 @@ pipeline {
                         fi
 
                         echo "=== 새 컨테이너 실행 ==="
-                        docker run -d --name "\${IMAGE_NAME}" --restart=unless-stopped -p 80:80 "\${IMAGE_NAME}:latest"
+                        docker run -d --name "\${IMAGE_NAME}" \
+                          --network "\${DOCKER_NETWORK}" \
+                          --restart=unless-stopped -p 80:80 "\${IMAGE_NAME}:latest"
                     '
                     """
                 }
