@@ -69,12 +69,13 @@ func (r *Repository) ModifySiteDateIsNonUse(ctx context.Context, tx Execer, site
 			UPDATE IRIS_SITE_DATE
 			SET 
 			    IS_USE = 'N',
-				MOD_AGENT = :1,
-				MOD_USER = :2,
-				MOD_UNO = :3,
+			    CLOSING_ACTUAL_DATE = (SELECT NVL(CLOSING_ACTUAL_DATE, SYSDATE) FROM IRIS_SITE_DATE WHERE SNO = :1),
+				MOD_AGENT = :2,
+				MOD_USER = :3,
+				MOD_UNO = :4,
 				MOD_DATE = SYSDATE
-			WHERE SNO = :1`
-	if _, err := tx.ExecContext(ctx, query, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
+			WHERE SNO = :5`
+	if _, err := tx.ExecContext(ctx, query, site.Sno, agent, site.ModUser, site.ModUno, site.Sno); err != nil {
 		return utils.CustomErrorf(err)
 	}
 
@@ -90,6 +91,7 @@ func (r *Repository) ModifySiteDateIsUse(ctx context.Context, tx Execer, site en
 			UPDATE IRIS_SITE_DATE
 			SET 
 			    IS_USE = 'Y',
+			    CLOSING_ACTUAL_DATE = NULL,
 				MOD_AGENT = :1,
 				MOD_USER = :2,
 				MOD_UNO = :3,
