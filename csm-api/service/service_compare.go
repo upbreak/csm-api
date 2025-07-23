@@ -129,6 +129,7 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 	for _, worker := range workerlist {
 		compareTemp := entity.Compare{
 			Jno:           worker.Jno,
+			UserKey:       worker.UserKey,
 			UserId:        worker.UserId,
 			UserNm:        worker.UserNm,
 			Department:    worker.Department,

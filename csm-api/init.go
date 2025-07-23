@@ -75,7 +75,7 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 
 	//eg.Go(func() error {
 	//	// 홍채인식기 전체근로자 반영
-	//	defer utils.Recover("[init] MergeRecdWorker")
+	//	defer Recover("[init] MergeRecdWorker")
 	//	log.Println("[init] MergeRecdWorker start")
 	//	if initErr := i.WorkerService.MergeRecdWorker(ctx); initErr != nil {
 	//		return entity.WriteErrorLog(ctx, utils.CustomErrorf(initErr))
@@ -86,7 +86,7 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 	//
 	//eg.Go(func() error {
 	//	// 홍채인식기 현장근로자 반영
-	//	defer utils.Recover("[init] MergeRecdDailyWorker")
+	//	defer Recover("[init] MergeRecdDailyWorker")
 	//	log.Println("[init] MergeRecdDailyWorker start")
 	//	if initErr := i.WorkerService.MergeRecdDailyWorker(ctx); initErr != nil {
 	//		return entity.WriteErrorLog(ctx, utils.CustomErrorf(initErr))

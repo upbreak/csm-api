@@ -212,7 +212,7 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 	return count, nil
 }
 
-// func: 근로자 검색(현장근로자 추가시 사용)
+// func: 미출근 근로자 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
 func (r *Repository) GetAbsentWorkerList(ctx context.Context, db Queryer, page entity.PageSql, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
@@ -229,29 +229,35 @@ func (r *Repository) GetAbsentWorkerList(ctx context.Context, db Queryer, page e
 				FROM (
 					SELECT ROWNUM AS RNUM, sorted_data.*
 					FROM (
-						SELECT USER_ID, USER_NM, DEPARTMENT, :1 as RECORD_DATE
+						SELECT 
+						    USER_ID, 
+						    USER_NM, 
+						    DEPARTMENT, 
+						    :1 as RECORD_DATE,
+							USER_KEY
 						FROM IRIS_WORKER_SET
 						WHERE JNO = :2
-						AND USER_ID NOT IN (
-							SELECT USER_ID
+						AND SNO = :3
+						AND USER_KEY NOT IN (
+							SELECT USER_KEY
 							FROM IRIS_WORKER_DAILY_SET
-							WHERE JNO = :3
-							AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :4
+							WHERE JNO = :4
+							AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :5
 						)
 						%s
 					) sorted_data
-					WHERE ROWNUM <= :5
+					WHERE ROWNUM <= :6
 				)
-				WHERE RNUM > :6`, retryCondition)
+				WHERE RNUM > :7`, retryCondition)
 
-	if err := db.SelectContext(ctx, &workers, query, search.SearchStartTime, search.Jno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
+	if err := db.SelectContext(ctx, &workers, query, search.SearchStartTime, search.Jno, search.Sno, search.Jno, search.SearchStartTime, page.EndNum, page.StartNum); err != nil {
 		return nil, utils.CustomErrorf(err)
 	}
 
 	return &workers, nil
 }
 
-// func: 근로자 개수 검색(현장근로자 추가시 사용)
+// func: 미출근 근로자 개수 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
 func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, search entity.WorkerDaily, retry string) (int, error) {
@@ -267,15 +273,16 @@ func (r *Repository) GetAbsentWorkerCount(ctx context.Context, db Queryer, searc
 				SELECT COUNT(*)
 				FROM IRIS_WORKER_SET
 				WHERE JNO = :1
+				AND SNO = :2
 				AND USER_ID NOT IN (
-					SELECT USER_ID
+					SELECT USER_KEY
 					FROM IRIS_WORKER_DAILY_SET
-					WHERE JNO = :2
-					AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :3
+					WHERE JNO = :3
+					AND TO_CHAR(RECORD_DATE, 'YYYY-MM-DD') = :4
 				)
 				%s`, retryCondition)
 
-	if err := db.GetContext(ctx, &count, query, search.Jno, search.Jno, search.SearchStartTime); err != nil {
+	if err := db.GetContext(ctx, &count, query, search.Jno, search.Sno, search.Jno, search.SearchStartTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
@@ -436,12 +443,12 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 
 	condition := ""
 
-	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t2.USER_ID")
 	condition = utils.StringWhereConvert(condition, search.UserNm.NullString, "t2.USER_NM")
 	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t2.DEPARTMENT")
 
 	var columns []string
-	columns = append(columns, "t1.USER_ID")
+	columns = append(columns, "t2.USER_ID")
 	columns = append(columns, "t2.USER_NM")
 	columns = append(columns, "t2.DEPARTMENT")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
@@ -469,7 +476,8 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 						   	SELECT 
 								t1.SNO AS SNO,
 								t1.JNO AS JNO,
-								t1.USER_ID AS USER_ID,
+								t1.USER_KEY AS USER_KEY,
+								t2.USER_ID AS USER_ID,
 								t2.USER_NM AS USER_NM,
 								t2.DEPARTMENT AS DEPARTMENT,
 								t1.RECORD_DATE AS RECORD_DATE,
@@ -485,8 +493,9 @@ func (r *Repository) GetWorkerSiteBaseList(ctx context.Context, db Queryer, page
 								t1.COMPARE_STATE AS COMPARE_STATE,
 								t1.WORK_HOUR as WORK_HOUR
 							FROM IRIS_WORKER_DAILY_SET t1
-							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_ID = t2.USER_ID AND t1.sno = t2.sno
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.USER_KEY = t2.USER_KEY AND t1.sno = t2.sno
 							WHERE t1.SNO > 100
+							AND T2.IS_DEL = 'N'
 							AND t1.COMPARE_STATE in ('S', 'X')
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
@@ -513,12 +522,12 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 
 	condition := ""
 
-	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t1.USER_ID")
+	condition = utils.StringWhereConvert(condition, search.UserId.NullString, "t2.USER_ID")
 	condition = utils.StringWhereConvert(condition, search.UserNm.NullString, "t2.USER_NM")
 	condition = utils.StringWhereConvert(condition, search.Department.NullString, "t2.DEPARTMENT")
 
 	var columns []string
-	columns = append(columns, "t1.USER_ID")
+	columns = append(columns, "t2.USER_ID")
 	columns = append(columns, "t2.USER_NM")
 	columns = append(columns, "t2.DEPARTMENT")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
@@ -527,8 +536,9 @@ func (r *Repository) GetWorkerSiteBaseCount(ctx context.Context, db Queryer, sea
 							SELECT 
 								count(*)
 							FROM IRIS_WORKER_DAILY_SET t1
-							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.USER_ID = t2.USER_ID 
+							LEFT JOIN IRIS_WORKER_SET t2 ON t1.SNO = t2.SNO AND t1.USER_KEY = t2.USER_KEY 
 							WHERE t1.SNO > 100
+							AND T2.IS_DEL = 'N'
 							AND t1.COMPARE_STATE in ('S', 'X')
 							AND t1.JNO = :1
 							AND TO_CHAR(t1.RECORD_DATE, 'yyyy-mm-dd') BETWEEN :2 AND :3
@@ -555,7 +565,7 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 					SELECT 
 						:1 AS SNO,
 						:2 AS JNO,
-						:3 AS USER_ID,
+						:3 AS USER_KEY,
 						:4 AS RECORD_DATE,
 						:5 AS IN_RECOG_TIME,
 						:6 AS OUT_RECOG_TIME,
@@ -571,7 +581,7 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 				ON (
 					t1.SNO = t2.SNO 
 					AND t1.JNO = t2.JNO 
-					AND t1.USER_ID = t2.USER_ID
+					AND t1.USER_KEY = t2.USER_KEY
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				) WHEN MATCHED THEN
 					UPDATE SET
@@ -587,15 +597,15 @@ func (r *Repository) MergeSiteBaseWorker(ctx context.Context, tx Execer, workers
 						t1.WORK_HOUR   = t2.WORK_HOUR
 					WHERE t1.SNO = t2.SNO
 					AND t1.JNO = t2.JNO
-					AND t1.USER_ID = t2.USER_ID
+					AND t1.USER_KEY = t2.USER_KEY
 				    AND t1.RECORD_DATE   = t2.RECORD_DATE
 				WHEN NOT MATCHED THEN
-					INSERT (SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
-					VALUES (t2.SNO, t2.JNO, t2.USER_ID, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'X', t2.WORK_HOUR, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
+					INSERT (SNO, JNO, USER_KEY, RECORD_DATE, IN_RECOG_TIME, OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE, REG_AGENT, REG_USER, REG_UNO, IS_DEADLINE, IS_OVERTIME)
+					VALUES (t2.SNO, t2.JNO, t2.USER_KEY, t2.RECORD_DATE, t2.IN_RECOG_TIME, t2.OUT_RECOG_TIME, t2.WORK_STATE, 'X', t2.WORK_HOUR, SYSDATE, t2.REG_AGENT, t2.REG_USER, t2.REG_UNO, t2.IS_DEADLINE, t2.IS_OVERTIME)`
 
 	for _, worker := range workers {
 		_, err := tx.ExecContext(ctx, query,
-			worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
+			worker.Sno, worker.Jno, worker.UserKey, worker.RecordDate, worker.InRecogTime,
 			worker.OutRecogTime, agent, worker.ModUser, worker.ModUno, worker.IsDeadline,
 			worker.WorkState, worker.IsOvertime, worker.WorkHour,
 		)
@@ -612,11 +622,11 @@ func (r *Repository) MergeSiteBaseWorkerLog(ctx context.Context, tx Execer, work
 	agent := utils.GetAgent()
 
 	query := `
-		INSERT INTO IRIS_WORKER_DAILY_LOG(SNO, JNO, USER_ID, RECOG_TIME, TRANS_TYPE, MESSAGE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
-		VALUES(:1, :2, :3, :4, :5, :6, SYSDATE, :7, :8, :9)`
+		INSERT INTO IRIS_WORKER_DAILY_LOG(SNO, JNO, USER_ID, RECOG_TIME, TRANS_TYPE, MESSAGE, USER_KEY, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES(:1, :2, :3, :4, :5, :6, :7, SYSDATE, :8, :9, :10)`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.WorkState, worker.Message, worker.ModUser, worker.ModUno, agent); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.WorkState, worker.Message, worker.UserKey, worker.ModUser, worker.ModUno, agent); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}
@@ -639,13 +649,13 @@ func (r *Repository) ModifyWorkerDeadline(ctx context.Context, tx Execer, worker
 					MOD_UNO = :3
 				WHERE SNO = :4
 				AND JNO = :5
-				AND USER_ID = :6
+				AND USER_KEY = :6
 				AND RECORD_DATE = :7`
 
 	for _, worker := range workers {
 		_, err := tx.ExecContext(ctx, query,
 			agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno,
-			worker.UserId, worker.RecordDate,
+			worker.UserKey, worker.RecordDate,
 		)
 		if err != nil {
 			return utils.CustomErrorf(err)
@@ -671,13 +681,13 @@ func (r *Repository) ModifyWorkerProject(ctx context.Context, tx Execer, workers
 					MOD_UNO = :4
 				WHERE SNO = :5
 				AND JNO = :6
-				AND USER_ID = :7
+				AND USER_KEY = :7
 				AND RECORD_DATE = :8`
 
 	for _, worker := range workers {
 		_, err := tx.ExecContext(ctx, query,
 			worker.AfterJno, agent, worker.ModUser, worker.ModUno, worker.Sno,
-			worker.Jno, worker.UserId, worker.RecordDate,
+			worker.Jno, worker.UserKey, worker.RecordDate,
 		)
 		if err != nil {
 			return utils.CustomErrorf(err)
@@ -821,12 +831,12 @@ func (r *Repository) RemoveSiteBaseWorkers(ctx context.Context, tx Execer, worke
 		DELETE FROM IRIS_WORKER_DAILY_SET
 		WHERE SNO = :1
 		AND JNO = :2
-		AND USER_ID = :3
+		AND USER_KEY = :3
 		AND TRUNC(RECORD_DATE) = TRUNC(:4)
 		AND IS_DEADLINE = 'N'`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.Sno, worker.Jno, worker.UserKey, worker.RecordDate); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}
@@ -844,11 +854,11 @@ func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, worker
 			MOD_UNO = :2
 		WHERE SNO = :3
 		AND JNO = :4
-		AND USER_ID = :5
+		AND USER_KEY = :5
 		AND TRUNC(RECORD_DATE) = TRUNC(:6)`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserKey, worker.RecordDate); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}
@@ -958,11 +968,11 @@ func (r *Repository) ModifyWorkHours(ctx context.Context, tx Execer, workers ent
 			MOD_UNO = :4
 		WHERE SNO = :5
 		AND JNO = :6
-		AND USER_ID = :7
+		AND USER_KEY = :7
 		AND RECORD_DATE = :8`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.WorkHour, agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserId, worker.RecordDate); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.WorkHour, agent, worker.ModUser, worker.ModUno, worker.Sno, worker.Jno, worker.UserKey, worker.RecordDate); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}
@@ -1191,6 +1201,68 @@ func (r *Repository) MergeRecdDailyWorker(ctx context.Context, tx Execer, worker
 			return utils.CustomErrorf(err)
 		}
 		if _, err := tx.ExecContext(ctx, query2, w.IrisNo); err != nil {
+			return utils.CustomErrorf(err)
+		}
+	}
+	return nil
+}
+
+// 변경 이력 변경 전 데이터 조회
+func (r *Repository) GetDailyWorkerBeforeList(ctx context.Context, db Queryer, workers entity.WorkerDailys) (entity.WorkerDailys, error) {
+	var list entity.WorkerDailys
+	query := `
+		SELECT
+			SNO, JNO, USER_KEY, RECORD_DATE, IN_RECOG_TIME,
+			OUT_RECOG_TIME, IS_DEADLINE, WORK_STATE, IS_OVERTIME, WORK_HOUR,
+			REG_DATE, REG_AGENT, REG_USER, REG_UNO
+		FROM IRIS_WORKER_DAILY_SET
+		WHERE USER_KEY = :1 
+		AND TRUNC(RECORD_DATE) = TRUNC(:2)`
+
+	for _, w := range workers {
+		var dailyWorker entity.WorkerDaily
+		if err := db.GetContext(ctx, &dailyWorker, query, w.UserKey, w.RecordDate); err != nil {
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					dailyWorker.Sno = w.Sno
+					dailyWorker.Jno = w.Jno
+					dailyWorker.UserKey = w.UserKey
+					dailyWorker.ReasonType = w.ReasonType
+				} else {
+					return entity.WorkerDailys{}, utils.CustomErrorf(err)
+				}
+			}
+		}
+		dailyWorker.ReasonType = w.ReasonType
+		list = append(list, &dailyWorker)
+	}
+	return list, nil
+}
+
+// 변경 이력 변경 후 데이터 저장
+func (r *Repository) AddHistoryDailyWorkers(ctx context.Context, tx Execer, workers entity.WorkerDailys) error {
+	agent := utils.GetAgent()
+
+	insetQuery := `
+		INSERT INTO IRIS_WORKER_DAILY_HIS(
+			SNO, JNO, USER_KEY, RECORD_DATE, IN_RECOG_TIME,
+			OUT_RECOG_TIME, IS_DEADLINE, WORK_STATE, IS_OVERTIME, WORK_HOUR,
+			HIS_STATUS, REASON, REASON_TYPE, REG_DATE, REG_AGENT,
+			REG_USER, REG_UNO
+		) VALUES (
+			:1, :2, :3, :4, :5, 
+			:6, :7, :8, :9, :10,
+		    :11, :12, :13, :14, :15, 
+		    :16, :17
+		)`
+
+	for _, w := range workers {
+		if _, err := tx.ExecContext(ctx, insetQuery,
+			w.Sno, w.Jno, w.UserKey, w.RecordDate, w.InRecogTime,
+			w.OutRecogTime, w.IsDeadline, w.WorkState, w.IsOvertime, w.WorkHour,
+			w.HisStatus, w.Reason, w.ReasonType, w.RegDate, agent,
+			w.ModUser, w.ModUno,
+		); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}

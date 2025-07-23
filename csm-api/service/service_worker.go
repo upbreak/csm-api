@@ -6,6 +6,7 @@ import (
 	"csm-api/store"
 	"csm-api/txutil"
 	"csm-api/utils"
+	"github.com/guregu/null"
 	"time"
 )
 
@@ -58,7 +59,7 @@ func (s *ServiceWorker) GetWorkerTotalCount(ctx context.Context, search entity.W
 	return count, nil
 }
 
-// func: 근로자 검색(현장근로자 추가시 사용)
+// func: 미출근 근로자 검색(현장근로자 추가시 사용)
 // @param
 // - userId string
 func (s *ServiceWorker) GetAbsentWorkerList(ctx context.Context, page entity.Page, search entity.WorkerDaily, retry string) (*entity.Workers, error) {
@@ -185,6 +186,11 @@ func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entit
 // @param
 // -
 func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	beforeList, err := s.Store.GetDailyWorkerBeforeList(ctx, s.SafeDB, workers)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -199,6 +205,25 @@ func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.
 
 	// 변경사항 로그 저장
 	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	// 변경이력 저장
+	regDate := null.NewTime(time.Now(), true)
+	// 변경전
+	for i := range beforeList {
+		beforeList[i].HisStatus = utils.ParseNullString("BEFORE")
+		beforeList[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, beforeList); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// 변경후
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("AFTER")
+		workers[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
 		return utils.CustomErrorf(err)
 	}
 

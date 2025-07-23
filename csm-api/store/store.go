@@ -163,6 +163,8 @@ type WorkerStore interface {
 	GetRecdDailyWorkerList(ctx context.Context, db Queryer) ([]entity.WorkerDaily, error)
 	GetRecdDailyWorkerChk(ctx context.Context, db Queryer, userKey string, date null.Time) (bool, error)
 	MergeRecdDailyWorker(ctx context.Context, tx Execer, worker []entity.WorkerDaily) error
+	GetDailyWorkerBeforeList(ctx context.Context, db Queryer, workers entity.WorkerDailys) (entity.WorkerDailys, error)
+	AddHistoryDailyWorkers(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
 }
 
 type WorkHourStore interface {
