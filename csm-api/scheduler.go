@@ -94,8 +94,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 근로자 마감 처리 (퇴근한 근로자만 처리)::0시 0분 0초
 	_, err := s.cron.AddFunc("0 0 0 * * *", func() {
+		defer Recover("[Scheduler] Running ModifyWorkerDeadlineSchedule")
 		log.Println("[Scheduler] Running ModifyWorkerDeadlineSchedule")
-
 		if err := s.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {
 			log.Println("[Scheduler] ModifyWorkerDeadlineSchedule fail")
 			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] ModifyWorkerDeadlineSchedule", err))
@@ -122,6 +122,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 프로젝트 정보 업데이트(초기 세팅)::5분
 	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
+		defer Recover("[Scheduler] Running CheckProjectSettings")
 		log.Println("[Scheduler] Running CheckProjectSettings")
 		var count int
 		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
@@ -137,6 +138,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 근로자 공수 계산 (마감 처리가 안되고 출퇴근이 모두 있는 근로자)::0시 1분 0초
 	_, err = s.cron.AddFunc("0 1 0 * * *", func() {
+		defer Recover("[Scheduler] Running ModifyWorkHour")
 		log.Println("[Scheduler] Running ModifyWorkHour")
 		user := entity.Base{
 			ModUser: utils.ParseNullString("SYSTEM_BATCH"),
@@ -154,6 +156,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 날씨 저장::8시, 10시, 13시, 15시, 17시
 	_, err = s.cron.AddFunc("0 0 8,10,13,15,17 * * *", func() {
+		defer Recover("[Scheduler] Running SaveWeather")
 		log.Println("[Scheduler] Running SaveWeather")
 
 		err = s.WeatherService.SaveWeather(ctx)
@@ -171,6 +174,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 공정률 기록::00:00부터 05:00까지 1시간
 	_, err = s.cron.AddFunc("0 0 0,1,2,3,4,5 * * *", func() {
+		defer Recover("[Scheduler] Running SettingWorkRate")
 		log.Println("[Scheduler] Running SettingWorkRate")
 		var count int64
 		now := time.Now()
@@ -188,7 +192,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 홍채인식기 전체근로자 반영::5분
 	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
-		log.Println("[Scheduler] Running ")
+		defer Recover("[Scheduler] Running MergeRecdWorker")
+		log.Println("[Scheduler] Running MergeRecdWorker")
 		if err = s.WorkerService.MergeRecdWorker(ctx); err != nil {
 			log.Println("[Scheduler] MergeRecdWorker fail")
 			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdWorker", err))
@@ -202,7 +207,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 	// 홍채인식기 현장근로자 반영::5분(정시 2분부터 시작)
 	_, err = s.cron.AddFunc("0 2-59/5 * * * *", func() {
-		log.Println("[Scheduler] Running ")
+		defer Recover("[Scheduler] Running MergeRecdDailyWorker")
+		log.Println("[Scheduler] Running MergeRecdDailyWorker")
 		if err = s.WorkerService.MergeRecdDailyWorker(ctx); err != nil {
 			log.Println("[Scheduler] MergeRecdDailyWorker fail")
 			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdDailyWorker", err))
