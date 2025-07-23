@@ -38,6 +38,7 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 
 	query := fmt.Sprintf(`
 		SELECT
+		    T1.USER_KEY,
 			T1.SNO,
 			T1.JNO,
 			T2.USER_ID,
@@ -57,6 +58,7 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 		LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.USER_KEY = T2.USER_KEY --T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
 		WHERE TRUNC(T1.RECORD_DATE) = TRUNC(:1)
 		AND T1.SNO = :2
+		AND T2.IS_DEL = 'N'
 		AND (
 			T1.JNO = :3 
 			OR (T1.JNO != :4 AND T1.COMPARE_STATE NOT IN ('S', 'X'))
@@ -203,10 +205,11 @@ func (r *Repository) ModifyWorkerCompareApply(ctx context.Context, tx Execer, wo
 			MOD_UNO = :3,
 			MOD_AGENT = :4
 		WHERE SNO = :5
-		AND USER_ID = :6`
+		AND USER_KEY = :6
+		AND IS_DEL = 'N'`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserKey); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}
@@ -228,11 +231,11 @@ func (r *Repository) ModifyDailyWorkerCompareApply(ctx context.Context, tx Exece
 			MOD_UNO = :4,
 			MOD_AGENT = :5
 		WHERE SNO = :6
-		AND USER_ID = :7
+		AND USER_KEY = :7
 		AND TRUNC(RECORD_DATE) = TRUNC(:8)`
 
 	for _, worker := range workers {
-		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.AfterState, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserId, worker.RecordDate); err != nil {
+		if _, err := tx.ExecContext(ctx, query, worker.Jno, worker.AfterState, worker.RegUser, worker.RegUno, agent, worker.Sno, worker.UserKey, worker.RecordDate); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}
@@ -312,11 +315,11 @@ func (r *Repository) AddCompareLog(ctx context.Context, tx Execer, logs entity.W
 	agent := utils.GetAgent()
 
 	query := `
-		INSERT INTO IRIS_COMPARE_LOG(SNO, JNO, USER_ID, USER_NM, BEFORE_STATE, AFTER_STATE, RECORD_DATE, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
-		VALUES(:1, :2, :3, :4, :5, :6, :7, SYSDATE, :8, :9, :10)`
+		INSERT INTO IRIS_COMPARE_LOG(SNO, JNO, USER_ID, USER_NM, BEFORE_STATE, AFTER_STATE, RECORD_DATE, USER_KEY, REG_DATE, REG_USER, REG_UNO, REG_AGENT)
+		VALUES(:1, :2, :3, :4, :5, :6, :7, :8, SYSDATE, :9, :10, :11)`
 
 	for _, log := range logs {
-		if _, err := tx.ExecContext(ctx, query, log.Sno, log.Jno, log.UserId, log.UserNm, log.BeforeState, log.AfterState, log.RecordDate, log.RegUser, log.RegUno, agent); err != nil {
+		if _, err := tx.ExecContext(ctx, query, log.Sno, log.Jno, log.UserId, log.UserNm, log.BeforeState, log.AfterState, log.RecordDate, log.UserKey, log.RegUser, log.RegUno, agent); err != nil {
 			return utils.CustomErrorf(err)
 		}
 	}

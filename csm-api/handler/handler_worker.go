@@ -84,7 +84,7 @@ func (h *HandlerWorker) TotalList(w http.ResponseWriter, r *http.Request) {
 	SuccessValuesResponse(ctx, w, values)
 }
 
-// func: 출근 안한 근로자 검색
+// func: 미출근 근로자 검색
 // @param
 // -
 func (h *HandlerWorker) AbsentList(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +97,7 @@ func (h *HandlerWorker) AbsentList(w http.ResponseWriter, r *http.Request) {
 	retrySearch := r.URL.Query().Get("retry_search")
 	searchStartTime := r.URL.Query().Get("search_start_time")
 	jno := r.URL.Query().Get("jno")
+	sno := r.URL.Query().Get("sno")
 
 	if pageNum == "" || rowSize == "" || jno == "" {
 		BadRequestResponse(ctx, w)
@@ -105,6 +106,7 @@ func (h *HandlerWorker) AbsentList(w http.ResponseWriter, r *http.Request) {
 	page.PageNum, _ = strconv.Atoi(pageNum)
 	page.RowSize, _ = strconv.Atoi(rowSize)
 	search.Jno = utils.ParseNullInt(jno)
+	search.Sno = utils.ParseNullInt(sno)
 	search.SearchStartTime = utils.ParseNullString(searchStartTime)
 
 	list, err := h.Service.GetAbsentWorkerList(ctx, page, search, retrySearch)

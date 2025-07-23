@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"context"
 	"csm-api/auth"
-	"log"
+	"csm-api/entity"
+	"csm-api/utils"
+	"fmt"
 	"net/http"
 	"runtime/debug"
 )
@@ -68,7 +71,8 @@ func Recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("[panic] %v\n%s", err, debug.Stack())
+				//log.Printf("[panic] %v\n%s", err, debug.Stack())
+				_ = entity.WriteErrorLog(context.Background(), utils.CustomMessageErrorf(fmt.Sprintf("panic %s", debug.Stack()), fmt.Errorf("%v", err)))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()

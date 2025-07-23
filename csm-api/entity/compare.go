@@ -5,6 +5,7 @@ import "github.com/guregu/null"
 type Compare struct {
 	Sno              null.Int    `json:"sno" db:"SNO"`
 	Jno              null.Int    `json:"jno" db:"JNO"`
+	UserKey          null.String `json:"user_key" db:"USER_KEY"`
 	UserId           null.String `json:"user_id" db:"USER_ID"`
 	UserNm           null.String `json:"user_nm" db:"USER_NM"`
 	Department       null.String `json:"department" db:"DEPARTMENT"`

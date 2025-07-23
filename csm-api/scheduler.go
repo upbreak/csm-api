@@ -123,7 +123,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	// 프로젝트 정보 업데이트(초기 세팅)::5분
 	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
 		defer Recover("[Scheduler] Running CheckProjectSettings")
-		log.Println("[Scheduler] Running CheckProjectSettings")
+		//log.Println("[Scheduler] Running CheckProjectSettings")
 		var count int
 		if count, err = s.ProjectSettingService.CheckProjectSetting(ctx); err != nil {
 			log.Printf("[Scheduler] CheckProjectSettings fail: %+v", err)
@@ -190,10 +190,10 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err)
 	}
 
-	// 홍채인식기 전체근로자 반영::5분
-	_, err = s.cron.AddFunc("0 0/5 * * * *", func() {
+	// 홍채인식기 전체근로자 반영::2분
+	_, err = s.cron.AddFunc("0 0/2 * * * *", func() {
 		defer Recover("[Scheduler] Running MergeRecdWorker")
-		log.Println("[Scheduler] Running MergeRecdWorker")
+		//log.Println("[Scheduler] Running MergeRecdWorker")
 		if err = s.WorkerService.MergeRecdWorker(ctx); err != nil {
 			log.Println("[Scheduler] MergeRecdWorker fail")
 			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdWorker", err))
@@ -205,10 +205,10 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		return entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] failed to add cron job", err))
 	}
 
-	// 홍채인식기 현장근로자 반영::5분(정시 2분부터 시작)
-	_, err = s.cron.AddFunc("0 2-59/5 * * * *", func() {
+	// 홍채인식기 현장근로자 반영::2분(정시 1분부터 시작)
+	_, err = s.cron.AddFunc("0 1-59/2 * * * *", func() {
 		defer Recover("[Scheduler] Running MergeRecdDailyWorker")
-		log.Println("[Scheduler] Running MergeRecdDailyWorker")
+		//log.Println("[Scheduler] Running MergeRecdDailyWorker")
 		if err = s.WorkerService.MergeRecdDailyWorker(ctx); err != nil {
 			log.Println("[Scheduler] MergeRecdDailyWorker fail")
 			_ = entity.WriteErrorLog(ctx, utils.CustomMessageErrorf("[Scheduler] MergeRecdDailyWorker", err))

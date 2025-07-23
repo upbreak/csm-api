@@ -20,7 +20,7 @@ func WorkerRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	}
 
 	router.Get("/total", workerHandler.TotalList)                                   // 전체근로자 조회
-	router.Get("/total/simple", workerHandler.AbsentList)                           // 근로자 검색(현장근로자 추가시 사용)
+	router.Get("/total/absent", workerHandler.AbsentList)                           // 미출근 근로자 검색(현장근로자 추가시 사용)
 	router.Get("/total/depart", workerHandler.DepartList)                           // 프로젝트 회사명 조회
 	router.Post("/total", workerHandler.Add)                                        // 추가
 	router.Put("/total", workerHandler.Modify)                                      // 수정
