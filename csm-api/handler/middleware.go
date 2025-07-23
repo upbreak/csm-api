@@ -2,7 +2,9 @@ package handler
 
 import (
 	"csm-api/auth"
+	"log"
 	"net/http"
+	"runtime/debug"
 )
 
 // api호출시 jwt를 확인하는 미들웨어
@@ -60,4 +62,16 @@ func AuthMiddleware(jwt *auth.JWTUtils) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, req)
 		})
 	}
+}
+
+func Recoverer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("[panic] %v\n%s", err, debug.Stack())
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }

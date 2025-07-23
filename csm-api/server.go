@@ -22,6 +22,7 @@ type Server struct {
 func (s *Server) Run(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
+		defer Recover("HTTP Server Goroutine")
 		log.Println("HTTP server start")
 		if err := s.srv.Serve(s.l); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Printf("failed to close: %+v", err)
@@ -46,6 +47,7 @@ func NewServer(l net.Listener, mux http.Handler) *Server {
 func (s *Server) Shutdown(ctx context.Context) error {
 	var shutdownErr error
 	s.shutdownOnce.Do(func() {
+		defer Recover("HTTP server shutdown")
 		log.Println("HTTP server shutdown initiated...")
 		if err := s.srv.Shutdown(ctx); err != nil {
 			log.Printf("HTTP server Shutdown error: %+v", err)

@@ -29,6 +29,7 @@ import (
 // chi패키지를 이용하여 http method에 따른 여러 요청을 라우팅 할 수 있음 함수 구현
 func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Handler, error) {
 	mux := chi.NewRouter()
+	mux.Use(handler.Recoverer)
 
 	// CORS 미들웨어 설정
 	c := cors.New(cors.Options{ // 허용할 도메인
