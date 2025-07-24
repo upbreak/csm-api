@@ -8,12 +8,17 @@ import (
 )
 
 func init() {
-	log.Println("start go:build dev")
+	log.Println("start go:build local")
 
 	// 개발 환경에 필요한 기본값 설정
 	err := os.Setenv("ENV", "development")
 	if err != nil {
 		log.Fatalf("Failed to set ENV: %v", err)
+	}
+
+	err = os.Setenv("ROLE", "web")
+	if err != nil {
+		log.Fatalf("Failed to set ROLE: %v", err)
 	}
 
 	err = os.Setenv("DOMAIN", "localhost")

@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Env            string `env:"ENV" envDefault:"local"`
+	Role           string `env:"ROLE" envDefault:"web"`
 	Port           int    `env:"PORT" envDefault:"8082"`
 	Domain         string `env:"DOMAIN" envDefault:"localhost"`
 	UploadPath     string `env:"UPLOAD_PATH" envDefault:"uploads"`

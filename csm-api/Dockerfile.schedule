@@ -1,0 +1,33 @@
+# Go 빌드 환경 설정
+FROM golang:1.23.4 AS builder
+
+WORKDIR /app
+
+# Go 모듈 복사 및 종속성 설치
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 소스 코드 복사 및 빌드
+COPY . .
+# 여기서 -tags schedule 지정!
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags schedule -o app-schedule
+
+# 실행 환경 설정
+FROM base-dependencies
+
+ARG CIMAGE_UID=101
+ARG CIMAGE_GID=101
+
+RUN addgroup --system --gid ${CIMAGE_GID} cimage \
+ && adduser --system --uid ${CIMAGE_UID} --gid ${CIMAGE_GID} --disabled-password --gecos "" cimage
+
+# Go 애플리케이션 복사 (이름 주의!)
+COPY --from=builder /app/app-schedule /app/
+
+WORKDIR /app
+
+RUN chown ${CIMAGE_UID}:${CIMAGE_GID} /app/app-schedule
+
+USER cimage
+
+CMD ["./app-schedule"]

@@ -16,6 +16,11 @@ func init() {
 		log.Fatalf("Failed to set ENV: %v", err)
 	}
 
+	err := os.Setenv("ROLE", "web")
+	if err != nil {
+		log.Fatalf("Failed to set ROLE: %v", err)
+	}
+
 	err = os.Setenv("DOMAIN", "127.0.0.1")
 	if err != nil {
 		log.Fatalf("Failed to set DOMAIN: %v", err)
