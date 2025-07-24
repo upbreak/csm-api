@@ -8,11 +8,14 @@ import (
 	"csm-api/store"
 	"csm-api/utils"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -68,6 +71,15 @@ func run(ctx context.Context) error {
 		return utils.CustomMessageErrorf("config.NewConfig", err)
 	}
 
+	// domain, port 설정
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.Domain, cfg.Port))
+	if err != nil {
+		return utils.CustomMessageErrorf("net.Listen", err)
+	}
+
+	url := fmt.Sprintf("http://%s", l.Addr().String())
+	fmt.Printf("Listening at %s\n", url)
+
 	// DB config 설정
 	dbCfg, err := config.NewDBConfig()
 	if err != nil {
@@ -88,37 +100,75 @@ func run(ctx context.Context) error {
 	}
 	cleanup = append(cleanup, func() { timesheetCleanup() })
 
+	// api config 생성
+	apiCfg, err := config.GetApiConfig()
+	if err != nil {
+		return utils.CustomMessageErrorf("config.ApiConfig", err)
+	}
+
 	defer func() {
 		for _, clean := range cleanup {
 			clean()
 		}
 	}()
 
-	env := os.Getenv("ENV")
-	log.Printf("start go:build env:%s", env)
-	role := os.Getenv("ROLE")
-	log.Printf("start go:build role:%s", role)
-
 	// 초기화 (Init 객체 생성)
-	if env == "development" || env == "local" {
-		init, err := NewInit(safeDb)
-		if err != nil {
-			return utils.CustomMessageErrorf("NewInit fail", err)
-		}
-		// 초기화 실행
-		err = init.RunInitializations(ctx)
-		if err != nil {
-			return utils.CustomMessageErrorf("RunInitializations", err)
-		}
+	init, err := NewInit(safeDb)
+	if err != nil {
+		return utils.CustomMessageErrorf("NewInit fail", err)
+	}
+	// 초기화 실행
+	err = init.RunInitializations(ctx)
+	if err != nil {
+		return utils.CustomMessageErrorf("RunInitializations", err)
 	}
 
-	switch role {
-	case "web":
-		return runWeb(ctx, cfg, safeDb, timesheetDb)
-	case "schedule":
-		return runSchedule(ctx, safeDb, timesheetDb)
-	default:
-		return runWeb(ctx, cfg, safeDb, timesheetDb)
+	// 라우팅 설정
+	mux, err := newMux(ctx, safeDb, timesheetDb)
+	if err != nil {
+		return utils.CustomMessageErrorf("newMux", err)
 	}
 
+	// HTTP server 생성
+	server := NewServer(l, mux)
+
+	// scheduler 생성
+	scheduler, err := NewScheduler(safeDb, apiCfg, timesheetDb)
+	if err != nil {
+		return utils.CustomMessageErrorf("NewScheduler", err)
+	}
+
+	// 서버와 스케줄러 동시에 실행
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		return server.Run(ctx)
+	})
+
+	// 운영환경에서만 스케줄러 실행
+	env := os.Getenv("ENV")
+	if env == "production" {
+		eg.Go(func() error {
+			return scheduler.Run(ctx)
+		})
+	} else {
+		log.Printf("[INFO] Scheduler runs only when ENV=production. Current ENV: %s\n", env)
+	}
+
+	// 종료 신호 대기
+	select {
+	case <-ctx.Done():
+		fmt.Println("\nShutdown signal received")
+
+		// 서버 shutdown (5초 안에 처리)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err = server.Shutdown(shutdownCtx); err != nil {
+			return utils.CustomMessageErrorf("server graceful shutdown", err)
+		}
+		log.Println("Server exited normally.")
+	}
+
+	return nil
 }

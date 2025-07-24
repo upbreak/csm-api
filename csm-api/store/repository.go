@@ -30,8 +30,7 @@ func New(ctx context.Context, cfg *config.DBConfig) (*sqlx.DB, func(), error) {
 	P.PoolParams.MaxSessions = 10                  // 최대 세션 10개
 	P.PoolParams.SessionIncrement = 2              // 풀 확장할 때마다 +2
 	P.PoolParams.SessionTimeout = 60 * time.Second // 유휴 풀 세션 TTL
-	//P.PoolParams.WaitTimeout = 10 * time.Second    // 풀 대기 최대 시간
-	P.PoolParams.WaitTimeout = 2 * time.Minute
+	P.PoolParams.WaitTimeout = 10 * time.Second    // 풀 대기 최대 시간
 
 	// 디버깅 용도로 DSN 출력
 	fmt.Printf("DSN: %s\n", P.StringWithPassword())

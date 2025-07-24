@@ -223,7 +223,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	// ... 추가 job 등록
 	s.cron.Start()
 
-	log.Println("Scheduler server start")
+	log.Println("[Scheduler] Cron started")
 
 	// ctx.Done() 기다리다가 종료
 	<-ctx.Done()

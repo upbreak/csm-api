@@ -109,7 +109,7 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 		"JSON",                // 응답 자료 형식
 		startDate,             // 발표시각 from
 		endDate,               //endDate,                // 발표시각 to
-		"108") // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
+		"108")                 // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
 
 	// api call
 	body, err := api.CallGetAPI(url)
@@ -226,15 +226,22 @@ func (s *ServiceWeather) GetWeatherList(ctx context.Context, sno int64, targetDa
 // params:
 // -
 func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	defer txutil.DeferTx(tx, &err)
+
 	// IRIS_SITE_POS에 등록된 값들 불러오기
 	list, err := s.SitePosStore.GetSitePosList(ctx, s.SafeDB)
+
 	if err != nil {
 		err = utils.CustomErrorf(err)
 	}
 
-	// 날씨 조회
-	var weathers []entity.Weather
 	for _, site := range list {
+
 		// 장소를 바꿀 수 없는 경우
 		if site.Latitude.Valid == false || site.Longitude.Valid == false {
 			continue
@@ -266,19 +273,8 @@ func (s *ServiceWeather) SaveWeather(ctx context.Context) (err error) {
 		weather.Sno = site.Sno
 		weather.RecogTime = null.TimeFrom(now)
 
-		weathers = append(weathers, *weather)
-	}
-
-	// weather 저장
-	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
-	if err != nil {
-		return utils.CustomErrorf(err)
-	}
-
-	defer txutil.DeferTx(tx, &err)
-
-	for i := range weathers {
-		if err = s.Store.SaveWeather(ctx, tx, weathers[i]); err != nil {
+		// weather 저장
+		if err = s.Store.SaveWeather(ctx, tx, *weather); err != nil {
 			err = utils.CustomErrorf(err)
 		}
 	}
