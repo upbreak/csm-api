@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/auth"
 	"csm-api/clock"
+	"csm-api/config"
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/store"
@@ -23,10 +24,15 @@ import (
 type Init struct {
 	WorkerService   service.WorkerService
 	WorkHourService service.WorkHourService
+	WeatherService  service.WeatherApiService
 }
 
 func NewInit(safeDb *sqlx.DB) (*Init, error) {
 	r := store.Repository{Clocker: clock.RealClock{}}
+	apiCfg, err := config.GetApiConfig()
+	if err != nil {
+		_ = entity.WriteErrorLog(context.Background(), utils.CustomMessageErrorf("config.ApiConfig", err))
+	}
 
 	init := &Init{
 		WorkerService: &service.ServiceWorker{
@@ -38,6 +44,13 @@ func NewInit(safeDb *sqlx.DB) (*Init, error) {
 			SafeDB:  safeDb,
 			SafeTDB: safeDb,
 			Store:   &r,
+		},
+		WeatherService: &service.ServiceWeather{
+			ApiKey:       apiCfg,
+			SafeDB:       safeDb,
+			SafeTDB:      safeDb,
+			Store:        &r,
+			SitePosStore: &r,
 		},
 	}
 
@@ -72,6 +85,18 @@ func (i *Init) RunInitializations(ctx context.Context) (err error) {
 		log.Println("[init] ModifyWorkHour completed")
 		return nil
 	})
+
+	//eg.Go(func() error {
+	//	defer Recover("[init] SaveWeather")
+	//	log.Println("[init] SaveWeather start")
+	//	err = i.WeatherService.SaveWeather(ctx)
+	//	if err != nil {
+	//		log.Printf("[init] SaveWeather fail: %w", err)
+	//		return entity.WriteErrorLog(ctx, utils.CustomErrorf(err))
+	//	}
+	//	log.Printf("[init] SaveWeather completed")
+	//	return nil
+	//})
 
 	//eg.Go(func() error {
 	//	// 홍채인식기 전체근로자 반영

@@ -1,4 +1,4 @@
-//go:build prod
+//go:build schedule
 
 package config
 
@@ -8,15 +8,15 @@ import (
 )
 
 func init() {
-	log.Println("start go:build prod")
+	log.Println("start go:build schedule")
 
 	// 운영 환경에 필요한 기본값 설정
-	err := os.Setenv("ENV", "production")
+	err := os.Setenv("ENV", "schedule")
 	if err != nil {
 		log.Fatalf("Failed to set ENV: %v", err)
 	}
 
-	err = os.Setenv("ROLE", "web")
+	err = os.Setenv("ROLE", "schedule")
 	if err != nil {
 		log.Fatalf("Failed to set ROLE: %v", err)
 	}
@@ -52,7 +52,7 @@ func init() {
 		log.Fatalf("Failed to set EXCEL_PATH: %v", err)
 	}
 
-	err = os.Setenv("CONSOLE_LOG_PATH", "/var/log/csm")
+	err = os.Setenv("CONSOLE_LOG_PATH", "/var/log/csm/schedule")
 	if err != nil {
 		log.Fatalf("Failed to set EXCEL_PATH: %v", err)
 	}
