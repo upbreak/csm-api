@@ -109,7 +109,7 @@ func (s *ServiceWeather) GetWeatherWrnMsg() (entity.WeatherWrnMsgList, error) {
 		"JSON",                // 응답 자료 형식
 		startDate,             // 발표시각 from
 		endDate,               //endDate,                // 발표시각 to
-		"108") // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
+		"108")                 // stnId. 전국(108), 서울(109), 부산(159), 대구(143), 광주(156), 전주(146), 대전(133), 청주(131), 강릉(105), 제주(184)
 
 	// api call
 	body, err := api.CallGetAPI(url)

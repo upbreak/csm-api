@@ -52,8 +52,8 @@ type ProjectStore interface {
 	GetProjectWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectSafeWorkerCountList(ctx context.Context, db Queryer, targetDate time.Time) (*entity.ProjectSafeCounts, error)
 	GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error)
-	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, retry string) (*entity.JobInfos, error)
-	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string) (int, error)
+	GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, retry string, includeJno string) (*entity.JobInfos, error)
+	GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string, includeJno string) (int, error)
 	GetAllProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error)
 	GetAllProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string) (int, error)
 	GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error)
@@ -165,6 +165,8 @@ type WorkerStore interface {
 	MergeRecdDailyWorker(ctx context.Context, tx Execer, worker []entity.WorkerDaily) error
 	GetDailyWorkerBeforeList(ctx context.Context, db Queryer, workers entity.WorkerDailys) (entity.WorkerDailys, error)
 	AddHistoryDailyWorkers(ctx context.Context, tx Execer, workers entity.WorkerDailys) error
+	GetHistoryDailyWorkers(ctx context.Context, db Queryer, startDate string, endDate string, sno int64, retry string) (entity.WorkerDailys, error)
+	GetHistoryDailyWorkerReason(ctx context.Context, db Queryer, cno int64) (string, error)
 }
 
 type WorkHourStore interface {

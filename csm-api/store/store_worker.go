@@ -1268,3 +1268,105 @@ func (r *Repository) AddHistoryDailyWorkers(ctx context.Context, tx Execer, work
 	}
 	return nil
 }
+
+// 변경 이력 조회
+func (r *Repository) GetHistoryDailyWorkers(ctx context.Context, db Queryer, startDate string, endDate string, sno int64, retry string) (entity.WorkerDailys, error) {
+	var list entity.WorkerDailys
+
+	var columns []string
+	columns = append(columns, "T1.REASON_TYPE")
+	columns = append(columns, "T2.USER_NM")
+	columns = append(columns, "T2.USER_ID")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
+
+	query := fmt.Sprintf(`
+		SELECT
+			HIS_STATUS,
+			HIS_NAME,
+			REASON_TYPE,
+			REG_DATE,
+			USER_ID,
+			USER_NM,
+			DEPARTMENT,
+			JOB_NAME,
+			FIXED_RECORD_DATE AS RECORD_DATE,
+			FIXED_SNO AS SNO,
+			IN_RECOG_TIME,
+			OUT_RECOG_TIME,
+			WORK_HOUR,
+			WORK_STATE,
+			IS_OVERTIME,
+			IS_DEADLINE,
+			CNO
+		FROM (
+			SELECT
+				T1.HIS_STATUS,
+				DECODE(T1.HIS_STATUS, 'AFTER', '변경 후', 'BEFORE', '변경 전', '') AS HIS_NAME,
+				DECODE(T1.REASON_TYPE, '01', '추가', '02', '수정', '03', '마감', '04', '일괄공수입력', '05', '프로젝트변경', '06', '삭제', '07', '마감취소', '08', '수정/마감', '') AS REASON_TYPE,
+				T1.REG_DATE,
+				T2.USER_ID,
+				T2.USER_NM,
+				T2.DEPARTMENT,
+				T3.JOB_NAME,
+				COALESCE(
+				  T1.RECORD_DATE,
+				  MAX(T1.RECORD_DATE) OVER (
+					PARTITION BY T1.USER_KEY, T1.REG_DATE
+				  )
+				) AS FIXED_RECORD_DATE,
+				COALESCE(
+				  T1.SNO,
+				  MAX(T1.SNO) OVER (
+					PARTITION BY T1.USER_KEY, T1.REG_DATE
+				  )
+				) AS FIXED_SNO,
+				T1.IN_RECOG_TIME,
+				T1.OUT_RECOG_TIME,
+				T1.WORK_HOUR,
+				DECODE(T1.WORK_STATE, '01', '출근', '02', '퇴근', '') AS WORK_STATE,
+				T1.IS_OVERTIME,
+				T1.IS_DEADLINE,
+				T1.CNO
+			FROM IRIS_WORKER_DAILY_HIS T1
+			LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.USER_KEY = T2.USER_KEY
+			LEFT JOIN S_JOB_INFO T3 ON T1.JNO = T3.JNO
+			WHERE 1=1
+			%s
+		)
+		WHERE TO_CHAR(FIXED_RECORD_DATE, 'YYYY-MM-DD') BETWEEN :1 AND :2
+		  AND FIXED_SNO = :3
+		ORDER BY
+			REG_DATE DESC,
+			USER_ID,
+			FIXED_RECORD_DATE DESC,
+			CASE WHEN HIS_STATUS = 'BEFORE' THEN 0 ELSE 1 END,
+			HIS_STATUS DESC
+		`, retryCondition)
+
+	if err := db.SelectContext(ctx, &list, query, startDate, endDate, sno); err != nil {
+		return list, utils.CustomErrorf(err)
+	}
+	return list, nil
+}
+
+// 변경 이력 사유 조회
+func (r *Repository) GetHistoryDailyWorkerReason(ctx context.Context, db Queryer, cno int64) (string, error) {
+	var reason string
+
+	query := `
+		SELECT MAX(REASON)
+		FROM IRIS_WORKER_DAILY_HIS
+		WHERE (USER_KEY, TO_CHAR(REG_DATE, 'YYYY-MM-DD HH24:MI')) IN (
+			SELECT USER_KEY, TO_CHAR(REG_DATE, 'YYYY-MM-DD HH24:MI')
+			FROM IRIS_WORKER_DAILY_HIS
+			WHERE cno = :1
+		)`
+
+	if err := db.GetContext(ctx, &reason, query, cno); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", utils.CustomErrorf(err)
+	}
+	return reason, nil
+}

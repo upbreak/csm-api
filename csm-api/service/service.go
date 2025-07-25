@@ -44,8 +44,8 @@ type ProjectService interface {
 	GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
-	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, retry string) (*entity.JobInfos, error)
-	GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string) (int, error)
+	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, retry string, includeJno string) (*entity.JobInfos, error)
+	GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string, includeJno string) (int, error)
 	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error)
 	GetAllProjectCount(ctx context.Context, search entity.JobInfo, isAll int, retry string) (int, error)
 	GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error)
@@ -138,6 +138,8 @@ type WorkerService interface {
 	ModifyWorkHours(ctx context.Context, workers entity.WorkerDailys) error
 	MergeRecdWorker(ctx context.Context) error
 	MergeRecdDailyWorker(ctx context.Context) error
+	GetHistoryDailyWorkers(ctx context.Context, startDate string, endDate string, sno int64, retry string) (entity.WorkerDailys, error)
+	GetHistoryDailyWorkerReason(ctx context.Context, cno int64) (string, error)
 }
 
 type WorkHourService interface {

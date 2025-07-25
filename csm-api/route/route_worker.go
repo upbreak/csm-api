@@ -33,6 +33,8 @@ func WorkerRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 	router.Post("/site-base/deadline-cancel", workerHandler.SiteBaseDeadlineCancel) // 마감 취소
 	router.Get("/site-base/record", workerHandler.DailyWorkersByJnoAndDate)         // 프로젝트, 기간내 모든 현장근로자 근태정보 조회
 	router.Post("/site-base/work-hours", workerHandler.ModifyWorkHours)             // 현장근로자 일괄 공수 변경
+	router.Get("/site-base/history", workerHandler.GetDailyWorkerHistory)           // 변경 이력 조회
+	router.Get("/site-base/reason", workerHandler.GetDailyWorkerHistoryReason)      // 변경 이력 사유 조회
 
 	return router
 }

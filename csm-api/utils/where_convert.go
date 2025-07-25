@@ -60,40 +60,119 @@ func OrTimeBetweenWhereConvert(condition string, sqlValue1 sql.NullString, sqlVa
 	return condition
 }
 
+// 테이블 컬럼(columns)과 검색 쿼리(retry)를 받아 SQL WHERE절(AND, OR 조건 조각)로 변환
+// parameter
+// - columns: ex) []string{"T1.REASON_TYPE", "T2.USER_NM", "T2.USER_ID"}
+// - retry: ex) "ALL:마감?USER_NM?USER_ID;03?REASON_TYPE;07?REASON_TYPE;08?REASON_TYPE|테스트~USER_ID:010123|ALL"
+// role
+//  1. `~` (틸드) : 검색 컬럼을 나누는 최상위 구분자. 각 블록은 AND로 결합됨. ex) "A~B"  →  A ... AND B ...
+//  2. `|` (파이프) : 하나의 블록 내에서 검색 값 또는 값의 그룹을 나누는 구분자. 각 그룹은 AND로 결합됨 (괄호로 감싸지지 않음). ex) "A|B"  →  A... AND B...
+//  3. `;` (세미콜론) : 검색값 중에서 값의 그룹인 것의 "서브 조건"을 나누는 구분자. 각 서브조건은 OR로 결합됨 (괄호로 감싸짐). ex) "A;B"  →  (A... OR B...)
+//  4. `:` (콜론) : "필드:값" 구문.
+//     - 필드가 ALL이면 특별 규칙, 그 외에는 해당 필드명으로만 검색
+//  5. `?` (물음표) : 서브조건에서 뒤에 필드명을 붙이면, 지정된 필드에서만 LIKE 검색
+//     - 여러 필드명 지정 가능 ("값?USER_ID?USER_NM")
+//     - 지정 없으면 모든 columns에 대해 검색
+//  6. retry에 있는 검색 컬럼이 columns에 없으면 해당 필드는 where절 변환에서 무시
+//
+// return
+// ex):
+//
+//	AND (LOWER(T2.USER_NM) LIKE LOWER('%마감%')
+//	     OR LOWER(T2.USER_ID) LIKE LOWER('%마감%')
+//	     OR LOWER(T1.REASON_TYPE) LIKE LOWER('%03%')
+//	     OR LOWER(T1.REASON_TYPE) LIKE LOWER('%07%')
+//	     OR LOWER(T1.REASON_TYPE) LIKE LOWER('%08%'))
+//	AND (LOWER(T1.REASON_TYPE) LIKE LOWER('%테스트%')
+//	     OR LOWER(T2.USER_NM) LIKE LOWER('%테스트%')
+//	     OR LOWER(T2.USER_ID) LIKE LOWER('%테스트%'))
+//	AND LOWER(T2.USER_ID) LIKE LOWER('%010123%')
+//	AND (LOWER(T1.REASON_TYPE) LIKE LOWER('%ALL%')
+//	     OR LOWER(T2.USER_NM) LIKE LOWER('%ALL%')
+//	     OR LOWER(T2.USER_ID) LIKE LOWER('%ALL%'))
 func RetrySearchTextConvert(retry string, columns []string) string {
 	where := ""
 	trimRetry := strings.TrimSpace(retry)
 	if trimRetry == "" {
 		return ""
 	}
-	keyArr := strings.Split(retry, "~")
-
-	if len(keyArr) > 0 {
-		for _, key := range keyArr {
-			arr := strings.Split(key, ":")
-			if arr[0] == "ALL" {
-				values := strings.Split(arr[1], "|")
-				for _, value := range values {
-					var temp []string
-					for _, column := range columns {
-						s := fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, strings.TrimSpace(value))
-						temp = append(temp, s)
+	// ~: AND 묶음
+	andGroups := strings.Split(trimRetry, "~")
+	for _, andGroup := range andGroups {
+		pipeGroups := strings.Split(andGroup, "|")
+		var andExpr []string
+		for _, group := range pipeGroups {
+			group = strings.TrimSpace(group)
+			// ":"가 있는 경우 (예: ALL:xxx, USER_ID:xxx)
+			if colonIdx := strings.Index(group, ":"); colonIdx != -1 {
+				key := group[:colonIdx]
+				value := group[colonIdx+1:]
+				if strings.ToUpper(key) == "ALL" {
+					// ALL:값;값;값 구조 (세미콜론으로 OR)
+					orBlocks := strings.Split(value, ";")
+					var orExpr []string
+					for _, block := range orBlocks {
+						block = strings.TrimSpace(block)
+						if block == "" {
+							continue
+						}
+						parts := strings.Split(block, "?")
+						searchWord := parts[0]
+						var fieldTargets []string
+						isAllColumn := false
+						if len(parts) > 1 {
+							fieldTargets = parts[1:]
+						} else {
+							fieldTargets = columns
+							isAllColumn = true
+						}
+						var temp []string
+						for _, column := range columns {
+							if isAllColumn {
+								temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, searchWord))
+							} else {
+								for _, f := range fieldTargets {
+									if strings.HasSuffix(column, f) {
+										temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, searchWord))
+										break
+									}
+								}
+							}
+						}
+						if len(temp) > 0 {
+							orExpr = append(orExpr, strings.Join(temp, " OR "))
+						}
 					}
-					where += fmt.Sprintf(`AND (%s)`, strings.Join(temp, " OR "))
+					if len(orExpr) > 0 {
+						andExpr = append(andExpr, fmt.Sprintf("(%s)", strings.Join(orExpr, " OR ")))
+					}
+				} else {
+					// key: 필드, value: 값1;값2;값3...
+					values := strings.Split(value, "|")
+					for _, v := range values {
+						v = strings.TrimSpace(v)
+						for _, column := range columns {
+							// 컬럼 끝이 key와 같을 때만!
+							if strings.HasSuffix(column, key) {
+								andExpr = append(andExpr, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, v))
+							}
+						}
+					}
 				}
 			} else {
+				// ":"가 없는 값은 전체 columns
+				var temp []string
 				for _, column := range columns {
-					values := strings.Split(arr[1], "|")
-					if strings.Contains(column, arr[0]) {
-						for _, value := range values {
-							where += fmt.Sprintf(`AND LOWER(%s) LIKE LOWER('%%%s%%')`, column, strings.TrimSpace(value))
-						}
-						break
-					}
+					temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, group))
+				}
+				if len(temp) > 0 {
+					andExpr = append(andExpr, fmt.Sprintf("(%s)", strings.Join(temp, " OR ")))
 				}
 			}
 		}
+		if len(andExpr) > 0 {
+			where += "AND " + strings.Join(andExpr, " AND ") + " "
+		}
 	}
-
-	return where
+	return strings.TrimSpace(where)
 }
