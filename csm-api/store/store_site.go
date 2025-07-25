@@ -431,3 +431,58 @@ func (r *Repository) GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno 
 	}
 	return workRate, nil
 }
+
+// 월별 공정률 조회
+func (r *Repository) GetSiteWorkRateListByMonth(ctx context.Context, db Queryer, jno int64, searchDate string) (entity.SiteWorkRates, error) {
+	workRates := entity.SiteWorkRates{}
+
+	query := `
+			WITH DATE_LIST AS (
+			  SELECT TO_DATE(:1, 'YYYY-MM') + LEVEL - 1 AS RECORD_DATE, :2 AS JNO
+			  FROM dual
+			  CONNECT BY LEVEL <= LAST_DAY(TO_DATE(:3, 'YYYY-MM')) - TO_DATE(:4, 'YYYY-MM') + 1
+			),
+			BASE_DATA AS(
+				SELECT  D.RECORD_DATE, D.JNO, R.SNO, R.WORK_RATE
+				FROM DATE_LIST D LEFT JOIN IRIS_JOB_WORK_RATE R ON D.JNO = R.JNO AND D.RECORD_DATE = R.RECORD_DATE
+			), 
+			LATEST_DATA AS(
+				SELECT * FROM 
+				(	SELECT R.JNO, R.SNO, R.RECORD_DATE, NVL(R.WORK_RATE, 0) AS WORK_RATE, B.RECORD_DATE AS TARGET_DATE, ROW_NUMBER() OVER (PARTITION BY B.RECORD_DATE ORDER BY R.R.RECORD_DATE DESC) AS RN
+					FROM BASE_DATA B
+					LEFT JOIN IRIS_JOB_WORK_RATE R ON R.JNO = B.JNO AND R.RECORD_DATE < B.RECORD_DATE
+				)
+				WHERE RN = 1
+			) 
+			SELECT 
+				B.RECORD_DATE,
+				L.SNO,
+				B.JNO,
+				COALESCE(B.WORK_RATE, L.WORK_RATE) AS WORK_RATE,
+				CASE WHEN B.WORK_RATE IS NULL THEN 'N' ELSE 'Y' END AS IS_WORK_RATE		
+			FROM BASE_DATA B 
+			INNER JOIN LATEST_DATA L ON B.RECORD_DATE = L.TARGET_DATE
+			WHERE B.RECORD_DATE < SYSDATE
+	`
+	if err := db.SelectContext(ctx, &workRates, query, searchDate, jno, searchDate, searchDate); err != nil {
+		return workRates, utils.CustomErrorf(err)
+	}
+	return workRates, nil
+
+}
+
+// 공정률 추가
+func (r *Repository) AddWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error {
+	agent := utils.GetAgent()
+
+	query := `
+			INSERT INTO IRIS_JOB_WORK_RATE (WORK_RATE, SNO, JNO, RECORD_DATE, MOD_DATE, MOD_UNO, MOD_USER, MOD_AGENT )
+			VALUES
+				(:1, :2, :3, TO_DATE(:4, 'YYYY-MM-DD'), SYSDATE, :5, :6, :7)
+			`
+
+	if _, err := tx.ExecContext(ctx, query, workRate.WorkRate, workRate.Sno, workRate.Jno, workRate.SearchDate, workRate.ModUno, workRate.ModUser, agent); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	return nil
+}

@@ -27,6 +27,8 @@ type SiteService interface {
 	SettingWorkRate(ctx context.Context, targetDate time.Time) (int64, error)
 	ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) error
 	GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (entity.SiteWorkRate, error)
+	GetSiteWorkRateListByMonth(ctx context.Context, jno int64, month string) (entity.SiteWorkRates, error)
+	AddWorkRate(ctx context.Context, workRate entity.SiteWorkRate) error
 }
 
 type SitePosService interface {

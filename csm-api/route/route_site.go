@@ -48,15 +48,17 @@ func SiteRoute(safeDB *sqlx.DB, timeSheetDB *sqlx.DB, r *store.Repository, apiCo
 		},
 	}
 
-	router.Get("/", siteHandler.List)                        // 현장관리 조회
-	router.Get("/nm", siteHandler.SiteNameList)              // 현장명 조회
-	router.Get("/stats", siteHandler.StatsList)              // 현장상태조회
-	router.Post("/", siteHandler.Add)                        // 현장 생성
-	router.Put("/", siteHandler.Modify)                      // 수정
-	router.Put("/non-use", siteHandler.ModifyNonUse)         // 현장 사용안함
-	router.Put("/use", siteHandler.ModifyUse)                // 현장 사용
-	router.Put("/work-rate", siteHandler.ModifyWorkRate)     // 공정률 수정
-	router.Get("/work-rate", siteHandler.SiteWorkRateByDate) // 날짜별 현장 공정률
+	router.Get("/", siteHandler.List)                                      // 현장관리 조회
+	router.Get("/nm", siteHandler.SiteNameList)                            // 현장명 조회
+	router.Get("/stats", siteHandler.StatsList)                            // 현장상태조회
+	router.Post("/", siteHandler.Add)                                      // 현장 생성
+	router.Put("/", siteHandler.Modify)                                    // 수정
+	router.Put("/non-use", siteHandler.ModifyNonUse)                       // 현장 사용안함
+	router.Put("/use", siteHandler.ModifyUse)                              // 현장 사용
+	router.Put("/work-rate", siteHandler.ModifyWorkRate)                   // 공정률 수정
+	router.Get("/work-rate", siteHandler.SiteWorkRateByDate)               // 날짜별 현장 공정률
+	router.Get("/work-rate/{jno}/{date}", siteHandler.SiteWorkRateByMonth) // 월별 공정률
+	router.Post("/work-rate", siteHandler.AddWorkRate)                     // 공정률 추가
 
 	return router
 }

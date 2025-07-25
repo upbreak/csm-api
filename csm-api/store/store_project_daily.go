@@ -5,6 +5,7 @@ import (
 	"csm-api/entity"
 	"csm-api/utils"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -68,7 +69,7 @@ func (r *Repository) GetDailyJobList(ctx context.Context, db Queryer, jno int64,
 				TARGET_DATE
 			FROM IRIS_DAILY_JOB
 			WHERE TO_CHAR(TARGET_DATE, 'YYYY-MM') = :1
-			AND :2 = 0 OR (JNO = :3 OR JNO = 0)`
+			AND (:2 = 0 OR (JNO = :3 OR JNO = 0))`
 
 	if err := db.SelectContext(ctx, &projectDailys, query, targetDate, jno, jno); err != nil {
 		return entity.ProjectDailys{}, utils.CustomErrorf(err)
@@ -80,11 +81,26 @@ func (r *Repository) GetDailyJobList(ctx context.Context, db Queryer, jno int64,
 func (r *Repository) AddDailyJob(ctx context.Context, tx Execer, project entity.ProjectDailys) error {
 	query := `
 		INSERT INTO IRIS_DAILY_JOB(JNO, CONTENT, TARGET_DATE, REG_DATE, REG_UNO, REG_USER)
-		VALUES (:1, :2, :3, SYSDATE, :4, :5)`
+			SELECT
+				:1, :2, :3, SYSDATE, :4, :5
+			FROM dual
+			WHERE NOT EXISTS (
+				SELECT 1
+				FROM IRIS_DAILY_JOB
+				WHERE 
+					JNO = :6
+					AND TRUNC(TARGET_DATE) = TRUNC(:7)
+			)
+		`
 
 	for _, job := range project {
-		if _, err := tx.ExecContext(ctx, query, job.Jno, job.Content, job.TargetDate, job.RegUno, job.RegUser); err != nil {
+		if result, err := tx.ExecContext(ctx, query, job.Jno, job.Content, job.TargetDate, job.RegUno, job.RegUser, job.Jno, job.TargetDate); err != nil {
 			return utils.CustomErrorf(err)
+		} else {
+			count, _ := result.RowsAffected()
+			if count == 0 {
+				return utils.CustomErrorf(fmt.Errorf("중복데이터 존재"))
+			}
 		}
 	}
 
@@ -102,10 +118,25 @@ func (r *Repository) ModifyDailyJob(ctx context.Context, tx Execer, project enti
 				MOD_DATE = SYSDATE,
 				MOD_UNO = :4,
 				MOD_USER = :5
-			WHERE IDX = :6`
+			WHERE 
+			    IDX = :6
+				AND NOT EXISTS (
+					SELECT	1
+					FROM IRIS_DAILY_JOB
+					WHERE
+						JNO = :7
+						AND TRUNC(TARGET_DATE) = TRUNC(:8)
+						AND IDX != :9			
+					)
+			`
 
-	if _, err := tx.ExecContext(ctx, query, project.Jno, project.Content, project.TargetDate, project.RegUno, project.RegUser, project.Idx); err != nil {
+	if result, err := tx.ExecContext(ctx, query, project.Jno, project.Content, project.TargetDate, project.RegUno, project.RegUser, project.Idx, project.Jno, project.TargetDate, project.Idx); err != nil {
 		return utils.CustomErrorf(err)
+	} else {
+		count, _ := result.RowsAffected()
+		if count == 0 {
+			return utils.CustomErrorf(fmt.Errorf("중복데이터 존재"))
+		}
 	}
 
 	return nil

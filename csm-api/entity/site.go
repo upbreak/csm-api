@@ -64,3 +64,5 @@ type SiteWorkRate struct {
 	SearchDate null.String `json:"search_date" db:"SEARCH_DATE"`
 	Base
 }
+
+type SiteWorkRates []*SiteWorkRate

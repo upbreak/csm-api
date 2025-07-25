@@ -128,8 +128,8 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				t1.MOD_DATE,
 				t1.MOD_USER,
 				t1.MOD_UNO,
-				NVL(t7.WORK_RATE, 0) AS WORK_RATE,
-				NVL(t7.IS_WORK_RATE, 'N') AS IS_WORK_RATE,
+				NVL(t8.WORK_RATE, 0) AS WORK_RATE,
+				NVL(t8.IS_WORK_RATE, 'N') AS IS_WORK_RATE,
 				t2.JOB_TYPE AS PROJECT_TYPE,
 				t6.CD_NM AS PROJECT_TYPE_NM,
 				t2.JOB_NO AS PROJECT_NO,
@@ -138,6 +138,7 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 				t2.JOB_LOC AS PROJECT_LOC,
 				t2.JOB_CODE AS PROJECT_CODE,
 				t4.KIND_NAME AS PROJECT_CODE_NAME,
+				t7.CANCEL_DAY,
 				t3.SITE_NM,
 				t2.COMP_CODE,
 				t2.COMP_NICK,
@@ -171,7 +172,8 @@ func (r *Repository) GetProjectList(ctx context.Context, db Queryer, sno int64, 
 			INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 			INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
 			INNER JOIN TIMESHEET.SYS_CODE_SET t6 ON t6.MINOR_CD = t2.JOB_TYPE AND t6.major_cd = 'JOB_TYPE' 
-			LEFT JOIN work_rate_info t7 ON t1.JNO = t7.JNO
+			INNER JOIN ( SELECT J.JNO, C.UDF_VAL_03 AS CANCEL_DAY FROM IRIS_JOB_SET J INNER JOIN IRIS_CODE_SET C ON J.CANCEL_CODE =  C.CODE ) t7 ON t1.JNO = t7.JNO
+			LEFT JOIN work_rate_info t8 ON t1.JNO = t8.JNO
 			LEFT JOIN worker_counts wc ON t1.SNO = wc.SNO AND t1.JNO = wc.JNO
 			LEFT JOIN equip eq ON t1.SNO = eq.SNO  AND t1.JNO = eq.JNO
 			WHERE t1.SNO > 100
@@ -345,12 +347,14 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
     			t1.SNO,
 				t1.JNO,
 				t2.JOB_NAME as PROJECT_NM,
-				t1.WORK_RATE
+				t1.WORK_RATE,
+				t5.CANCEL_DAY
 			FROM
 				IRIS_SITE_JOB t1
 				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
 				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
+				INNER JOIN ( SELECT J.JNO, C.UDF_VAL_03 AS CANCEL_DAY FROM IRIS_JOB_SET J INNER JOIN IRIS_CODE_SET C ON J.CANCEL_CODE =  C.CODE ) t5 ON t1.JNO = t5.JNO
 			WHERE t1.sno > 100
 			AND t1.IS_USE = 'Y'
 			ORDER BY

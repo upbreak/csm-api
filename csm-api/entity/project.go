@@ -48,6 +48,7 @@ type ProjectInfo struct {
 	EquipCount            null.Int    `json:"equip_count" db:"EQUIP_COUNT"`
 	WorkRate              null.Int    `json:"work_rate" db:"WORK_RATE"`
 	IsWorkRate            null.String `json:"is_work_rate" db:"IS_WORK_RATE"`
+	CancelDay             null.Int    `json:"cancel_day" db:"CANCEL_DAY"`
 	Base
 
 	ProjectPeList    *UserPeInfos   `json:"project_pe_list"`

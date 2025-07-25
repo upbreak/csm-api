@@ -371,7 +371,9 @@ func (s *ServiceSite) SettingWorkRate(ctx context.Context, targetDate time.Time)
 	return
 }
 
-// 공정률 수정
+// func: 공정률 수정
+// @param
+// -
 func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWorkRate) (err error) {
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
@@ -388,11 +390,43 @@ func (s *ServiceSite) ModifyWorkRate(ctx context.Context, workRate entity.SiteWo
 	return
 }
 
-// 날짜별 공정률 조회
+// func: 날짜별 공정률 조회
+// @param
+// -
 func (s *ServiceSite) GetSiteWorkRateByDate(ctx context.Context, jno int64, month string) (entity.SiteWorkRate, error) {
 	data, err := s.Store.GetSiteWorkRateByDate(ctx, s.SafeDB, jno, month)
 	if err != nil {
 		return data, utils.CustomErrorf(err)
 	}
 	return data, nil
+}
+
+// func: 월별 공정률 조회
+// @param
+// -
+func (s *ServiceSite) GetSiteWorkRateListByMonth(ctx context.Context, jno int64, month string) (entity.SiteWorkRates, error) {
+	workRates, err := s.Store.GetSiteWorkRateListByMonth(ctx, s.SafeDB, jno, month)
+	if err != nil {
+		return workRates, utils.CustomErrorf(err)
+	}
+	return workRates, nil
+}
+
+// func: 공정률 추가
+// @param
+// -
+func (s *ServiceSite) AddWorkRate(ctx context.Context, workRate entity.SiteWorkRate) (err error) {
+	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	defer txutil.DeferTx(tx, &err)
+
+	err = s.Store.AddWorkRate(ctx, tx, workRate)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	return
 }
