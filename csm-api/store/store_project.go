@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -368,7 +369,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 // func: 공사관리시스템 등록 프로젝트 전체 조회
 // @param
 // -
-func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, retry string) (*entity.JobInfos, error) {
+func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, search entity.JobInfo, retry string, includeJno string) (*entity.JobInfos, error) {
 	list := entity.JobInfos{}
 
 	condition := ""
@@ -392,6 +393,17 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 		order = pageSql.Order.String
 	} else {
 		order = "JNO DESC, JOB_NO ASC"
+	}
+
+	var jnoCondition string
+	if includeJno != "undefined" && includeJno != "" {
+		parseInt, _ := strconv.ParseInt(includeJno, 10, 64)
+		jnoCondition = fmt.Sprintf(`
+			AND t1.SNO = (
+				SELECT SNO
+				FROM IRIS_SITE_JOB
+				WHERE JNO = %d
+			)`, parseInt)
 	}
 
 	query := fmt.Sprintf(`
@@ -418,12 +430,12 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 							INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
 						WHERE t1.SNO > 100
 						AND t1.IS_USE = 'Y'
-						%s %s
+						%s %s %s
 						ORDER BY %s
 					) sorted_data
 					WHERE ROWNUM <= :1
 				)
-				WHERE RNUM > :2`, condition, retryCondition, order)
+				WHERE RNUM > :2`, jnoCondition, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &list, query, pageSql.EndNum, pageSql.StartNum); err != nil {
 		return nil, utils.CustomErrorf(err)
@@ -435,7 +447,7 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 // func: 공사관리시스템 등록 프로젝트 전체 조회 개수
 // @param
 // -
-func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string) (int, error) {
+func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search entity.JobInfo, retry string, includeJno string) (int, error) {
 	var count int
 
 	condition := ""
@@ -454,6 +466,17 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 	columns = append(columns, "t2.JOB_PM_NAME")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
+	var jnoCondition string
+	if includeJno != "undefined" && includeJno != "" {
+		parseInt, _ := strconv.ParseInt(includeJno, 10, 64)
+		jnoCondition = fmt.Sprintf(`
+			AND t1.SNO = (
+				SELECT SNO
+				FROM IRIS_SITE_JOB
+				WHERE JNO = %d
+			)`, parseInt)
+	}
+
 	query := fmt.Sprintf(`
 				SELECT 
 					COUNT(*)
@@ -465,7 +488,7 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 					INNER JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t2.job_state AND t5.major_cd = 'JOB_STATE'
 				WHERE t1.SNO > 100
 				AND t1.IS_USE = 'Y'
-				%s %s`, condition, retryCondition)
+				%s %s %s`, jnoCondition, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

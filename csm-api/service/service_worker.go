@@ -186,6 +186,7 @@ func (s *ServiceWorker) GetWorkerSiteBaseCount(ctx context.Context, search entit
 // @param
 // -
 func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	// 변경전 데이터 조회
 	beforeList, err := s.Store.GetDailyWorkerBeforeList(ctx, s.SafeDB, workers)
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -234,6 +235,12 @@ func (s *ServiceWorker) MergeSiteBaseWorker(ctx context.Context, workers entity.
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	// 변경전 데이터 조회
+	beforeList, err := s.Store.GetDailyWorkerBeforeList(ctx, s.SafeDB, workers)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -250,6 +257,26 @@ func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity
 	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
 		return utils.CustomErrorf(err)
 	}
+
+	// 변경이력 저장
+	regDate := null.NewTime(time.Now(), true)
+	// 변경전
+	for i := range beforeList {
+		beforeList[i].HisStatus = utils.ParseNullString("BEFORE")
+		beforeList[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, beforeList); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// 변경후
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("AFTER")
+		workers[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	return
 }
 
@@ -257,6 +284,12 @@ func (s *ServiceWorker) ModifyWorkerDeadline(ctx context.Context, workers entity
 // @param
 // -
 func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	// 변경전 데이터 조회
+	beforeList, err := s.Store.GetDailyWorkerBeforeList(ctx, s.SafeDB, workers)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -276,6 +309,26 @@ func (s *ServiceWorker) ModifyWorkerProject(ctx context.Context, workers entity.
 
 	// 프로젝트 변경 로그 저장
 	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	// 변경이력 저장
+	regDate := null.NewTime(time.Now(), true)
+	// 변경전
+	for i := range beforeList {
+		beforeList[i].HisStatus = utils.ParseNullString("BEFORE")
+		beforeList[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, beforeList); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// 변경후
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("AFTER")
+		workers[i].RegDate = regDate
+		workers[i].Jno = workers[i].AfterJno
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
 		return utils.CustomErrorf(err)
 	}
 
@@ -352,11 +405,44 @@ func (s *ServiceWorker) RemoveSiteBaseWorkers(ctx context.Context, workers entit
 		return utils.CustomErrorf(err)
 	}
 
+	// 변경이력 저장
+	regDate := null.NewTime(time.Now(), true)
+	// 변경전
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("BEFORE")
+		workers[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// 변경후
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("AFTER")
+		workers[i].Sno = null.NewInt(0, false)
+		workers[i].Jno = null.NewInt(0, false)
+		workers[i].RecordDate = null.NewTime(time.Time{}, false)
+		workers[i].InRecogTime = null.NewTime(time.Time{}, false)
+		workers[i].OutRecogTime = null.NewTime(time.Time{}, false)
+		workers[i].IsDeadline = null.NewString("", false)
+		workers[i].WorkState = null.NewString("", false)
+		workers[i].IsOvertime = null.NewString("", false)
+		workers[i].WorkHour = null.NewFloat(0, false)
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	return
 }
 
 // 마감 취소
 func (s *ServiceWorker) ModifyDeadlineCancel(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	// 변경전 데이터 조회
+	beforeList, err := s.Store.GetDailyWorkerBeforeList(ctx, s.SafeDB, workers)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -374,6 +460,25 @@ func (s *ServiceWorker) ModifyDeadlineCancel(ctx context.Context, workers entity
 		return utils.CustomErrorf(err)
 	}
 
+	// 변경이력 저장
+	regDate := null.NewTime(time.Now(), true)
+	// 변경전
+	for i := range beforeList {
+		beforeList[i].HisStatus = utils.ParseNullString("BEFORE")
+		beforeList[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, beforeList); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// 변경후
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("AFTER")
+		workers[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	return
 }
 
@@ -388,6 +493,12 @@ func (s *ServiceWorker) GetDailyWorkersByJnoAndDate(ctx context.Context, param e
 
 // 현장근로자 일괄 공수 변경
 func (s *ServiceWorker) ModifyWorkHours(ctx context.Context, workers entity.WorkerDailys) (err error) {
+	// 변경전 데이터 조회
+	beforeList, err := s.Store.GetDailyWorkerBeforeList(ctx, s.SafeDB, workers)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
@@ -402,6 +513,25 @@ func (s *ServiceWorker) ModifyWorkHours(ctx context.Context, workers entity.Work
 
 	// 공수 변경 로그 저장
 	if err = s.Store.MergeSiteBaseWorkerLog(ctx, tx, workers); err != nil {
+		return utils.CustomErrorf(err)
+	}
+
+	// 변경이력 저장
+	regDate := null.NewTime(time.Now(), true)
+	// 변경전
+	for i := range beforeList {
+		beforeList[i].HisStatus = utils.ParseNullString("BEFORE")
+		beforeList[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, beforeList); err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// 변경후
+	for i := range workers {
+		workers[i].HisStatus = utils.ParseNullString("AFTER")
+		workers[i].RegDate = regDate
+	}
+	if err = s.Store.AddHistoryDailyWorkers(ctx, tx, workers); err != nil {
 		return utils.CustomErrorf(err)
 	}
 
@@ -509,4 +639,22 @@ func (s *ServiceWorker) MergeRecdDailyWorker(ctx context.Context) (err error) {
 		return utils.CustomErrorf(err)
 	}
 	return
+}
+
+// 변경 이력 조회
+func (s *ServiceWorker) GetHistoryDailyWorkers(ctx context.Context, startDate string, endDate string, sno int64, retry string) (entity.WorkerDailys, error) {
+	list, err := s.Store.GetHistoryDailyWorkers(ctx, s.SafeDB, startDate, endDate, sno, retry)
+	if err != nil {
+		return entity.WorkerDailys{}, utils.CustomErrorf(err)
+	}
+	return list, nil
+}
+
+// 변경 이력 사유 조회
+func (s *ServiceWorker) GetHistoryDailyWorkerReason(ctx context.Context, cno int64) (string, error) {
+	reason, err := s.Store.GetHistoryDailyWorkerReason(ctx, s.SafeDB, cno)
+	if err != nil {
+		return "", utils.CustomErrorf(err)
+	}
+	return reason, nil
 }

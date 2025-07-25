@@ -35,6 +35,7 @@ type WorkerDaily struct {
 	IrisNo          null.Int    `json:"iris_no" db:"IRIS_NO"`
 	Sno             null.Int    `json:"sno" db:"SNO"` //현장 고유번호
 	Jno             null.Int    `json:"jno" db:"JNO"` //프로젝트 고유번호
+	JobName         null.String `json:"job_name" db:"JOB_NAME"`
 	UserKey         null.String `json:"user_key" db:"USER_KEY"`
 	UserId          null.String `json:"user_id" db:"USER_ID"` //근로자 아이디
 	UserNm          null.String `json:"user_nm" db:"USER_NM"`
@@ -120,7 +121,9 @@ type WorkerTimeExcel struct {
 }
 
 type WorkerReason struct {
+	Cno        null.Int    `json:"cno" db:"CNO"`
 	Reason     null.String `json:"reason" db:"REASON"`
 	ReasonType null.String `json:"reason_type" db:"REASON_TYPE"`
 	HisStatus  null.String `json:"his_status" db:"HIS_STATUS"`
+	HisName    null.String `json:"his_name" db:"HIS_NAME"`
 }

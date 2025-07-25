@@ -420,3 +420,43 @@ func (h *HandlerWorker) ModifyWorkHours(w http.ResponseWriter, r *http.Request) 
 	entity.WriteLog(logEntry)
 	SuccessResponse(ctx, w)
 }
+
+// 변경이력 조회
+func (h *HandlerWorker) GetDailyWorkerHistory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	snoString := r.URL.Query().Get("sno")
+	retrySearch := r.URL.Query().Get("retry_search")
+	if startDate == "" || endDate == "" || snoString == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	sno, _ := strconv.ParseInt(snoString, 10, 64)
+
+	list, err := h.Service.GetHistoryDailyWorkers(ctx, startDate, endDate, sno, retrySearch)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	SuccessValuesResponse(ctx, w, list)
+}
+
+// 변경 이력 사유 조회
+func (h *HandlerWorker) GetDailyWorkerHistoryReason(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	cnoString := r.URL.Query().Get("cno")
+	if cnoString == "" {
+		BadRequestResponse(ctx, w)
+		return
+	}
+	cno, _ := strconv.ParseInt(cnoString, 10, 64)
+	list, err := h.Service.GetHistoryDailyWorkerReason(ctx, cno)
+	if err != nil {
+		FailResponse(ctx, w, err)
+		return
+	}
+	SuccessValuesResponse(ctx, w, list)
+}
