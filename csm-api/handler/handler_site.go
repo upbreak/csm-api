@@ -273,3 +273,41 @@ func (h *HandlerSite) SiteWorkRateByDate(w http.ResponseWriter, r *http.Request)
 	}
 	SuccessValuesResponse(r.Context(), w, data)
 }
+
+// 월별 공정률 조회
+func (h *HandlerSite) SiteWorkRateByMonth(w http.ResponseWriter, r *http.Request) {
+	searchDate := r.PathValue("date")
+	jnoString := r.PathValue("jno")
+	if jnoString == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	if searchDate == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	jno, _ := strconv.ParseInt(jnoString, 10, 64)
+	data, err := h.Service.GetSiteWorkRateListByMonth(r.Context(), jno, searchDate)
+	if err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessValuesResponse(r.Context(), w, data)
+}
+
+// 공정률 추가
+func (h *HandlerSite) AddWorkRate(w http.ResponseWriter, r *http.Request) {
+	var workRate entity.SiteWorkRate
+	if err := json.NewDecoder(r.Body).Decode(&workRate); err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+
+	if err := h.Service.AddWorkRate(r.Context(), workRate); err != nil {
+		FailResponse(r.Context(), w, err)
+		return
+	}
+	SuccessResponse(r.Context(), w)
+}

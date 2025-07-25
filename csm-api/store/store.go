@@ -30,6 +30,8 @@ type SiteStore interface {
 	SettingWorkRate(ctx context.Context, tx Execer, targetDate time.Time) (int64, error)
 	ModifyWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error
 	GetSiteWorkRateByDate(ctx context.Context, db Queryer, jno int64, month string) (entity.SiteWorkRate, error)
+	GetSiteWorkRateListByMonth(ctx context.Context, db Queryer, jno int64, searchDate string) (entity.SiteWorkRates, error)
+	AddWorkRate(ctx context.Context, tx Execer, workRate entity.SiteWorkRate) error
 }
 
 type SitePosStore interface {

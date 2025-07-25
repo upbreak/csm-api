@@ -69,7 +69,7 @@ func (r *Repository) GetDailyJobList(ctx context.Context, db Queryer, jno int64,
 				TARGET_DATE
 			FROM IRIS_DAILY_JOB
 			WHERE TO_CHAR(TARGET_DATE, 'YYYY-MM') = :1
-			AND :2 = 0 OR (JNO = :3 OR JNO = 0)`
+			AND (:2 = 0 OR (JNO = :3 OR JNO = 0))`
 
 	if err := db.SelectContext(ctx, &projectDailys, query, targetDate, jno, jno); err != nil {
 		return entity.ProjectDailys{}, utils.CustomErrorf(err)
