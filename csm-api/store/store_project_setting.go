@@ -207,13 +207,14 @@ func (r *Repository) GetProjectSetting(ctx context.Context, db Queryer, jno int6
 				J.OUT_TIME,
 				J.RESPITE_TIME,
 				J.CANCEL_CODE,
+				C.UDF_VAL_03 AS CANCEL_DAY,
 				J.REG_DATE,
 				J.REG_UNO,
 				J.REG_USER,
 				J.MOD_DATE,
 				J.MOD_UNO,
 				J.MOD_USER
-			FROM IRIS_JOB_SET J
+			FROM IRIS_JOB_SET J INNER JOIN IRIS_CODE_SET C ON J.CANCEL_CODE =  C.CODE
 			WHERE
 				J.JNO = :1
 			`)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"csm-api/entity"
 	"csm-api/utils"
+	"fmt"
 )
 
 // func: 휴무일 조회
@@ -49,17 +50,32 @@ func (r *Repository) AddRestSchedule(ctx context.Context, tx Execer, schedule en
 			INSERT INTO IRIS_SCH_REST_SET(
 				JNO, IS_EVERY_YEAR, REST_YEAR, REST_MONTH, REST_DAY, 
 			    REASON, REG_DATE, REG_AGENT, REG_UNO, REG_USER
-			) VALUES (
+			)  SELECT
 				:1, :2, :3, :4, :5, 
 				:6, SYSDATE, :8, :9, :10
-			)`
+				FROM dual
+				WHERE NOT EXISTS(
+				    SELECT 1
+				    FROM IRIS_SCH_REST_SET
+				    WHERE 
+				    	JNO = :11 
+						AND REST_YEAR = :12
+						AND REST_MONTH = :13
+						AND REST_DAY = :14
+				)
+			`
 
 	for _, rest := range schedule {
-		if _, err := tx.ExecContext(ctx, query,
+		if result, err := tx.ExecContext(ctx, query,
 			rest.Jno, rest.IsEveryYear, rest.RestYear, rest.RestMonth, rest.RestDay,
-			rest.Reason /*SYSDATE*/, agent, rest.RegUno, rest.RegUser,
+			rest.Reason /*SYSDATE*/, agent, rest.RegUno, rest.RegUser, rest.Jno, rest.RestYear, rest.RestMonth, rest.RestDay,
 		); err != nil {
 			return utils.CustomErrorf(err)
+		} else {
+			count, _ := result.RowsAffected()
+			if count == 0 {
+				return utils.CustomErrorf(fmt.Errorf("중복데이터 존재"))
+			}
 		}
 	}
 
@@ -85,10 +101,26 @@ func (r *Repository) ModifyRestSchedule(ctx context.Context, tx Execer, schedule
 				MOD_AGENT = :7,
 				MOD_UNO = :8,
 				MOD_USER = :9
-			WHERE CNO = :10`
+			WHERE CNO = :10 AND
+				NOT EXISTS(
+						SELECT 1
+						FROM IRIS_SCH_REST_SET
+						WHERE 
+							JNO = :11 
+							AND REST_YEAR = :12
+							AND REST_MONTH = :13
+							AND REST_DAY = :14
+							AND CNO != :15
+					)
+			`
 
-	if _, err := tx.ExecContext(ctx, query, schedule.Jno, schedule.IsEveryYear, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Reason, agent, schedule.ModUno, schedule.ModUser, schedule.Cno); err != nil {
+	if result, err := tx.ExecContext(ctx, query, schedule.Jno, schedule.IsEveryYear, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Reason, agent, schedule.ModUno, schedule.ModUser, schedule.Cno, schedule.Jno, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Cno); err != nil {
 		return utils.CustomErrorf(err)
+	} else {
+		count, _ := result.RowsAffected()
+		if count == 0 {
+			return utils.CustomErrorf(fmt.Errorf("중복데이터 존재"))
+		}
 	}
 
 	return nil
