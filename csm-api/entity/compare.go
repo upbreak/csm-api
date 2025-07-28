@@ -12,6 +12,7 @@ type Compare struct {
 	DiscName         null.String `json:"disc_name" db:"DISC_NAME"`
 	Gender           null.String `json:"gender" db:"GENDER"`
 	IsTbm            null.String `json:"is_tbm" db:"IS_TBM"`
+	DeviceNm         null.String `json:"device_nm" db:"DEVICE_NM"`
 	RecordDate       null.Time   `json:"record_date" db:"RECORD_DATE"`
 	WorkerInTime     null.Time   `json:"worker_in_time" db:"WORKER_IN_TIME"`
 	WorkerOutTime    null.Time   `json:"worker_out_time" db:"WORKER_OUT_TIME"`

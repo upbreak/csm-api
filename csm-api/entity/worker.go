@@ -50,6 +50,7 @@ type WorkerDaily struct {
 	IsOvertime      null.String `json:"is_overtime" db:"IS_OVERTIME"`
 	CompareState    null.String `json:"compare_state" db:"COMPARE_STATE"`
 	WorkHour        null.Float  `json:"work_hour" db:"WORK_HOUR"`
+	DeviceNm        null.String `json:"device_nm" db:"DEVICE_NM"`
 	SearchStartTime null.String `json:"search_start_time" db:"SEARCH_START_TIME"`
 	SearchEndTime   null.String `json:"search_end_time" db:"SEARCH_END_TIME"`
 	AfterJno        null.Int    `json:"after_jno" db:"AFTER_JNO"`
