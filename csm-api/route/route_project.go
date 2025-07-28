@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func ProjectRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
+func ProjectRoute(safeDB *sqlx.DB, timeSheetDB *sqlx.DB, r *store.Repository) chi.Router {
 	router := chi.NewRouter()
 
 	projectHandler := &handler.HandlerProject{
@@ -17,6 +17,11 @@ func ProjectRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 			SafeTDB:   safeDB,
 			Store:     r,
 			UserStore: r,
+			UserService: &service.ServiceUser{
+				SafeDB:      safeDB,
+				TimeSheetDB: timeSheetDB,
+				Store:       r,
+			},
 		},
 	}
 

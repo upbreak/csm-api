@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"csm-api/auth"
 	"csm-api/entity"
 	"csm-api/store"
 	"csm-api/txutil"
@@ -14,11 +15,11 @@ import (
 )
 
 type ServiceProject struct {
-	SafeDB    store.Queryer
-	SafeTDB   store.Beginner
-	Store     store.ProjectStore
-	UserStore store.UserStore
-	//ManHourService ManHourService
+	SafeDB      store.Queryer
+	SafeTDB     store.Beginner
+	Store       store.ProjectStore
+	UserStore   store.UserStore
+	UserService UserService
 }
 
 // 현장 고유번호로 현장에 해당하는 프로젝트 리스트 조회 비즈니스
@@ -108,12 +109,31 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 // @param
 // -
 func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error) {
-	list, err := p.Store.GetProjectNmList(ctx, p.SafeDB)
+	unoString, _ := auth.GetContext(ctx, auth.Uno{})
+	role, _ := auth.GetContext(ctx, auth.Role{})
+
+	// 권한 조회
+	list, err := p.UserService.GetAuthorizationList(ctx, "/job_name")
+	authorization := entity.AuthorizationCheck(*list, role)
+
+	var roleInt int
+	if authorization { // 권한이 있는 경우
+		roleInt = 1
+	} else {
+		roleInt = 0
+	}
+
+	uno, err := strconv.ParseInt(unoString, 10, 64)
+	if err != nil {
+		return nil, utils.CustomErrorf(err)
+	}
+
+	nmList, err := p.Store.GetProjectNmList(ctx, p.SafeDB, roleInt, uno)
 	if err != nil {
 		return &entity.ProjectInfos{}, utils.CustomErrorf(err)
 	}
 
-	return list, nil
+	return nmList, nil
 }
 
 // func: 공사관리시스템 등록 프로젝트 전체 조회

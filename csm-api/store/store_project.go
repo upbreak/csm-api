@@ -340,10 +340,20 @@ func (r *Repository) GetProjectSafeWorkerCountList(ctx context.Context, db Query
 // func: 프로젝트 조회(이름)
 // @param
 // -
-func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.ProjectInfos, error) {
+func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer, role int, uno int64) (*entity.ProjectInfos, error) {
 	projectInfos := entity.ProjectInfos{}
 
-	sql := `SELECT
+	sql := `
+		WITH USER_IN_JNO AS (
+			SELECT JNO
+			FROM S_JOB_MEMBER_LIST
+			WHERE 1 = :1 OR UNO = :2
+		UNION
+			SELECT JNO
+			FROM JOB_SUBCON_INFO
+			WHERE ID = :3
+	)
+			SELECT
     			t1.SNO,
 				t1.JNO,
 				t2.JOB_NAME as PROJECT_NM,
@@ -351,7 +361,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 				t5.CANCEL_DAY
 			FROM
 				IRIS_SITE_JOB t1
-				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO
+				INNER JOIN S_JOB_INFO t2 ON t1.JNO = t2.JNO AND t2.JNO IN (SELECT * FROM USER_IN_JNO)
 				INNER JOIN IRIS_SITE_SET t3 ON t1.SNO = t3.SNO
 				INNER JOIN TIMESHEET.JOB_KIND_CODE t4 ON t2.JOB_CODE = t4.KIND_CODE
 				INNER JOIN ( SELECT J.JNO, C.UDF_VAL_03 AS CANCEL_DAY FROM IRIS_JOB_SET J INNER JOIN IRIS_CODE_SET C ON J.CANCEL_CODE =  C.CODE ) t5 ON t1.JNO = t5.JNO
@@ -359,7 +369,7 @@ func (r *Repository) GetProjectNmList(ctx context.Context, db Queryer) (*entity.
 			AND t1.IS_USE = 'Y'
 			ORDER BY
 				t1.IS_DEFAULT DESC, JNO DESC`
-	if err := db.SelectContext(ctx, &projectInfos, sql); err != nil {
+	if err := db.SelectContext(ctx, &projectInfos, sql, role, uno, uno); err != nil {
 		return &projectInfos, utils.CustomErrorf(err)
 	}
 
