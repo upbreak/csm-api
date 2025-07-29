@@ -10,6 +10,7 @@ type Compare struct {
 	UserNm           null.String `json:"user_nm" db:"USER_NM"`
 	Department       null.String `json:"department" db:"DEPARTMENT"`
 	DiscName         null.String `json:"disc_name" db:"DISC_NAME"`
+	Phone            null.String `json:"phone" db:"PHONE"`
 	Gender           null.String `json:"gender" db:"GENDER"`
 	IsTbm            null.String `json:"is_tbm" db:"IS_TBM"`
 	DeviceNm         null.String `json:"device_nm" db:"DEVICE_NM"`

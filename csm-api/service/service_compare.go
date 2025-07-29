@@ -98,7 +98,13 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 	// TBM map: 동명이인 고려한 slice map
 	tbmMap := make(map[entity.TbmKey][]entity.Tbm)
 	for _, tbm := range tbmList {
-		key := entity.TbmKey{tbm.Sno.Int64, tbm.Jno.Int64, tbm.UserNm.String, tbm.Department.String, tbm.TbmDate.Time}
+		key := entity.TbmKey{
+			tbm.Sno.Int64,
+			0,
+			//tbm.Jno.Int64,
+			tbm.UserNm.String,
+			tbm.Department.String,
+			tbm.TbmDate.Time}
 		tbmMap[key] = append(tbmMap[key], tbm)
 	}
 
@@ -108,7 +114,8 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 	for _, d := range deductionList {
 		regKey := entity.DeductionRegKey{
 			d.Sno.Int64,
-			d.Jno.Int64,
+			0,
+			//d.Jno.Int64,
 			replacer.Replace(d.Phone.String),
 			cleanBirthRegNo(d.RegNo.String, d.Gender.String),
 			d.RecordDate.Time,
@@ -116,7 +123,8 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 		deductionRegMap[regKey] = d
 		key := entity.DeductionKey{
 			d.Sno.Int64,
-			d.Jno.Int64,
+			0,
+			//d.Jno.Int64,
 			d.UserNm.String,
 			d.Department.String,
 			d.RecordDate.Time,
@@ -134,6 +142,7 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 			UserNm:        worker.UserNm,
 			Department:    worker.Department,
 			DiscName:      worker.DiscName,
+			Phone:         worker.Phone,
 			Gender:        utils.ParseNullString(getBirthToRegNo(worker.RegNo.String)),
 			IsTbm:         utils.ParseNullString("N"),
 			DeviceNm:      worker.DeviceNm,
@@ -152,9 +161,9 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 			worker.Department.String,
 			worker.RecordDate.Time,
 		}
-		if worker.CompareState.String == "S" || worker.CompareState.String == "X" {
-			tbmKey.Jno = worker.Jno.Int64
-		}
+		//if worker.CompareState.String == "S" || worker.CompareState.String == "X" {
+		//	tbmKey.Jno = worker.Jno.Int64
+		//}
 		if tbms, ok := tbmMap[tbmKey]; ok && len(tbms) > 0 {
 			compareTemp.IsTbm = utils.ParseNullString("Y")
 			compareTemp.DiscName = tbms[0].DiscName
@@ -168,13 +177,13 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 		deductKey := entity.DeductionRegKey{
 			worker.Sno.Int64,
 			0,
-			replacer.Replace(worker.UserId.String),
+			replacer.Replace(worker.Phone.String),
 			cleanRegNo(worker.RegNo.String),
 			worker.RecordDate.Time,
 		}
-		if worker.CompareState.String == "S" || worker.CompareState.String == "X" {
-			deductKey.Jno = worker.Jno.Int64
-		}
+		//if worker.CompareState.String == "S" || worker.CompareState.String == "X" {
+		//	deductKey.Jno = worker.Jno.Int64
+		//}
 
 		if deduction, ok := deductionRegMap[deductKey]; ok {
 			compareTemp.DeductionInTime = deduction.InRecogTime

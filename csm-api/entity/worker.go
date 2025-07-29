@@ -33,6 +33,7 @@ type Workers []*Worker
 type WorkerDaily struct {
 	RowNum          null.Int    `json:"rnum" db:"RNUM"`
 	IrisNo          null.Int    `json:"iris_no" db:"IRIS_NO"`
+	Dno             null.String `json:"dno" db:"DNO"`
 	Sno             null.Int    `json:"sno" db:"SNO"` //현장 고유번호
 	Jno             null.Int    `json:"jno" db:"JNO"` //프로젝트 고유번호
 	JobName         null.String `json:"job_name" db:"JOB_NAME"`
@@ -41,6 +42,7 @@ type WorkerDaily struct {
 	UserNm          null.String `json:"user_nm" db:"USER_NM"`
 	Department      null.String `json:"department" db:"DEPARTMENT"`
 	DiscName        null.String `json:"disc_name" db:"DISC_NAME"` // 공종명
+	Phone           null.String `json:"phone" db:"PHONE"`
 	RegNo           null.String `json:"reg_no" db:"REG_NO"`
 	RecordDate      null.Time   `json:"record_date" db:"RECORD_DATE"`
 	InRecogTime     null.Time   `json:"in_recog_time" db:"IN_RECOG_TIME"`   //출근시간
@@ -70,6 +72,7 @@ type WorkerOverTime struct {
 type WorkerOverTimes []*WorkerOverTime
 
 type WorkerDailyExcel struct {
+	RegNo      string
 	Department string
 	UserNm     string
 	Phone      string
