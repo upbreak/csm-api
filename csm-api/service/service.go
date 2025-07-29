@@ -186,9 +186,9 @@ type ScheduleService interface {
 }
 
 type ExcelService interface {
-	ImportTbm(ctx context.Context, path string, tbm entity.Tbm) error
-	ImportDeduction(ctx context.Context, path string, deduction entity.Deduction) error
-	ImportAddDailyWorker(ctx context.Context, path string, worker entity.WorkerDaily) error
+	ImportTbm(ctx context.Context, path string, tbm entity.Tbm, file entity.UploadFile) error
+	ImportDeduction(ctx context.Context, path string, deduction entity.Deduction, file entity.UploadFile) error
+	ImportAddDailyWorker(ctx context.Context, path string, worker entity.WorkerDaily) (entity.WorkerDailys, error)
 }
 
 type UploadFileService interface {

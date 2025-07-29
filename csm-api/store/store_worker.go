@@ -865,62 +865,94 @@ func (r *Repository) ModifyDeadlineCancel(ctx context.Context, tx Execer, worker
 	return nil
 }
 
+// 현장 근로자 근로자 키 조회
+func (r *Repository) GetDailyWorkerUserKey(ctx context.Context, db Queryer, worker entity.WorkerDaily) (string, error) {
+	var userKey string
+	query := `
+		SELECT USER_KEY
+		FROM IRIS_WORKER_SET
+		WHERE REPLACE(PHONE, '-', '') = :1
+		AND USER_NM = :2
+		AND SUBSTR(REG_NO, 1, 6) = :3
+		AND SNO = :4
+		AND JNO = :5`
+	if err := db.GetContext(ctx, &userKey, query, worker.Phone, worker.UserNm, worker.RegNo, worker.Sno, worker.Jno); err != nil {
+		return "", utils.CustomErrorf(err)
+	}
+	return userKey, nil
+}
+
 // 현장근로자 추가
-func (r *Repository) AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers []entity.WorkerDaily) (entity.WorkerDailys, error) {
+func (r *Repository) AddDailyWorkers(ctx context.Context, db Queryer, tx Execer, workers entity.WorkerDailys) (entity.WorkerDailys, error) {
 	agent := utils.GetAgent()
 
-	existsQuery := `
-		SELECT 1
-		FROM IRIS_WORKER_SET
-		WHERE SNO        = :1
-		  AND JNO        = :2
-		  AND USER_ID    = :3
-		  AND USER_NM    = :4
-		  AND DEPARTMENT LIKE :5
-	`
-
 	insertQuery := `
-		INSERT INTO IRIS_WORKER_DAILY_SET (
-			SNO, JNO, USER_ID, RECORD_DATE, IN_RECOG_TIME,
-			OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE,
-			REG_USER, REG_UNO, REG_AGENT
+		MERGE INTO IRIS_WORKER_DAILY_SET T
+		USING (
+			SELECT
+				:1  AS SNO,
+				:2  AS JNO,
+				:3  AS USER_KEY,
+				:4  AS RECORD_DATE,
+				:5  AS IN_RECOG_TIME,
+				:6  AS OUT_RECOG_TIME,
+				:7  AS WORK_STATE,
+				:8  AS COMPARE_STATE,
+				:9  AS WORK_HOUR,
+				:10 AS REG_USER,
+				:11 AS REG_UNO,
+				:12 AS REG_AGENT
+			FROM DUAL
+		) SRC
+		ON (
+			T.SNO = SRC.SNO
+			AND T.USER_KEY = SRC.USER_KEY
+			AND T.RECORD_DATE = SRC.RECORD_DATE
 		)
-		VALUES (
-			:1, :2, :3, :4, :5,
-			:6, :7, :8, :9, SYSDATE,
-			:10, :11, :12
-		)
+		WHEN MATCHED THEN
+			UPDATE SET
+				T.IN_RECOG_TIME  = SRC.IN_RECOG_TIME,
+				T.OUT_RECOG_TIME = SRC.OUT_RECOG_TIME,
+				T.WORK_STATE     = SRC.WORK_STATE,
+				T.COMPARE_STATE  = SRC.COMPARE_STATE,
+				T.WORK_HOUR      = SRC.WORK_HOUR,
+				T.MOD_DATE       = SYSDATE,
+				T.MOD_USER       = SRC.REG_USER,
+				T.MOD_UNO        = SRC.REG_UNO,
+				T.MOD_AGENT      = SRC.REG_AGENT
+		WHEN NOT MATCHED THEN
+			INSERT (
+				SNO, JNO, USER_KEY, RECORD_DATE, IN_RECOG_TIME,
+				OUT_RECOG_TIME, WORK_STATE, COMPARE_STATE, WORK_HOUR, REG_DATE,
+				REG_USER, REG_UNO, REG_AGENT
+			) VALUES (
+				SRC.SNO, SRC.JNO, SRC.USER_KEY, SRC.RECORD_DATE, SRC.IN_RECOG_TIME,
+				SRC.OUT_RECOG_TIME, SRC.WORK_STATE, SRC.COMPARE_STATE, SRC.WORK_HOUR, SYSDATE,
+				SRC.REG_USER, SRC.REG_UNO, SRC.REG_AGENT
+			)
 	`
 
 	var insertedWorkers entity.WorkerDailys
 
 	for _, worker := range workers {
-		var dummy int
-		err := db.QueryRowxContext(ctx, existsQuery,
-			worker.Sno, worker.Jno, worker.UserId, worker.UserNm, fmt.Sprintf("%%%s%%", worker.Department.String),
-		).Scan(&dummy)
-
-		if err == nil {
-			// 조건 통과 → INSERT 시도
-			_, err := tx.ExecContext(ctx, insertQuery,
-				worker.Sno, worker.Jno, worker.UserId, worker.RecordDate, worker.InRecogTime,
-				worker.OutRecogTime, worker.WorkState, worker.CompareState, worker.WorkHour,
-				worker.RegUser, worker.RegUno, agent,
-			)
-			if err != nil {
-				return nil, utils.CustomErrorf(err)
-			}
-			// 통과된 항목만 슬라이스에 append
-			copied := worker // 새 인스턴스를 만들어야 주소 복사 문제 방지됨
-			copied.ModUser = worker.RegUser
-			copied.ModUno = worker.RegUno
-			copied.Message = utils.ParseNullString(fmt.Sprintf("[ADD DATA]in_recog_time: %v|out_recog_time: %v|work_hour: %v",
-				worker.InRecogTime.Time.Format("15:04:05"),
-				worker.OutRecogTime.Time.Format("15:04:05"),
-				worker.WorkHour.Float64,
-			))
-			insertedWorkers = append(insertedWorkers, &copied)
+		_, err := tx.ExecContext(ctx, insertQuery,
+			worker.Sno, worker.Jno, worker.UserKey, worker.RecordDate, worker.InRecogTime,
+			worker.OutRecogTime, worker.WorkState, worker.CompareState, worker.WorkHour, worker.RegUser,
+			worker.RegUno, agent,
+		)
+		if err != nil {
+			return nil, utils.CustomErrorf(err)
 		}
+		// 통과된 항목만 슬라이스에 append
+		copied := worker // 새 인스턴스를 만들어야 주소 복사 문제 방지됨
+		copied.ModUser = worker.RegUser
+		copied.ModUno = worker.RegUno
+		copied.Message = utils.ParseNullString(fmt.Sprintf("[ADD DATA]in_recog_time: %v|out_recog_time: %v|work_hour: %v",
+			worker.InRecogTime.Time.Format("15:04:05"),
+			worker.OutRecogTime.Time.Format("15:04:05"),
+			worker.WorkHour.Float64,
+		))
+		insertedWorkers = append(insertedWorkers, copied)
 	}
 
 	return insertedWorkers, nil
@@ -1077,8 +1109,9 @@ func (r *Repository) MergeRecdWorker(ctx context.Context, tx Execer, worker []en
 				t1.USER_NM = t2.USER_NM,
 				t1.DEPARTMENT = t2.DEPARTMENT, 
 				t1.WORKER_TYPE = t2.WORKER_TYPE,
-				t1.IS_MANAGE = t2.IS_MANAGE, 
-				t1.DISC_NAME = t2.DISC_NAME, 
+				t1.IS_MANAGE = t2.IS_MANAGE,
+				t1.PHONE = t2.USER_ID, 
+				t1.DISC_NAME = t2.DISC_NAME,
 				t1.REG_NO = t2.REG_NO,
 				t1.MOD_DATE = SYSDATE, 
 				t1.MOD_USER = 'TRG_IRIS_WORKER_SET',
@@ -1119,7 +1152,7 @@ func (r *Repository) GetRecdDailyWorkerList(ctx context.Context, db Queryer) ([]
 	var list []entity.WorkerDaily
 
 	query := `
-		SELECT IRIS_NO, SNO, JNO, USER_ID, USER_NM, REG_NO, RECOG_TIME AS RECORD_DATE
+		SELECT IRIS_NO, DNO, SNO, JNO, USER_ID, USER_NM, REG_NO, RECOG_TIME AS RECORD_DATE
 		FROM IRIS_RECD_SET
 		WHERE IS_WORKER = 'Y'
 		AND IS_DAILY_WORKER = 'N'`
@@ -1164,7 +1197,8 @@ func (r *Repository) MergeRecdDailyWorker(ctx context.Context, tx Execer, worker
 				:6 AS OUT_RECOG_TIME,
 				:7 AS WORK_STATE,
 				0 AS MOD_UNO,
-				:8 AS MOD_AGENT		
+				:8 AS MOD_AGENT,
+				:9 AS DNO	
 			FROM DUAL
 		) t2
 		ON (
@@ -1179,16 +1213,19 @@ func (r *Repository) MergeRecdDailyWorker(ctx context.Context, tx Execer, worker
 				t1.MOD_DATE = SYSDATE,
 				t1.MOD_USER = 'TRG_IRIS_WORKER_DAILY_SET',
 				t1.MOD_UNO = t2.MOD_UNO,
-				t1.MOD_AGENT = t2.MOD_AGENT
+				t1.MOD_AGENT = t2.MOD_AGENT,
+				t1.DNO = t2.DNO
 			WHERE t2.OUT_RECOG_TIME IS NOT NULL
 			AND (t1.OUT_RECOG_TIME IS NULL OR t2.OUT_RECOG_TIME > t1.OUT_RECOG_TIME)
 		WHEN NOT MATCHED THEN
 			INSERT (
 				SNO, JNO, USER_KEY, RECORD_DATE, IN_RECOG_TIME, 
-				OUT_RECOG_TIME, WORK_STATE, REG_DATE, REG_USER, REG_UNO, REG_AGENT
+				OUT_RECOG_TIME, WORK_STATE, REG_DATE, REG_USER, REG_UNO, 
+				REG_AGENT, DNO
 			) VALUES (
 				t2.SNO, t2.JNO, t2.USER_KEY, t2.RECORD_DATE, t2.IN_RECOG_TIME, 
-				t2.OUT_RECOG_TIME, t2.WORK_STATE, SYSDATE, 'TRG_IRIS_WORKER_DAILY_SET', t2.MOD_UNO, t2.MOD_AGENT
+				t2.OUT_RECOG_TIME, t2.WORK_STATE, SYSDATE, 'TRG_IRIS_WORKER_DAILY_SET', t2.MOD_UNO, 
+				t2.MOD_AGENT, t2.DNO
 			)`
 
 	query2 := `
@@ -1197,7 +1234,7 @@ func (r *Repository) MergeRecdDailyWorker(ctx context.Context, tx Execer, worker
 		WHERE IRIS_NO = :1`
 
 	for _, w := range worker {
-		if _, err := tx.ExecContext(ctx, query, w.Sno, w.Jno, w.UserKey, w.RecordDate, w.InRecogTime, w.OutRecogTime, w.WorkState, agent); err != nil {
+		if _, err := tx.ExecContext(ctx, query, w.Sno, w.Jno, w.UserKey, w.RecordDate, w.InRecogTime, w.OutRecogTime, w.WorkState, agent, w.Dno); err != nil {
 			return utils.CustomErrorf(err)
 		}
 		if _, err := tx.ExecContext(ctx, query2, w.IrisNo); err != nil {
@@ -1302,7 +1339,18 @@ func (r *Repository) GetHistoryDailyWorkers(ctx context.Context, db Queryer, sta
 			SELECT
 				T1.HIS_STATUS,
 				DECODE(T1.HIS_STATUS, 'AFTER', '변경 후', 'BEFORE', '변경 전', '') AS HIS_NAME,
-				DECODE(T1.REASON_TYPE, '01', '추가', '02', '수정', '03', '마감', '04', '일괄공수입력', '05', '프로젝트변경', '06', '삭제', '07', '마감취소', '08', '수정/마감', '') AS REASON_TYPE,
+				DECODE(T1.REASON_TYPE, 
+						'01', '추가', 
+						'02', '수정', 
+						'03', '마감', 
+						'04', '일괄공수입력', 
+						'05', '프로젝트변경', 
+						'06', '삭제', 
+						'07', '마감취소', 
+						'08', '수정/마감',
+						'09', '엑셀업로드',  
+						''
+				) AS REASON_TYPE,
 				T1.REG_DATE,
 				T2.USER_ID,
 				T2.USER_NM,

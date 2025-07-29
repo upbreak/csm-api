@@ -17,6 +17,7 @@ func ExcelRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 			SafeTDB:     safeDB,
 			Store:       r,
 			WorkerStore: r,
+			FileStore:   r,
 		},
 		FileService: &service.ServiceUploadFile{
 			DB:    safeDB,

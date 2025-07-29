@@ -2,7 +2,6 @@ package handler
 
 import (
 	"csm-api/config"
-	"csm-api/ctxutil"
 	"csm-api/entity"
 	"csm-api/service"
 	"csm-api/utils"
@@ -127,14 +126,6 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// context 안에 트랜잭션 저장
-	ctx, err := ctxutil.WithTx(r.Context(), h.DB)
-	if err != nil {
-		FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to begin transaction: %v", err)))
-		return
-	}
-	defer ctxutil.DeferTx(ctx, "ImportExcel", &err)()
-
 	// 파일 정보 저장
 	uploadFile := entity.UploadFile{
 		FileType: utils.ParseNullString(fileType),
@@ -146,10 +137,6 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 			RegUser: utils.ParseNullString(regUser),
 			RegUno:  utils.ParseNullInt(regUno),
 		},
-	}
-	if err = h.FileService.AddUploadFile(ctx, uploadFile); err != nil {
-		FailResponse(ctx, w, err)
-		return
 	}
 
 	// 엑셀 파싱 및 db 저장
@@ -163,8 +150,8 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 				RegUno:  utils.ParseNullInt(regUno),
 			},
 		}
-		if err = h.Service.ImportTbm(ctx, tempFilePath, tbm); err != nil {
-			FailResponse(ctx, w, err)
+		if err = h.Service.ImportTbm(r.Context(), tempFilePath, tbm, uploadFile); err != nil {
+			FailResponse(r.Context(), w, err)
 			return
 		}
 	} else if fileType == "DEDUCTION" {
@@ -176,11 +163,13 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 				RegUno:  utils.ParseNullInt(regUno),
 			},
 		}
-		if err = h.Service.ImportDeduction(ctx, tempFilePath, deduction); err != nil {
-			FailResponse(ctx, w, err)
+		if err = h.Service.ImportDeduction(r.Context(), tempFilePath, deduction, uploadFile); err != nil {
+			FailResponse(r.Context(), w, err)
 			return
 		}
 	} else if fileType == "ADD_DAILY_WORKER" {
+		reason := r.FormValue("reason")
+		reasonType := r.FormValue("reason_type")
 		workDaily := entity.WorkerDaily{
 			Sno:        utils.ParseNullInt(snoString),
 			Jno:        utils.ParseNullInt(jnoString),
@@ -189,9 +178,21 @@ func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 				RegUser: utils.ParseNullString(regUser),
 				RegUno:  utils.ParseNullInt(regUno),
 			},
+			WorkerReason: entity.WorkerReason{
+				Reason:     utils.ParseNullString(reason),
+				ReasonType: utils.ParseNullString(reasonType),
+			},
 		}
-		if err = h.Service.ImportAddDailyWorker(ctx, tempFilePath, workDaily); err != nil {
-			FailResponse(ctx, w, err)
+		list, err := h.Service.ImportAddDailyWorker(r.Context(), tempFilePath, workDaily)
+		if err != nil {
+			FailResponse(r.Context(), w, err)
+			return
+		}
+		if len(list) == 0 {
+			FailResponse(r.Context(), w, utils.CustomErrorf(fmt.Errorf("failed to import data: %v", list)))
+			return
+		} else {
+			SuccessValuesResponse(r.Context(), w, list)
 			return
 		}
 	}
@@ -266,7 +267,7 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 	sheet := "Sheet1"
 
 	// 헤더
-	headers := []string{"No.", "이름", "부서/조직명", "핸드폰번호", "근로날짜", "출근시간", "퇴근시간", "공수"}
+	headers := []string{"No.", "이름", "생년월일", "핸드폰번호", "근로날짜", "출근시간", "퇴근시간", "공수"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, header)
@@ -316,7 +317,9 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 
 	f.SetCellStyle(sheet, "A1", "H1", headerStyle)
 
-	// 날짜 및 시간 데이터 파싱
+	// 임시데이터 생성
+	birth, _ := time.Parse("2006.01.02", "1999.01.01")
+
 	layoutDate := "2006-01-02"
 	date1, _ := time.Parse(layoutDate, "2025-07-01")
 	date2, _ := time.Parse(layoutDate, "2025-07-01")
@@ -328,8 +331,8 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 	end2 := time.Date(1899, 12, 31, 14, 12, 0, 0, time.UTC)
 
 	rows := [][]interface{}{
-		{1, "홍길동1", "진웅종합건설", "010-1234-5678", date1, start1, end1, 1},
-		{2, "홍길동2", "진웅종합건설", "010-1234-5678", date2, start2, end2, 0.5},
+		{1, "홍길동1", birth, "010-1234-5678", date1, start1, end1, 1},
+		{2, "홍길동2", birth, "010-1234-5678", date2, start2, end2, 0.5},
 	}
 
 	// 셀 값 입력
@@ -342,9 +345,10 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 
 	// 스타일 적용
 	f.SetCellStyle(sheet, "A2", "H10", borderStyle)
-	f.SetCellStyle(sheet, "E2", "E10", dateStyle)
-	f.SetCellStyle(sheet, "F2", "F10", timeStyle)
-	f.SetCellStyle(sheet, "G2", "G10", timeStyle)
+	f.SetCellStyle(sheet, "C2", "C10", dateStyle) // 생년월일 추가
+	f.SetCellStyle(sheet, "E2", "E10", dateStyle) // 근로날짜
+	f.SetCellStyle(sheet, "F2", "F10", timeStyle) // 출근
+	f.SetCellStyle(sheet, "G2", "G10", timeStyle) // 퇴근
 
 	// 컬럼 너비
 	f.SetColWidth(sheet, "A", "H", 15)
@@ -366,7 +370,7 @@ func (h *HandlerExcel) DailyWorkerFormExport(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// 근로자 근태기록 엑셀 export
+// 현장 근로자 근태기록 엑셀 export
 func (h *HandlerExcel) DailyWorkerRecordExcelExport(w http.ResponseWriter, r *http.Request) {
 	f := excelize.NewFile()
 	sheet := "Sheet1"

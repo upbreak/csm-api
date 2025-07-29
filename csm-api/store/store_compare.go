@@ -22,9 +22,10 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 			ORDER BY
 				CASE COMPARE_STATE
 					WHEN 'S' THEN 1
-					WHEN 'W' THEN 2
-					WHEN 'C' THEN 3
-					ELSE 4
+					WHEN 'X' THEN 2		
+					WHEN 'W' THEN 3
+					WHEN 'C' THEN 4
+					ELSE 5
 				END,
 				CASE 
 					WHEN IN_RECOG_TIME IS NULL THEN OUT_RECOG_TIME 
@@ -43,6 +44,7 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 			T1.JNO,
 			T2.USER_ID,
 			T2.USER_NM,
+			T2.PHONE,
 			T2.REG_NO,
 			CASE
 				WHEN INSTR(T2.DEPARTMENT, ' ', -1) > 0 THEN SUBSTR(T2.DEPARTMENT, 1, INSTR(T2.DEPARTMENT, ' ', -1) - 1)
