@@ -53,18 +53,20 @@ func (r *Repository) GetDailyWorkerList(ctx context.Context, db Queryer, compare
 			T1.OUT_RECOG_TIME,
 			TRUNC(T1.RECORD_DATE) AS RECORD_DATE,
 			T1.COMPARE_STATE,
-			T1.IS_DEADLINE
+			T1.IS_DEADLINE,
+			T3.DEVICE_NM
 		FROM IRIS_WORKER_DAILY_SET T1
 		LEFT JOIN IRIS_WORKER_SET T2 ON T1.SNO = T2.SNO AND T1.USER_KEY = T2.USER_KEY --T1.SNO = T2.SNO AND T1.USER_ID = T2.USER_ID
+		LEFT JOIN IRIS_DEVICE_SET T3 ON T1.DNO = T3.DNO 
 		WHERE TRUNC(T1.RECORD_DATE) = TRUNC(:1)
-		AND T1.SNO = :2
-		AND T2.IS_DEL = 'N'
-		AND (
-			T1.JNO = :3 
-			OR (T1.JNO != :4 AND T1.COMPARE_STATE NOT IN ('S', 'X'))
-		)
-		%s
-		%s`, retryCondition, orderBy)
+			AND T1.SNO = :2
+			AND T2.IS_DEL = 'N'
+			AND (
+				T1.JNO = :3 
+				OR (T1.JNO != :4 AND T1.COMPARE_STATE NOT IN ('S', 'X'))
+			)
+			%s
+			%s`, retryCondition, orderBy)
 
 	if err := db.SelectContext(ctx, &list, query, compare.RecordDate, compare.Sno, compare.Jno, compare.Jno); err != nil {
 		return list, utils.CustomErrorf(err)

@@ -136,6 +136,7 @@ func (s *ServiceCompare) GetCompareList(ctx context.Context, compare entity.Comp
 			DiscName:      worker.DiscName,
 			Gender:        utils.ParseNullString(getBirthToRegNo(worker.RegNo.String)),
 			IsTbm:         utils.ParseNullString("N"),
+			DeviceNm:      worker.DeviceNm,
 			RecordDate:    worker.RecordDate,
 			WorkerInTime:  worker.InRecogTime,
 			WorkerOutTime: worker.OutRecogTime,
