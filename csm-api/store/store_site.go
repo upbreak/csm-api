@@ -52,12 +52,6 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 					t3.JOB_NAME AS DEFAULT_PROJECT_NAME,
 					t3.JOB_NO AS DEFAULT_PROJECT_NO,
 					CASE
-						WHEN EXISTS (
-							SELECT 1
-							FROM IRIS_SCH_REST_SET r
-							WHERE r.JNO = t2.JNO
-							  AND TO_DATE(r.REST_YEAR || LPAD(r.REST_MONTH, 2, '0') || LPAD(r.REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:4)
-						) THEN 'H'
 						WHEN (
 							SELECT COUNT(*)
 							FROM IRIS_WORKER_DAILY_SET d
@@ -65,6 +59,12 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 							  AND TRUNC(d.RECORD_DATE) = TRUNC(:5)
 							  AND d.WORK_STATE = '01'
 						) >= 5 THEN 'Y'
+						WHEN EXISTS (
+							SELECT 1
+							FROM IRIS_SCH_REST_SET r
+							WHERE r.JNO = t2.JNO
+							  AND TO_DATE(r.REST_YEAR || LPAD(r.REST_MONTH, 2, '0') || LPAD(r.REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:4)
+						) THEN 'H'
 						ELSE 'C'
 					END AS CURRENT_SITE_STATS
 				FROM IRIS_SITE_SET t1
@@ -76,8 +76,6 @@ func (r *Repository) GetSiteList(ctx context.Context, db Queryer, targetDate tim
 				ORDER BY t1.REG_DATE ASC,t1.SNO DESC`
 
 	if err := db.SelectContext(ctx, &sites, sql, role, uno, uno, targetDate, targetDate, targetDate, targetDate, targetDate); err != nil {
-		//TODO: 에러 아카이브
-
 		return &sites, utils.CustomErrorf(err)
 	}
 
@@ -173,26 +171,29 @@ func (r *Repository) GetSiteStatsList(ctx context.Context, db Queryer, targetDat
 	sites := entity.Sites{}
 
 	query := `
-				SELECT DISTINCT 
-					T1.SNO,
-					CASE 
-						WHEN T2.JNO IS NOT NULL THEN 'H'
-						WHEN NVL(T3.WORKER_COUNT, 0) >= 5 THEN 'Y'
-						ELSE 'C'
-					END AS CURRENT_SITE_STATS
-				FROM IRIS_SITE_JOB T1
-				LEFT JOIN (
-					SELECT DISTINCT JNO
-					FROM IRIS_SCH_REST_SET
-					WHERE TO_DATE(REST_YEAR || LPAD(REST_MONTH, 2, '0') || LPAD(REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:1)
-				) T2 ON T1.JNO = T2.JNO
+			SELECT 
+				S.SNO,
+				CASE
+					WHEN NVL(W.WORKER_COUNT, 0) >= 5 THEN 'Y'
+					WHEN H.SNO IS NOT NULL THEN 'H'
+					ELSE 'C'
+				END AS CURRENT_SITE_STATS
+			FROM 
+				(SELECT DISTINCT SNO FROM IRIS_SITE_JOB) S
 				LEFT JOIN (
 					SELECT SNO, COUNT(*) AS WORKER_COUNT
 					FROM IRIS_WORKER_DAILY_SET
-					WHERE TRUNC(RECORD_DATE) = TRUNC(:2)
-					AND WORK_STATE = '01'
+					WHERE TRUNC(RECORD_DATE) = TRUNC(:1)
+					  AND WORK_STATE = '01'
 					GROUP BY SNO
-				) T3 ON T1.SNO = T3.SNO`
+				) W ON S.SNO = W.SNO
+				LEFT JOIN (
+					SELECT DISTINCT SJ.SNO
+					FROM IRIS_SITE_JOB SJ
+					JOIN IRIS_SCH_REST_SET RS ON SJ.JNO = RS.JNO
+					WHERE TO_DATE(RS.REST_YEAR || LPAD(RS.REST_MONTH, 2, '0') || LPAD(RS.REST_DAY, 2, '0'), 'YYYYMMDD') = TRUNC(:2)
+				) H ON S.SNO = H.SNO
+			ORDER BY S.SNO DESC`
 	if err := db.SelectContext(ctx, &sites, query, targetDate, targetDate); err != nil {
 		return &sites, utils.CustomErrorf(err)
 	}

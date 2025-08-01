@@ -41,6 +41,9 @@ func SiteRoute(safeDB *sqlx.DB, timeSheetDB *sqlx.DB, r *store.Repository, apiCo
 			AddressSearchAPIService: &service.ServiceAddressSearch{
 				ApiKey: apiConfig,
 			},
+			RestDateApiService: &service.ServiceRestDate{
+				ApiKey: apiConfig,
+			},
 		},
 		CodeService: &service.ServiceCode{
 			SafeDB: safeDB,
