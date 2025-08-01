@@ -36,6 +36,7 @@ type ServiceSite struct {
 	ProjectService          ProjectService
 	WeatherApiService       WeatherApiService
 	AddressSearchAPIService AddressSearchAPIService
+	RestDateApiService      RestDateApiService
 }
 
 // func: 현장 관리 리스트 조회
@@ -68,7 +69,38 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		return &entity.Sites{}, utils.CustomErrorf(err)
 	}
 
+	// 공휴일 조회
+	year := strconv.Itoa(targetDate.Year())
+	restDates, err := s.RestDateApiService.GetRestDelDates(year, "")
+	if err != nil {
+		return &entity.Sites{}, utils.CustomErrorf(err)
+	}
+
+	// 주말, 휴무일인지 체크
+	isRest := targetDate.Weekday() == time.Saturday || targetDate.Weekday() == time.Sunday
+	if !isRest {
+		for _, rest := range restDates {
+			rd, err := time.ParseInLocation("20060102", strconv.FormatInt(rest.RestDate, 10), targetDate.Location())
+			if err != nil {
+				continue
+			}
+			if rd.Year() == targetDate.Year() &&
+				rd.Month() == targetDate.Month() &&
+				rd.Day() == targetDate.Day() {
+				isRest = true
+				break
+			}
+		}
+	}
+
 	for _, site := range *sites {
+		// 주말,공휴일 이라면 미운영을 휴무일 상태로 변경
+		if isRest {
+			if site.CurrentSiteStats.String == "C" {
+				site.CurrentSiteStats.String = "H"
+			}
+		}
+
 		sno := site.Sno.Int64
 		var projectCnt int64 = 0
 		var sumWorkRate int64 = 0
@@ -118,18 +150,6 @@ func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*e
 		}
 		site.SitePos = sitePos
 
-		// 현장 날씨 조회
-		//now := time.Now()
-		//baseDate := now.Format("20060102")
-		//baseTime := now.Add(time.Minute * -30).Format("1504") // 기상청에서 30분 단위로 발표하기 때문에 30분 전의 데이터 요청
-		//nx, ny := utils.LatLonToXY(sitePos.Latitude.Float64, sitePos.Longitude.Float64)
-		//
-		//siteWeather, err := s.WeatherApiService.GetWeatherSrtNcst(baseDate, baseTime, nx, ny)
-		//if err != nil {
-		//	return &entity.Sites{}, utils.CustomErrorf(err)
-		//}
-		//site.Weather = siteWeather
-
 		// 현장 날짜 조회
 		siteDateData, err := s.SiteDateStore.GetSiteDateData(ctx, s.SafeDB, sno)
 		if err != nil {
@@ -176,9 +196,43 @@ func (s *ServiceSite) GetSiteNmCount(ctx context.Context, search entity.Site, no
 // @param
 // -
 func (s *ServiceSite) GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
+	// 프로젝트별 휴무일 조회
 	sites, err := s.Store.GetSiteStatsList(ctx, s.SafeDB, targetDate)
 	if err != nil {
 		return &entity.Sites{}, utils.CustomErrorf(err)
+	}
+
+	// 공휴일 조회
+	year := strconv.Itoa(targetDate.Year())
+	restDates, err := s.RestDateApiService.GetRestDelDates(year, "")
+	if err != nil {
+		return &entity.Sites{}, utils.CustomErrorf(err)
+	}
+
+	// 주말, 휴무일인지 체크
+	isRest := targetDate.Weekday() == time.Saturday || targetDate.Weekday() == time.Sunday
+	if !isRest {
+		for _, rest := range restDates {
+			rd, err := time.ParseInLocation("20060102", strconv.FormatInt(rest.RestDate, 10), targetDate.Location())
+			if err != nil {
+				continue
+			}
+			if rd.Year() == targetDate.Year() &&
+				rd.Month() == targetDate.Month() &&
+				rd.Day() == targetDate.Day() {
+				isRest = true
+				break
+			}
+		}
+	}
+
+	// 주말,공휴일 이라면 미운영을 휴무일 상태로 변경
+	if isRest {
+		for _, site := range *sites {
+			if site.CurrentSiteStats.String == "C" {
+				site.CurrentSiteStats.String = "H"
+			}
+		}
 	}
 
 	return sites, nil
