@@ -31,7 +31,7 @@ func (r *Repository) GetRestScheduleList(ctx context.Context, db Queryer, jno in
 			  )
 			AND (
 			  :6 = 0 OR (JNO = :7 OR JNO = 0)
-			)`
+			) ORDER BY JNO ASC`
 
 	if err := db.SelectContext(ctx, &list, query, month, month, year, month, month, jno, jno); err != nil {
 		return nil, utils.CustomErrorf(err)
@@ -62,13 +62,15 @@ func (r *Repository) AddRestSchedule(ctx context.Context, tx Execer, schedule en
 						AND REST_YEAR = :12
 						AND REST_MONTH = :13
 						AND REST_DAY = :14
+						AND TRIM(REASON) = TRIM(:15)
 				)
 			`
 
 	for _, rest := range schedule {
 		if result, err := tx.ExecContext(ctx, query,
 			rest.Jno, rest.IsEveryYear, rest.RestYear, rest.RestMonth, rest.RestDay,
-			rest.Reason /*SYSDATE*/, agent, rest.RegUno, rest.RegUser, rest.Jno, rest.RestYear, rest.RestMonth, rest.RestDay,
+			rest.Reason /*SYSDATE*/, agent, rest.RegUno, rest.RegUser,
+			rest.Jno, rest.RestYear, rest.RestMonth, rest.RestDay, rest.Reason,
 		); err != nil {
 			return utils.CustomErrorf(err)
 		} else {
@@ -111,10 +113,14 @@ func (r *Repository) ModifyRestSchedule(ctx context.Context, tx Execer, schedule
 							AND REST_MONTH = :13
 							AND REST_DAY = :14
 							AND CNO != :15
+							AND TRIM(REASON) = TRIM(:16)
 					)
 			`
 
-	if result, err := tx.ExecContext(ctx, query, schedule.Jno, schedule.IsEveryYear, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Reason, agent, schedule.ModUno, schedule.ModUser, schedule.Cno, schedule.Jno, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Cno); err != nil {
+	if result, err := tx.ExecContext(ctx, query,
+		schedule.Jno, schedule.IsEveryYear, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Reason, agent, schedule.ModUno, schedule.ModUser, schedule.Cno,
+		schedule.Jno, schedule.RestYear, schedule.RestMonth, schedule.RestDay, schedule.Cno, schedule.Reason,
+	); err != nil {
 		return utils.CustomErrorf(err)
 	} else {
 		count, _ := result.RowsAffected()
