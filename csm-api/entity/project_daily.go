@@ -5,11 +5,12 @@ import (
 )
 
 type ProjectDaily struct {
-	Idx        null.Int    `json:"idx" db:"IDX"`
-	Jno        null.Int    `json:"jno" db:"JNO"`
-	Content    null.String `json:"content" db:"CONTENT"`
-	IsUse      null.String `json:"isUse" db:"IS_USE"`
-	TargetDate null.Time   `json:"targetDate" db:"TARGET_DATE"`
+	Idx          null.Int    `json:"idx" db:"IDX"`
+	Jno          null.Int    `json:"jno" db:"JNO"`
+	Content      null.String `json:"content" db:"CONTENT"`
+	ContentColor null.String `json:"content_color" db:"CONTENT_COLOR"`
+	IsUse        null.String `json:"isUse" db:"IS_USE"`
+	TargetDate   null.Time   `json:"targetDate" db:"TARGET_DATE"`
 	Base
 }
 

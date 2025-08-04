@@ -34,6 +34,7 @@ func (r *Repository) GetProjectDailyContentList(ctx context.Context, db Queryer,
 				t1.IDX,
 				t1.CONTENT,
 				t1.IS_USE,
+				t1.CONTENT_COLOR,
 				t1.TARGET_DATE,
 				t1.REG_DATE,
 				t1.MOD_DATE,
@@ -66,6 +67,7 @@ func (r *Repository) GetDailyJobList(ctx context.Context, db Queryer, jno int64,
 				IDX,
 				JNO,
 				CONTENT,
+				CONTENT_COLOR,
 				TARGET_DATE
 			FROM IRIS_DAILY_JOB
 			WHERE TO_CHAR(TARGET_DATE, 'YYYY-MM') = :1
@@ -80,21 +82,22 @@ func (r *Repository) GetDailyJobList(ctx context.Context, db Queryer, jno int64,
 // 작업내용 추가
 func (r *Repository) AddDailyJob(ctx context.Context, tx Execer, project entity.ProjectDailys) error {
 	query := `
-		INSERT INTO IRIS_DAILY_JOB(JNO, CONTENT, TARGET_DATE, REG_DATE, REG_UNO, REG_USER)
+		INSERT INTO IRIS_DAILY_JOB(JNO, CONTENT, CONTENT_COLOR,TARGET_DATE, REG_DATE, REG_UNO, REG_USER)
 			SELECT
-				:1, :2, :3, SYSDATE, :4, :5
+				:1, :2, :3, :4, SYSDATE, :5, :6
 			FROM dual
 			WHERE NOT EXISTS (
 				SELECT 1
 				FROM IRIS_DAILY_JOB
 				WHERE 
-					JNO = :6
-					AND TRUNC(TARGET_DATE) = TRUNC(:7)
+					JNO = :7
+					AND TRUNC(TARGET_DATE) = TRUNC(:8)
+					AND TRIM(CONTENT) = TRIM(:9)
 			)
 		`
 
 	for _, job := range project {
-		if result, err := tx.ExecContext(ctx, query, job.Jno, job.Content, job.TargetDate, job.RegUno, job.RegUser, job.Jno, job.TargetDate); err != nil {
+		if result, err := tx.ExecContext(ctx, query, job.Jno, job.Content, job.ContentColor, job.TargetDate, job.RegUno, job.RegUser, job.Jno, job.TargetDate, job.Content); err != nil {
 			return utils.CustomErrorf(err)
 		} else {
 			count, _ := result.RowsAffected()
@@ -114,23 +117,25 @@ func (r *Repository) ModifyDailyJob(ctx context.Context, tx Execer, project enti
 			SET 
 				JNO = :1,
 				CONTENT = :2,
-				TARGET_DATE = :3,
+				CONTENT_COLOR =:3 ,
+				TARGET_DATE = :4,
 				MOD_DATE = SYSDATE,
-				MOD_UNO = :4,
-				MOD_USER = :5
+				MOD_UNO = :5,
+				MOD_USER = :6
 			WHERE 
-			    IDX = :6
+			    IDX = :7
 				AND NOT EXISTS (
 					SELECT	1
 					FROM IRIS_DAILY_JOB
 					WHERE
-						JNO = :7
-						AND TRUNC(TARGET_DATE) = TRUNC(:8)
-						AND IDX != :9			
+						JNO = :8
+						AND TRUNC(TARGET_DATE) = TRUNC(:9)
+						AND TRIM(CONTENT) = TRIM(:10)
+						AND IDX != :11			
 					)
 			`
 
-	if result, err := tx.ExecContext(ctx, query, project.Jno, project.Content, project.TargetDate, project.RegUno, project.RegUser, project.Idx, project.Jno, project.TargetDate, project.Idx); err != nil {
+	if result, err := tx.ExecContext(ctx, query, project.Jno, project.Content, project.ContentColor, project.TargetDate, project.RegUno, project.RegUser, project.Idx, project.Jno, project.TargetDate, project.Content, project.Idx); err != nil {
 		return utils.CustomErrorf(err)
 	} else {
 		count, _ := result.RowsAffected()
