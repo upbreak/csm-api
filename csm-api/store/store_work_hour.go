@@ -160,6 +160,8 @@ func (r *Repository) ModifyWorkHour(ctx context.Context, tx Execer, user entity.
 					AND T1.IN_RECOG_TIME IS NOT NULL
 					AND T1.OUT_RECOG_TIME IS NOT NULL
 					AND T1.IS_DEADLINE = 'N'
+					AND T1.COMPARE_STATE = 'S'
+					AND T1.WORK_HOUR IS NULL 
 			) T3
 			ON (T1.ROWID = T3.W_ROWID)
 			WHEN MATCHED THEN

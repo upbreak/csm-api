@@ -194,7 +194,6 @@ type ExcelService interface {
 type UploadFileService interface {
 	GetUploadFileList(ctx context.Context, file entity.UploadFile) ([]entity.UploadFile, error)
 	GetUploadFile(ctx context.Context, file entity.UploadFile) (entity.UploadFile, error)
-	AddUploadFile(ctx context.Context, file entity.UploadFile) error
 }
 
 type CompareService interface {
@@ -207,4 +206,5 @@ type UserRoleService interface {
 	GetUserRoleListByCodeAndJno(ctx context.Context, code string, jno int64) ([]entity.UserRoleMap, error)
 	AddUserRole(ctx context.Context, userRoles []entity.UserRoleMap) error
 	RemoveUserRole(ctx context.Context, userRoles []entity.UserRoleMap) error
+	GetUserMenuRoleCheck(ctx context.Context, role string, menuId string) (bool, error)
 }

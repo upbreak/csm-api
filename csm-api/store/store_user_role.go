@@ -77,3 +77,19 @@ func (r *Repository) RemoveUserRole(ctx context.Context, tx Execer, userRoles []
 	}
 	return nil
 }
+
+// 사용자 메뉴 접근 체크
+func (r *Repository) GetUserMenuRoleCheck(ctx context.Context, db Queryer, role string, menuId string) (bool, error) {
+	var count int
+
+	query := `
+		SELECT COUNT(*) 
+		FROM IRIS_USER_MENU
+		WHERE ROLE_CODE = :1
+		AND MENU_ID = :2`
+
+	if err := db.GetContext(ctx, &count, query, role, menuId); err != nil {
+		return false, utils.CustomErrorf(err)
+	}
+	return count > 0, nil
+}

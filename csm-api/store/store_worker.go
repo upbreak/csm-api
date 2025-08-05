@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"csm-api/entity"
-	"csm-api/enum"
 	"csm-api/utils"
 	"database/sql"
 	"errors"
@@ -355,7 +354,7 @@ func (r *Repository) AddWorker(ctx context.Context, tx Execer, worker entity.Wor
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("%s*등록 실패: 동일한 작업자가 이미 존재합니다 (USER_ID=%s, USER_NM=%s, REG_NO=%s)", enum.WORKER_T_A, worker.UserId, worker.UserNm, worker.RegNo)
+		return fmt.Errorf("등록 실패: 동일한 작업자가 이미 존재합니다 (USER_ID=%s, USER_NM=%s, REG_NO=%s)", worker.UserId, worker.UserNm, worker.RegNo)
 	}
 
 	return nil

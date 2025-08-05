@@ -62,3 +62,18 @@ func (h *HandlerUserRole) RemoveUserRole(w http.ResponseWriter, r *http.Request)
 	entity.WriteLog(itemLog)
 	SuccessResponse(r.Context(), w)
 }
+
+// 사용자 메뉴 접근 권한 체크
+func (h *HandlerUserRole) UserMenuRoleCheck(w http.ResponseWriter, r *http.Request) {
+	role, menuId := r.URL.Query().Get("role"), r.URL.Query().Get("menu_id")
+	if role == "" || menuId == "" {
+		BadRequestResponse(r.Context(), w)
+		return
+	}
+
+	valid, err := h.Service.GetUserMenuRoleCheck(r.Context(), role, menuId)
+	if err != nil {
+		FailResponse(r.Context(), w, err)
+	}
+	SuccessValuesResponse(r.Context(), w, valid)
+}
