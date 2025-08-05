@@ -19,9 +19,10 @@ func UserRoleRoute(safeDB *sqlx.DB, r *store.Repository) chi.Router {
 		},
 	}
 
-	router.Get("/uno", userRoleHandler.GetUserRoleListByUno) // 사용자 권한 조회
-	router.Post("/add", userRoleHandler.AddUserRole)         // 사용자 권한 추가
-	router.Post("/remove", userRoleHandler.RemoveUserRole)   // 사용자 권한 삭제
+	router.Get("/uno", userRoleHandler.GetUserRoleListByUno)     // 사용자 권한 조회
+	router.Post("/add", userRoleHandler.AddUserRole)             // 사용자 권한 추가
+	router.Post("/remove", userRoleHandler.RemoveUserRole)       // 사용자 권한 삭제
+	router.Get("/menu-valid", userRoleHandler.UserMenuRoleCheck) // 사용자 메뉴 접근 권한 체크
 
 	return router
 }

@@ -63,3 +63,8 @@ func (s *ServiceUserRole) RemoveUserRole(ctx context.Context, userRoles []entity
 	}
 	return
 }
+
+// 사용자 메뉴 접근 권한 체크
+func (s *ServiceUserRole) GetUserMenuRoleCheck(ctx context.Context, role string, menuId string) (bool, error) {
+	return s.Store.GetUserMenuRoleCheck(ctx, s.SafeDB, role, menuId)
+}

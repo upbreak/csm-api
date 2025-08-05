@@ -92,8 +92,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	auth.SetContext(ctx, auth.UserId{}, "SYSTEM_SCHEDULER")
 	auth.SetContext(ctx, auth.Uno{}, "0")
 
-	// 근로자 마감 처리 (퇴근한 근로자만 처리)::0시 0분 0초
-	_, err := s.cron.AddFunc("0 0 0 * * *", func() {
+	// 근로자 마감 처리 (퇴근한 근로자만 처리)::5시 0분 0초
+	_, err := s.cron.AddFunc("0 0 5 * * *", func() {
 		defer Recover("[Scheduler] Running ModifyWorkerDeadlineSchedule")
 		log.Println("[Scheduler] Running ModifyWorkerDeadlineSchedule")
 		if err := s.WorkerService.ModifyWorkerDeadlineInit(ctx); err != nil {

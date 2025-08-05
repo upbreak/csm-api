@@ -236,4 +236,5 @@ type UserRoleStore interface {
 	GetUserRoleListByCodeAndJno(ctx context.Context, db Queryer, code string, jno int64) ([]entity.UserRoleMap, error)
 	AddUserRole(ctx context.Context, tx Execer, userRoles []entity.UserRoleMap) error
 	RemoveUserRole(ctx context.Context, tx Execer, userRoles []entity.UserRoleMap) error
+	GetUserMenuRoleCheck(ctx context.Context, db Queryer, role string, menuId string) (bool, error)
 }
