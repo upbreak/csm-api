@@ -6,6 +6,30 @@ import (
 	"csm-api/utils"
 )
 
+// 관리자 로그인. 패스워드가 기술연구소 인 경우 해당 유저로 로그인
+func (r *Repository) GetUserInfo(ctx context.Context, db Queryer, userId string) (entity.User, error) {
+	user := entity.User{}
+
+	sql := `
+		SELECT
+			T1.UNO,
+			T1.USER_ID,
+			T1.USER_NAME,
+			T1.DEPT_NAME,
+			T1.TEAM_NAME,
+			NVL(T2.ROLE_CODE, 'USER') AS ROLE_CODE
+		FROM
+			COMMON.V_BIZ_USER_INFO T1
+			LEFT JOIN IRIS_USER_ROLE_MAP T2 ON T1.UNO = T2.USER_UNO AND T2.JNO = 0
+		WHERE T1.IS_USE = 'Y'
+		AND T1.USER_ID = :1`
+
+	if err := db.GetContext(ctx, &user, sql, userId); err != nil {
+		return user, utils.CustomErrorf(err)
+	}
+	return user, nil
+}
+
 // 직원 로그인
 func (r *Repository) GetUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.User, error) {
 	user := entity.User{}

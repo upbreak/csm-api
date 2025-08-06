@@ -17,6 +17,7 @@ type User struct {
 	TeamName  string `json:"team_name" db:"TEAM_NAME"`
 	RoleCode  string `json:"role_code" db:"ROLE_CODE"`
 	IsCompany bool   `json:"is_company"`
+	Admin     bool   `json:"admin"`
 }
 
 func (u User) SetUser(uno int64, userName string) User {
