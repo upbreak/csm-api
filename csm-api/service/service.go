@@ -12,7 +12,7 @@ type MenuService interface {
 
 type GetUserValidService interface {
 	GetUserValid(ctx context.Context, userId string, userPwd string, isAdmin bool) (entity.User, error)
-	GetCompanyUserValid(ctx context.Context, userId string, userPwd string) (entity.User, error)
+	GetCompanyUserValid(ctx context.Context, userId string, userPwd string, isAdmin bool) (entity.User, error)
 }
 
 type SiteService interface {
