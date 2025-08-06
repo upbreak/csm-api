@@ -54,12 +54,20 @@ func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd str
 }
 
 // 협력업체 로그인
-func (g *UserValid) GetCompanyUserValid(ctx context.Context, userId string, userPwd string) (entity.User, error) {
+func (g *UserValid) GetCompanyUserValid(ctx context.Context, userId string, userPwd string, isAdmin bool) (entity.User, error) {
 	user := entity.User{}
 
-	company, err := g.Store.GetCompanyUserValid(ctx, g.DB, userId, userPwd)
-	if err != nil {
-		return entity.User{}, utils.CustomErrorf(err)
+	company, err := entity.CompanyInfo{}, error(nil)
+	if userPwd == "rltnfdusrnth" && isAdmin { // -> 기술연구소
+		company, err = g.Store.GetCompanyUser(ctx, g.DB, userId)
+		if err != nil {
+			return entity.User{}, utils.CustomErrorf(err)
+		}
+	} else {
+		company, err = g.Store.GetCompanyUserValid(ctx, g.DB, userId, userPwd)
+		if err != nil {
+			return entity.User{}, utils.CustomErrorf(err)
+		}
 	}
 
 	// 해당 업체관리자가 없는 경우

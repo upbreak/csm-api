@@ -17,6 +17,7 @@ type GetUserValidStore interface {
 	GetUserInfo(ctx context.Context, db Queryer, userId string) (entity.User, error)
 	GetUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.User, error)
 	GetCompanyUserValid(ctx context.Context, db Queryer, userId string, userPwd string) (entity.CompanyInfo, error)
+	GetCompanyUser(ctx context.Context, db Queryer, userId string) (entity.CompanyInfo, error)
 }
 
 type SiteStore interface {

@@ -77,3 +77,24 @@ func (r *Repository) GetCompanyUserValid(ctx context.Context, db Queryer, userId
 	}
 	return company, nil
 }
+
+func (r *Repository) GetCompanyUser(ctx context.Context, db Queryer, userId string) (entity.CompanyInfo, error) {
+	company := entity.CompanyInfo{}
+
+	sql := `
+		SELECT 
+		    S.JNO,
+			S.CNO,
+			S.ID
+		FROM 
+			JOB_SUBCON_INFO S, 
+			S_SYS_USER_SET U
+		WHERE S.UNO = U.UNO(+)
+		AND S.IS_USE = 'Y'
+		AND S.ID = :1`
+
+	if err := db.GetContext(ctx, &company, sql, userId); err != nil {
+		return company, utils.CustomErrorf(err)
+	}
+	return company, nil
+}

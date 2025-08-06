@@ -40,7 +40,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 	if login.IsCompany {
 		// 협력업체 유효성 검사
-		user, err = l.Service.GetCompanyUserValid(ctx, login.UserId, login.UserPwd)
+		user, err = l.Service.GetCompanyUserValid(ctx, login.UserId, login.UserPwd, login.Admin)
 	} else {
 		// 직원 유효성 검사
 		user, err = l.Service.GetUserValid(ctx, login.UserId, login.UserPwd, login.Admin)
