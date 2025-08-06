@@ -51,13 +51,16 @@ func (n *NoticeHandler) List(w http.ResponseWriter, r *http.Request) {
 	search.Title = utils.ParseNullString(r.URL.Query().Get("title"))
 	search.UserInfo = utils.ParseNullString(r.URL.Query().Get("user_info"))
 
-	notices, err := n.Service.GetNoticeList(ctx, page, search)
+	isRoleStr := r.URL.Query().Get("isRole")
+	isRole, err := strconv.ParseBool(isRoleStr)
+
+	notices, err := n.Service.GetNoticeList(ctx, page, isRole, search)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{Message: err.Error()}, http.StatusInternalServerError)
 		return
 	}
 
-	count, err := n.Service.GetNoticeListCount(ctx, search)
+	count, err := n.Service.GetNoticeListCount(ctx, isRole, search)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

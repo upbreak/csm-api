@@ -108,16 +108,11 @@ func (p *ServiceProject) GetProjectWorkerCountList(ctx context.Context, targetDa
 // func: 프로젝트 조회(이름)
 // @param
 // -
-func (p *ServiceProject) GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error) {
+func (p *ServiceProject) GetProjectNmList(ctx context.Context, isRole bool) (*entity.ProjectInfos, error) {
 	unoString, _ := auth.GetContext(ctx, auth.Uno{})
-	role, _ := auth.GetContext(ctx, auth.Role{})
-
-	// 권한 조회
-	list, err := p.UserService.GetAuthorizationList(ctx, "/job_name")
-	authorization := entity.AuthorizationCheck(*list, role)
 
 	var roleInt int
-	if authorization { // 권한이 있는 경우
+	if isRole { // 권한이 있는 경우
 		roleInt = 1
 	} else {
 		roleInt = 0

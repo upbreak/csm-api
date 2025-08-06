@@ -20,21 +20,14 @@ type ServiceNotice struct {
 // func: 공지사항 전체 조회
 // @param
 // - page entity.PageSql : 현재 페이지번호, 리스트 목록 개수
-func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, search entity.Notice) (*entity.Notices, error) {
+func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, isRole bool, search entity.Notice) (*entity.Notices, error) {
 
 	// 사용자 정보 가져오기
-	role, _ := auth.GetContext(ctx, auth.Role{})
 	unoString, _ := auth.GetContext(ctx, auth.Uno{})
 	uno := utils.ParseNullInt(unoString)
 
-	// 권한 조회
-	list, err := s.UserStore.GetAuthorizationList(ctx, s.SafeDB, "/notice")
-	if err != nil {
-		return nil, utils.CustomErrorf(err)
-	}
-
 	var roleInt int
-	if entity.AuthorizationCheck(*list, role) {
+	if isRole {
 		roleInt = 1
 	} else {
 		roleInt = 0
@@ -42,7 +35,7 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, sea
 
 	// 페이지 변환
 	pageSql := entity.PageSql{}
-	pageSql, err = pageSql.OfPageSql(page)
+	pageSql, err := pageSql.OfPageSql(page)
 
 	if err != nil {
 		return nil, utils.CustomErrorf(err)
@@ -59,20 +52,13 @@ func (s *ServiceNotice) GetNoticeList(ctx context.Context, page entity.Page, sea
 // func: 공지사항 전체 개수 조회
 // @param
 // -
-func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, search entity.Notice) (int, error) {
+func (s *ServiceNotice) GetNoticeListCount(ctx context.Context, isRole bool, search entity.Notice) (int, error) {
 
-	role, _ := auth.GetContext(ctx, auth.Role{})
 	unoString, _ := auth.GetContext(ctx, auth.Uno{})
 	uno := utils.ParseNullInt(unoString)
 
-	// 권한 조회
-	list, err := s.UserStore.GetAuthorizationList(ctx, s.SafeDB, "/notice")
-	if err != nil {
-		return 0, utils.CustomErrorf(err)
-	}
-
 	var roleInt int
-	if entity.AuthorizationCheck(*list, role) {
+	if isRole {
 		roleInt = 1
 	} else {
 		roleInt = 0

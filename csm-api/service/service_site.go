@@ -42,17 +42,12 @@ type ServiceSite struct {
 // func: 현장 관리 리스트 조회
 // @param
 // - targetDate: 현재시간
-func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error) {
+func (s *ServiceSite) GetSiteList(ctx context.Context, targetDate time.Time, isRole bool) (*entity.Sites, error) {
 
 	unoString, _ := auth.GetContext(ctx, auth.Uno{})
-	role, _ := auth.GetContext(ctx, auth.Role{})
-
-	// 권한 조회
-	list, err := s.UserService.GetAuthorizationList(ctx, "/site")
-	authorization := entity.AuthorizationCheck(*list, role)
 
 	var roleInt int
-	if authorization { // 권한이 있는 경우
+	if isRole { // 권한이 있는 경우
 		roleInt = 1
 	} else {
 		roleInt = 0
