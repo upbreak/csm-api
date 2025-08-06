@@ -60,7 +60,16 @@ func (h *HandlerProject) WorkerCountList(w http.ResponseWriter, r *http.Request)
 func (h *HandlerProject) JobNameList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	list, err := h.Service.GetProjectNmList(ctx)
+	isRoleStr := r.URL.Query().Get("isRole")
+
+	isRole, err := strconv.ParseBool(isRoleStr)
+
+	if err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
+	list, err := h.Service.GetProjectNmList(ctx, isRole)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return

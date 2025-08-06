@@ -16,7 +16,7 @@ type GetUserValidService interface {
 }
 
 type SiteService interface {
-	GetSiteList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
+	GetSiteList(ctx context.Context, targetDate time.Time, isRole bool) (*entity.Sites, error)
 	GetSiteNmList(ctx context.Context, page entity.Page, search entity.Site, nonSite int) (*entity.Sites, error)
 	GetSiteNmCount(ctx context.Context, search entity.Site, nonSite int) (int, error)
 	GetSiteStatsList(ctx context.Context, targetDate time.Time) (*entity.Sites, error)
@@ -45,7 +45,7 @@ type SiteDateService interface {
 type ProjectService interface {
 	GetProjectList(ctx context.Context, sno int64, targetDate time.Time) (*entity.ProjectInfos, error)
 	GetProjectWorkerCountList(ctx context.Context, targetDate time.Time) (*entity.ProjectInfos, error)
-	GetProjectNmList(ctx context.Context) (*entity.ProjectInfos, error)
+	GetProjectNmList(ctx context.Context, isRole bool) (*entity.ProjectInfos, error)
 	GetUsedProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, retry string, includeJno string) (*entity.JobInfos, error)
 	GetUsedProjectCount(ctx context.Context, search entity.JobInfo, retry string, includeJno string) (int, error)
 	GetAllProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, isAll int, retry string) (*entity.JobInfos, error)
@@ -102,8 +102,8 @@ type CodeService interface {
 }
 
 type NoticeService interface {
-	GetNoticeList(ctx context.Context, page entity.Page, search entity.Notice) (*entity.Notices, error)
-	GetNoticeListCount(ctx context.Context, search entity.Notice) (int, error)
+	GetNoticeList(ctx context.Context, page entity.Page, isRole bool, search entity.Notice) (*entity.Notices, error)
+	GetNoticeListCount(ctx context.Context, isRole bool, search entity.Notice) (int, error)
 	AddNotice(ctx context.Context, notice entity.Notice) error
 	ModifyNotice(ctx context.Context, notice entity.Notice) error
 	RemoveNotice(ctx context.Context, idx int64) error

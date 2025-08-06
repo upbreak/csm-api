@@ -51,8 +51,15 @@ func (s *HandlerSite) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isRoleStr := r.URL.Query().Get("isRole")
+	isRole, err := strconv.ParseBool(isRoleStr)
+	if err != nil {
+		BadRequestResponse(ctx, w)
+		return
+	}
+
 	// 현장 관리 리스트 조회
-	sites, err := s.Service.GetSiteList(ctx, targetDate)
+	sites, err := s.Service.GetSiteList(ctx, targetDate, isRole)
 	if err != nil {
 		FailResponse(ctx, w, err)
 		return
