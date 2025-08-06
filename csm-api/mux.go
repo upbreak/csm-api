@@ -66,13 +66,7 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 
 		// 인증 라우팅
 		csm.Group(func(router chi.Router) {
-			router.Use(handler.AuthMiddleware(jwt)) // jwt 인증
-			//router.Use(func(next http.Handler) http.Handler {
-			//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			//		fmt.Printf("요청 도착: %s %s\n", r.Method, r.URL.Path)
-			//		next.ServeHTTP(w, r)
-			//	})
-			//})
+			router.Use(handler.AuthMiddleware(jwt))                                     // jwt 인증
 			router.Mount("/menu", route.MenuRoute(safeDb, &r))                          // 메뉴
 			router.Mount("/user", route.UserRoute(safeDb, timesheetDb, &r))             // 사용자 {권한}
 			router.Mount("/api", route.ApiRoute(apiCfg, safeDb, &r))                    // api
