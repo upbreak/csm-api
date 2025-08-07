@@ -95,11 +95,6 @@ func (r *Repository) GetNoticeList(ctx context.Context, db Queryer, uno null.Int
 								THEN 0 
 								ELSE 1
 							END,
-							CASE WHEN
-									JNO = 0 
-								THEN 0
-								ELSE 1 
-							END,
 							POSTING_START_DATE DESC
 						) sorted_data
 					WHERE ROWNUM <= :4

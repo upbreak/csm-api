@@ -27,7 +27,7 @@ func (u *ServiceUser) GetUserInfoPeList(ctx context.Context, unoList []int) (*en
 
 // 사용자 권한 조회 {현장소장 | 현장관리자 | 안전관리자 | 관리감독자 | 협력업체관리자}
 func (u *ServiceUser) GetUserRole(ctx context.Context, jno int64, uno int64) (string, error) {
-	role1, err := u.Store.GetSiteRole(ctx, u.TimeSheetDB, jno, uno)
+	role1, err := u.Store.GetSiteRole(ctx, u.SafeDB, jno, uno)
 	if err != nil {
 		return "", utils.CustomErrorf(err)
 	}

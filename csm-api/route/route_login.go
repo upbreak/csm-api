@@ -9,13 +9,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func LoginRoute(jwt *auth.JWTUtils, safeDB *sqlx.DB, r *store.Repository) chi.Router {
+func LoginRoute(jwt *auth.JWTUtils, safeDB *sqlx.DB, timesheetDB *sqlx.DB, r *store.Repository) chi.Router {
 	router := chi.NewRouter()
 
 	loginHandler := &handler.LoginHandler{
 		Service: &service.UserValid{
 			DB:    safeDB,
 			Store: r,
+			UserService: &service.ServiceUser{
+				SafeDB:      safeDB,
+				TimeSheetDB: timesheetDB,
+				Store:       r,
+			},
 		},
 		Jwt: jwt,
 	}
