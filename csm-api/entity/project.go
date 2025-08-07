@@ -66,15 +66,18 @@ type ProjectSafeCounts []*ProjectSafeCount
 
 // nonUsedProject
 type NonUsedProject struct {
-	Rnum     null.Int    `json:"rnum" db:"RNUM"`
-	Jno      null.Int    `json:"jno" db:"JNO"`
-	JobNo    null.String `json:"job_no" db:"JOB_NO"`
-	JobName  null.String `json:"job_name" db:"JOB_NAME"`
-	JobYear  null.Int    `json:"job_year" db:"JOB_YEAR"`
-	JobSd    null.String `json:"job_sd" db:"JOB_SD"`
-	JobEd    null.String `json:"job_ed" db:"JOB_ED"`
-	JobPmNm  null.String `json:"job_pm_nm" db:"JOB_PM_NM"`
-	DutyName null.String `json:"duty_name" db:"DUTY_NAME"`
+	Rnum          null.Int    `json:"rnum" db:"RNUM"`
+	Jno           null.Int    `json:"jno" db:"JNO"`
+	JobNo         null.String `json:"job_no" db:"JOB_NO"`
+	JobName       null.String `json:"job_name" db:"JOB_NAME"`
+	JobYear       null.Int    `json:"job_year" db:"JOB_YEAR"`
+	JobSd         null.String `json:"job_sd" db:"JOB_SD"`
+	JobEd         null.String `json:"job_ed" db:"JOB_ED"`
+	JobPmNm       null.String `json:"job_pm_nm" db:"JOB_PM_NM"`
+	DutyName      null.String `json:"duty_name" db:"DUTY_NAME"`
+	CompName      null.String `json:"comp_name" db:"COMP_NAME"`
+	OrderCompName null.String `json:"order_comp_name" db:"ORDER_COMP_NAME"`
+	CdNm          null.String `json:"cd_nm" db:"CD_NM"`
 }
 
 type NonUsedProjects []*NonUsedProject

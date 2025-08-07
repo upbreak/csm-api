@@ -393,9 +393,9 @@ func (r *Repository) GetUsedProjectList(ctx context.Context, db Queryer, pageSql
 	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "t5.CD_NM")
 
 	var columns []string
-	columns = append(columns, "t2.JOB_NAME")
+	columns = append(columns, "t1.JNO")
 	columns = append(columns, "t2.JOB_NO")
-	columns = append(columns, "t2.JOB_PM_NAME")
+	columns = append(columns, "t2.JOB_NAME")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var order string
@@ -471,9 +471,9 @@ func (r *Repository) GetUsedProjectCount(ctx context.Context, db Queryer, search
 	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "t5.CD_NM")
 
 	var columns []string
-	columns = append(columns, "t2.JOB_NAME")
+	columns = append(columns, "t1.JNO")
 	columns = append(columns, "t2.JOB_NO")
-	columns = append(columns, "t2.JOB_PM_NAME")
+	columns = append(columns, "t2.JOB_NAME")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var jnoCondition string
@@ -527,9 +527,9 @@ func (r *Repository) GetAllProjectList(ctx context.Context, db Queryer, pageSql 
 	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "SC.CD_NM")
 
 	var columns []string
-	columns = append(columns, "J.JOB_NAME")
+	columns = append(columns, "J.JNO")
 	columns = append(columns, "J.JOB_NO")
-	columns = append(columns, "J.JOB_PM_NAME")
+	columns = append(columns, "J.JOB_NAME")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var order string
@@ -616,7 +616,7 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 	condition = utils.StringWhereConvert(condition, search.CdNm.NullString, "SC.CD_NM")
 
 	var columns []string
-	columns = append(columns, "J.JOB_NAME")
+	columns = append(columns, "J.JNO")
 	columns = append(columns, "J.JOB_NO")
 	columns = append(columns, "J.JOB_PM_NAME")
 	retryCondition := utils.RetrySearchTextConvert(retry, columns)
@@ -647,7 +647,7 @@ func (r *Repository) GetAllProjectCount(ctx context.Context, db Queryer, search 
 // func: 본인이 속한 프로젝트 조회
 // @param
 // - UNO
-func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64) (*entity.JobInfos, error) {
+func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSql entity.PageSql, searchSql entity.JobInfo, uno sql.NullInt64, retry string) (*entity.JobInfos, error) {
 
 	list := entity.JobInfos{}
 
@@ -660,6 +660,12 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 	condition = utils.StringWhereConvert(condition, searchSql.JobSd.NullString, "J.JOB_SD")
 	condition = utils.StringWhereConvert(condition, searchSql.JobEd.NullString, "J.JOB_ED")
 	condition = utils.StringWhereConvert(condition, searchSql.CdNm.NullString, "SC.CD_NM")
+
+	var columns []string
+	columns = append(columns, "J.JNO")
+	columns = append(columns, "J.JOB_NO")
+	columns = append(columns, "J.JOB_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	var order string
 	if pageSql.Order.Valid {
@@ -699,12 +705,12 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 					ON 
 						J.job_state = SC.minor_cd 
 						AND SC.MAJOR_CD = 'JOB_STATE'
-					WHERE %s
+					WHERE %s %s
 					ORDER BY %s
 					) sorted_data
 				WHERE ROWNUM <= :2
 			) 
-			WHERE RNUM > :3`, condition, order)
+			WHERE RNUM > :3`, condition, retryCondition, order)
 
 	if err := db.SelectContext(ctx, &list, query, uno, pageSql.EndNum, pageSql.StartNum); err != nil {
 		return nil, utils.CustomErrorf(err)
@@ -716,7 +722,7 @@ func (r *Repository) GetStaffProjectList(ctx context.Context, db Queryer, pageSq
 // func: 본인이 속한 프로젝트 개수
 // @param
 // - UNO
-func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64) (int, error) {
+func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searchSql entity.JobInfo, uno sql.NullInt64, retry string) (int, error) {
 	var count int
 
 	condition := "1=1"
@@ -728,6 +734,12 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 	condition = utils.StringWhereConvert(condition, searchSql.JobSd.NullString, "J.JOB_SD")
 	condition = utils.StringWhereConvert(condition, searchSql.JobEd.NullString, "J.JOB_ED")
 	condition = utils.StringWhereConvert(condition, searchSql.CdNm.NullString, "SC.CD_NM")
+
+	var columns []string
+	columns = append(columns, "J.JNO")
+	columns = append(columns, "J.JOB_NO")
+	columns = append(columns, "J.JOB_NAME")
+	retryCondition := utils.RetrySearchTextConvert(retry, columns)
 
 	query := fmt.Sprintf(`
 				SELECT 
@@ -742,7 +754,7 @@ func (r *Repository) GetStaffProjectCount(ctx context.Context, db Queryer, searc
 				ON 
 					J.job_state = SC.minor_cd 
 					AND SC.MAJOR_CD = 'JOB_STATE'
-				WHERE %s`, condition)
+				WHERE %s %s`, condition, retryCondition)
 
 	if err := db.GetContext(ctx, &count, query, uno); err != nil {
 		return 0, utils.CustomErrorf(err)
@@ -824,10 +836,14 @@ func (r *Repository) GetNonUsedProjectList(ctx context.Context, db Queryer, page
 											t1.JOB_YEAR,
 											t1.JOB_SD,
 											t1.JOB_ED,
+											t1.COMP_NAME,
+											t1.ORDER_COMP_NAME,
 											t2.USER_NAME AS JOB_PM_NM,
-											t2.DUTY_NAME
+											t2.DUTY_NAME,
+											t5.CD_NM
 										FROM s_job_info t1
 										LEFT JOIN COMMON.V_BIZ_USER_INFO t2 ON t1.JOB_PM = t2.UNO
+										LEFT JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t1.job_state AND t5.major_cd = 'JOB_STATE'
 										WHERE t1.JOB_STATE = 'Y'
 										AND t1.JNO NOT IN(
 											SELECT JNO
@@ -937,10 +953,14 @@ func (r *Repository) GetNonUsedProjectListByType(ctx context.Context, db Queryer
 											t1.JOB_YEAR,
 											t1.JOB_SD,
 											t1.JOB_ED,
+											t1.COMP_NAME,
+											t1.ORDER_COMP_NAME,
 											t2.USER_NAME AS JOB_PM_NM,
-											t2.DUTY_NAME
+											t2.DUTY_NAME,
+											t5.CD_NM
 										FROM s_job_info t1
 										LEFT JOIN COMMON.V_BIZ_USER_INFO t2 ON t1.JOB_PM = t2.UNO
+										LEFT JOIN TIMESHEET.SYS_CODE_SET t5 ON t5.MINOR_CD = t1.job_state AND t5.major_cd = 'JOB_STATE'
 										WHERE t1.JOB_STATE = 'Y'
 										AND t1.JNO NOT IN(
 											SELECT JNO
