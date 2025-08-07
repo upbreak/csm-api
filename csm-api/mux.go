@@ -36,8 +36,8 @@ func newMux(ctx context.Context, safeDb *sqlx.DB, timesheetDb *sqlx.DB) (http.Ha
 		AllowedOrigins: []string{
 			"http://localhost:3002",
 			"http://127.0.0.1:3002",
-			"http://61.41.17.36",
-			"http://csm.htenc.co.kr",
+			"https://61.41.17.36",
+			"https://csm.htenc.co.kr",
 		},
 		AllowCredentials: true,                                                // 쿠키 허용
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 허용할 메서드
