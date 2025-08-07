@@ -96,82 +96,76 @@ func RetrySearchTextConvert(retry string, columns []string) string {
 	if trimRetry == "" {
 		return ""
 	}
-	// ~: AND 묶음
 	andGroups := strings.Split(trimRetry, "~")
 	for _, andGroup := range andGroups {
-		pipeGroups := strings.Split(andGroup, "|")
-		var andExpr []string
-		for _, group := range pipeGroups {
-			group = strings.TrimSpace(group)
-			// ":"가 있는 경우 (예: ALL:xxx, USER_ID:xxx)
-			if colonIdx := strings.Index(group, ":"); colonIdx != -1 {
-				key := group[:colonIdx]
-				value := group[colonIdx+1:]
-				if strings.ToUpper(key) == "ALL" {
-					// ALL:값;값;값 구조 (세미콜론으로 OR)
-					orBlocks := strings.Split(value, ";")
-					var orExpr []string
-					for _, block := range orBlocks {
-						block = strings.TrimSpace(block)
-						if block == "" {
-							continue
-						}
-						parts := strings.Split(block, "?")
-						searchWord := parts[0]
-						var fieldTargets []string
-						isAllColumn := false
-						if len(parts) > 1 {
-							fieldTargets = parts[1:]
+		andGroup = strings.TrimSpace(andGroup)
+		if andGroup == "" {
+			continue
+		}
+		colonIdx := strings.Index(andGroup, ":")
+		if colonIdx != -1 {
+			key := strings.TrimSpace(andGroup[:colonIdx])
+			value := strings.TrimSpace(andGroup[colonIdx+1:])
+			if strings.ToUpper(key) == "ALL" {
+				// *** ALL은 원래 코드 절대 그대로! (수정 금지) ***
+				orBlocks := strings.Split(value, ";")
+				var orExpr []string
+				for _, block := range orBlocks {
+					block = strings.TrimSpace(block)
+					if block == "" {
+						continue
+					}
+					parts := strings.Split(block, "?")
+					searchWord := parts[0]
+					var fieldTargets []string
+					isAllColumn := false
+					if len(parts) > 1 {
+						fieldTargets = parts[1:]
+					} else {
+						fieldTargets = columns
+						isAllColumn = true
+					}
+					var temp []string
+					for _, column := range columns {
+						if isAllColumn {
+							temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, searchWord))
 						} else {
-							fieldTargets = columns
-							isAllColumn = true
-						}
-						var temp []string
-						for _, column := range columns {
-							if isAllColumn {
-								temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, searchWord))
-							} else {
-								for _, f := range fieldTargets {
-									if strings.HasSuffix(column, f) {
-										temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, searchWord))
-										break
-									}
+							for _, f := range fieldTargets {
+								if strings.HasSuffix(column, f) {
+									temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, searchWord))
+									break
 								}
 							}
 						}
-						if len(temp) > 0 {
-							orExpr = append(orExpr, strings.Join(temp, " OR "))
-						}
 					}
-					if len(orExpr) > 0 {
-						andExpr = append(andExpr, fmt.Sprintf("(%s)", strings.Join(orExpr, " OR ")))
+					if len(temp) > 0 {
+						orExpr = append(orExpr, strings.Join(temp, " OR "))
 					}
-				} else {
-					// key: 필드, value: 값1;값2;값3...
-					values := strings.Split(value, "|")
-					for _, v := range values {
-						v = strings.TrimSpace(v)
-						for _, column := range columns {
-							// 컬럼 끝이 key와 같을 때만!
-							if strings.HasSuffix(column, key) {
-								andExpr = append(andExpr, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, v))
-							}
-						}
-					}
+				}
+				if len(orExpr) > 0 {
+					where += "AND (" + strings.Join(orExpr, " OR ") + ") "
 				}
 			} else {
-				// ":"가 없는 값은 전체 columns
-				var temp []string
-				for _, column := range columns {
-					temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, group))
-				}
-				if len(temp) > 0 {
-					andExpr = append(andExpr, fmt.Sprintf("(%s)", strings.Join(temp, " OR ")))
+				// *** key:필드 | 여러 값은 AND로 묶기 ***
+				values := strings.Split(value, "|")
+				for _, v := range values {
+					v = strings.TrimSpace(v)
+					for _, column := range columns {
+						if strings.HasSuffix(column, key) {
+							where += fmt.Sprintf("AND LOWER(%s) LIKE LOWER('%%%s%%') ", column, v)
+						}
+					}
 				}
 			}
-		}
-		if len(andExpr) > 0 {
-			where += "AND " + strings.Join(andExpr, " AND ") + " "
+		} else {
+			// *** : 없는 건 전체 columns OR ***
+			var temp []string
+			for _, column := range columns {
+				temp = append(temp, fmt.Sprintf(`LOWER(%s) LIKE LOWER('%%%s%%')`, column, andGroup))
+			}
+			if len(temp) > 0 {
+				where += "AND (" + strings.Join(temp, " OR ") + ") "
+			}
 		}
 	}
 	return strings.TrimSpace(where)

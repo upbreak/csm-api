@@ -198,7 +198,7 @@ func (p *ServiceProject) GetAllProjectCount(ctx context.Context, search entity.J
 // func: 본인이 속한 프로젝트 조회
 // @param
 // - UNO
-func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64) (*entity.JobInfos, error) {
+func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Page, search entity.JobInfo, uno int64, retry string) (*entity.JobInfos, error) {
 	var unoSql sql.NullInt64
 
 	if uno != 0 {
@@ -213,7 +213,7 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
 
-	jobInfos, err := p.Store.GetStaffProjectList(ctx, p.SafeDB, pageSql, search, unoSql)
+	jobInfos, err := p.Store.GetStaffProjectList(ctx, p.SafeDB, pageSql, search, unoSql, retry)
 	if err != nil {
 		return &entity.JobInfos{}, utils.CustomErrorf(err)
 	}
@@ -224,7 +224,7 @@ func (p *ServiceProject) GetStaffProjectList(ctx context.Context, page entity.Pa
 // func: 본인이 속한 프로젝트 개수
 // @param
 // - UNO
-func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64) (int, error) {
+func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity.JobInfo, uno int64, retry string) (int, error) {
 	var unoSql sql.NullInt64
 
 	if uno != 0 {
@@ -233,7 +233,7 @@ func (p *ServiceProject) GetStaffProjectCount(ctx context.Context, search entity
 		unoSql = sql.NullInt64{Valid: false}
 	}
 
-	count, err := p.Store.GetStaffProjectCount(ctx, p.SafeDB, search, unoSql)
+	count, err := p.Store.GetStaffProjectCount(ctx, p.SafeDB, search, unoSql, retry)
 	if err != nil {
 		return 0, utils.CustomErrorf(err)
 	}

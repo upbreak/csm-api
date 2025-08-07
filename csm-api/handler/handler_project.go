@@ -236,6 +236,7 @@ func (h *HandlerProject) MyOrgList(w http.ResponseWriter, r *http.Request) {
 	jobSd := r.URL.Query().Get("job_sd")
 	jobEd := r.URL.Query().Get("job_ed")
 	cdNm := r.URL.Query().Get("cd_nm")
+	retrySearch := r.URL.Query().Get("retry_search")
 
 	if pageNum == "" || rowSize == "" {
 		BadRequestResponse(ctx, w)
@@ -254,14 +255,14 @@ func (h *HandlerProject) MyOrgList(w http.ResponseWriter, r *http.Request) {
 	search.JobEd = utils.ParseNullString(jobEd)
 	search.CdNm = utils.ParseNullString(cdNm)
 
-	list, err := h.Service.GetStaffProjectList(ctx, page, search, int64UNO)
+	list, err := h.Service.GetStaffProjectList(ctx, page, search, int64UNO, retrySearch)
 
 	if err != nil {
 		BadRequestResponse(ctx, w)
 		return
 	}
 
-	count, err := h.Service.GetStaffProjectCount(ctx, search, int64UNO)
+	count, err := h.Service.GetStaffProjectCount(ctx, search, int64UNO, retrySearch)
 
 	if err != nil {
 		BadRequestResponse(ctx, w)
