@@ -15,8 +15,9 @@ import (
 )
 
 type UserValid struct {
-	DB    store.Queryer
-	Store store.GetUserValidStore
+	DB          store.Queryer
+	Store       store.GetUserValidStore
+	UserService UserService
 }
 
 // 직원 로그인
@@ -48,6 +49,16 @@ func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd str
 				user.RoleCode = string(auth.User)
 			}
 		}
+	}
+	var role string
+
+	role, err = g.UserService.GetUserRole(ctx, 0, user.Uno)
+	if err != nil {
+		return entity.User{}, utils.CustomErrorf(err)
+	}
+
+	if role != "" {
+		user.RoleCode = role
 	}
 
 	return user, nil
