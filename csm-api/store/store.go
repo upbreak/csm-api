@@ -107,6 +107,7 @@ type UserStore interface {
 	GetSiteRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error)
 	GetOperationalRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error)
 	GetAuthorizationList(ctx context.Context, db Queryer, api string) (*entity.RoleList, error)
+	GetSupervisorRole(ctx context.Context, db Queryer, uno int64) (string, error)
 }
 
 type CodeStore interface {
