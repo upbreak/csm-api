@@ -36,21 +36,21 @@ func (s *ServiceProjectSetting) GetManHourList(ctx context.Context, jno int64) (
 // @param
 // - manHours: 공수 정보 배열
 func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *entity.ManHours) (err error) {
+
+	jno := (*manHours)[0].Jno.Int64
+	user := (*manHours)[0].Base
+
+	deleteManhours, err := s.Store.GetManHourList(ctx, s.SafeDB, jno)
+	if err != nil {
+		return utils.CustomErrorf(err)
+	}
+	// jno에 해당하는 공수 찾기
 	tx, err := txutil.BeginTxWithMode(ctx, s.SafeTDB, false)
 	if err != nil {
 		return utils.CustomErrorf(err)
 	}
 
 	defer txutil.DeferTx(tx, &err)
-
-	jno := (*manHours)[0].Jno.Int64
-	user := (*manHours)[0].Base
-
-	// jno에 해당하는 공수 찾기
-	deleteManhours, err := s.Store.GetManHourList(ctx, s.SafeDB, jno)
-	if err != nil {
-		return utils.CustomErrorf(err)
-	}
 
 	// jno에 해당하는 공수 모두 삭제
 	if deleteManhours != nil && len(*deleteManhours) > 0 {
@@ -63,7 +63,23 @@ func (s *ServiceProjectSetting) MergeManHours(ctx context.Context, manHours *ent
 			deleteManhour.Base = user
 
 			// 삭제
-			if err = s.DeleteManHour(ctx, deleteManhour.Mhno.Int64, *deleteManhour); err != nil {
+			//if err = s.DeleteManHour(ctx, deleteManhour.Mhno.Int64, *deleteManhour); err != nil {
+			//	return utils.CustomErrorf(err)
+			//}
+			// 공수 삭제
+			if err = s.Store.DeleteManHour(ctx, tx, deleteManhour.Mhno.Int64); err != nil {
+				return utils.CustomErrorf(err)
+			}
+
+			// 공수 삭제 시 근로자 업데이트
+			jno = deleteManhour.Jno.Int64
+			user = deleteManhour.Base
+			if err = s.WorkHourStore.ModifyWorkHourByJno(ctx, tx, jno, user, nil); err != nil {
+				return utils.CustomErrorf(err)
+			}
+
+			// 로그 기록
+			if err = s.Store.ManHourLog(ctx, tx, *deleteManhour); err != nil {
 				return utils.CustomErrorf(err)
 			}
 		}
