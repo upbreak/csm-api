@@ -75,12 +75,17 @@ func (r *Repository) GetWorkerTotalList(ctx context.Context, db Queryer, page en
 					)
 					WHERE RN = 1
 				),
-				BASE AS (
-					SELECT R1.*
+				JOINED AS (
+					SELECT r1.*, ROW_NUMBER() OVER (PARTITION BY r1.user_nm ORDER BY r1.reg_date DESC) AS rn
 					FROM IRIS_WORKER_SET R1
-					JOIN LATEST_DAILY R2
+					LEFT JOIN LATEST_DAILY R2
 					ON R1.SNO = R2.SNO AND R1.USER_KEY = R2.USER_KEY
-					WHERE R1.IS_DEL = 'N'
+					WHERE (R1.IS_DEL IS NULL OR R1.IS_DEL = 'N') 
+				),
+				BASE AS (
+					SELECT *
+					FROM JOINED
+					WHERE rn = 1
 				)
 				SELECT *
 				FROM (
@@ -187,11 +192,17 @@ func (r *Repository) GetWorkerTotalCount(ctx context.Context, db Queryer, search
 							)
 							WHERE RN = 1
 						),
-						BASE AS (
-							SELECT R1.*
+						JOINED AS (
+							SELECT r1.*, ROW_NUMBER() OVER (PARTITION BY r1.user_nm ORDER BY r1.reg_date DESC) AS rn
 							FROM IRIS_WORKER_SET R1
-							JOIN LATEST_DAILY R2
+							LEFT JOIN LATEST_DAILY R2
 							ON R1.SNO = R2.SNO AND R1.USER_KEY = R2.USER_KEY
+							WHERE (R1.IS_DEL IS NULL OR R1.IS_DEL = 'N') 
+						),
+						BASE AS (
+							SELECT *
+							FROM JOINED
+							WHERE rn = 1
 						)
 						SELECT 
 							COUNT(*)
