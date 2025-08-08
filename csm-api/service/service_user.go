@@ -44,6 +44,15 @@ func (u *ServiceUser) GetUserRole(ctx context.Context, jno int64, uno int64) (st
 		return role2, nil
 	}
 
+	supervisorRole, err := u.Store.GetSupervisorRole(ctx, u.SafeDB, uno)
+	if err != nil {
+		return "", utils.CustomErrorf(err)
+	}
+
+	if supervisorRole != "" {
+		return supervisorRole, nil
+	}
+
 	return "", nil
 }
 

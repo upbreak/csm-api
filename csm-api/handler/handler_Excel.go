@@ -34,7 +34,7 @@ type HandlerExcel struct {
 }
 
 // excel 자료 import
-// fileType: WORK_LETTER (작업허가서), TBM (TBM 문서), DEDUCTION (퇴직공제), REPORT (작업일보), ADD_DAILY_WORKER (현장 근로자 등록)
+// fileType: WORK_LETTER (작업허가서), TBM (TBM 문서), DEDUCTION (퇴직공제), REPORT (작업일보), ADD_DAILY_WORKER (현장 근로자 등록), ADD_WORKER (전체 근로자 등록)
 // POST ROW DATA
 func (h *HandlerExcel) ImportExcel(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20) // 최대 10MB

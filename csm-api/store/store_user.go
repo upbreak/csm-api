@@ -41,6 +41,9 @@ func (r *Repository) GetUserInfoPeList(ctx context.Context, db Queryer, unoList 
 }
 
 // 현장소장, 현장 관리자 권한 조회
+// @param
+// - uno: 유저PK
+// - jno: 프로젝트PK (최초 로그인 시 jno를 0으로 부여하여 전체 프로젝트에서 권한 확인)
 func (r *Repository) GetSiteRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error) {
 	var role string
 
@@ -82,6 +85,9 @@ func (r *Repository) GetSiteRole(ctx context.Context, db Queryer, jno int64, uno
 }
 
 // 안전관리자, 관리감독자 조회
+// @param
+// - uno: 유저PK
+// - jno: 프로젝트PK (최초 로그인 시 jno를 0으로 부여하여 전체 프로젝트에서 권한 확인)
 func (r *Repository) GetOperationalRole(ctx context.Context, db Queryer, jno int64, uno int64) (string, error) {
 	var role string
 
@@ -135,4 +141,41 @@ func (r *Repository) GetAuthorizationList(ctx context.Context, db Queryer, api s
 	}
 
 	return &list, nil
+}
+
+// func: 안전보건 시스템에 등록되지 않은 관리감독자 조회
+// @params
+// - uno: 유저PK
+func (r *Repository) GetSupervisorRole(ctx context.Context, db Queryer, uno int64) (string, error) {
+	var role string
+
+	query := `
+		WITH MEMBER_LIST AS (
+			SELECT * FROM TIMESHEET.JOB_MEMBER_LIST
+			WHERE UNO = :1
+		),
+		TRIMMED_CODE AS (
+			SELECT 
+				COUNT(*) AS CNT
+			FROM MEMBER_LIST M
+			INNER JOIN TIMESHEET.SYS_CODE_SET SC ON M.CHARGE = SC.MINOR_CD 
+			WHERE SC.MAJOR_CD = 'MEMBER_CHARGE'
+			AND M.COMP_TYPE = 'H'
+			AND M.FUNC_CODE = 510
+		)
+		SELECT 
+			'SUPERVISOR' AS ROLE 
+		FROM 
+			TRIMMED_CODE 
+		WHERE 
+			CNT > 0
+	`
+
+	if err := db.GetContext(ctx, &role, query, uno); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", utils.CustomErrorf(err)
+	}
+	return role, nil
 }
