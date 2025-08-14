@@ -50,8 +50,11 @@ func (g *UserValid) GetUserValid(ctx context.Context, userId string, userPwd str
 			}
 		}
 	}
-	var role string
+	if user.RoleCode != string(auth.User) {
+		return user, nil
+	}
 
+	var role string
 	role, err = g.UserService.GetUserRole(ctx, 0, user.Uno)
 	if err != nil {
 		return entity.User{}, utils.CustomErrorf(err)
